@@ -1,0 +1,41 @@
+/* Custom Styles for Control Panel */
+body {
+    background-color: #020617;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(88, 28, 135, 0.15) 0px, transparent 50%);
+    background-attachment: fixed;
+}
+
+/* Glassmorphism utility */
+.glass {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0f172a; 
+}
+::-webkit-scrollbar-thumb {
+    background: #334155; 
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #475569; 
+}
+
+/* Input reset for webkit autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
+    -webkit-text-fill-color: white !important;
+}

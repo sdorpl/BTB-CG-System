@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, initial-scale=1.0">
+    <title>CG Output Page</title>
+    <!-- GSAP for animations (as required by templates) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <!-- Handlebars for template compilation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
+    <style>
+        /* Base styles for output */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            background-color: transparent;
+            /* Keep transparent for OBS/vMix */
+            /* Outline just for debugging during dev - remove / hide normally */
+            /* border: 1px solid red; */
+        }
+
+        #render-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            pointer-events: none;
+            /* Let clicks pass through */
+        }
+
+        .graphic-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .graphic-layer * {
+            pointer-events: auto;
+            /* Re-enable for inner elements if needed */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="render-container"></div>
+    <script src="renderer.js"></script>
+</body>
+
+</html>
