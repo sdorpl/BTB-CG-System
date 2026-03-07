@@ -13,6 +13,7 @@ let currentPage = 'dashboard'; // 'dashboard' | 'templates'
 let currentTemplateId = null;
 let currentTemplateTab = 'html';
 let inspectorAccordionStates = {}; // graphicId -> { accordionId -> isOpen }
+const DB_KEY = 'cg_state_backup';
 
 // ===========================================================
 // 1. BOOT
@@ -62,6 +63,10 @@ async function init() {
 // 2. STATE
 // ===========================================================
 function saveState() {
+    if (!state || !state.templates || state.templates.length === 0) {
+        console.warn("[!] saveState blocked: State appears to be empty or uninitialized.");
+        return;
+    }
     socket.emit('updateState', state);
 }
 

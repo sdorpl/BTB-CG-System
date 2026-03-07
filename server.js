@@ -143,13 +143,15 @@ function syncStateToDB(state) {
         }
 
         // 2. Templates
-        db.run("DELETE FROM templates");
         if (state.templates && state.templates.length > 0) {
+            db.run("DELETE FROM templates");
             const stmtTpl = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
             for (const t of state.templates) {
                 stmtTpl.run(t.id, JSON.stringify(t));
             }
             stmtTpl.finalize();
+        } else {
+            console.warn("[!] syncStateToDB: Skipping templates update - state.templates is empty or missing. (Prevention of wiping DB)");
         }
 
         // 3. Groups
@@ -182,12 +184,20 @@ io.on('connection', (socket) => {
     // Listen for FULL state updates from the control panel
     // Dla optymalizacji oddzielamy zapis grafiki od zapisu całych struktur
     socket.on('updateState', (newState) => {
+        if (!newState || (!newState.templates && !newState.graphics)) {
+            console.error(`[!] Rejected updateState from ${socket.id}: State is null or empty.`);
+            return;
+        }
+
+        console.log(`[u] Received updateState from ${socket.id}. Graphics: ${newState.graphics?.length || 0}, Templates: ${newState.templates?.length || 0}`);
         appState = newState;
         // Broadcast the updated state to ALL connected clients
         io.emit('stateUpdated', appState);
         
         // Persist to disk
-        syncGraphicsToDB(newState.graphics);
+        if (newState.graphics && newState.graphics.length > 0) {
+            syncGraphicsToDB(newState.graphics);
+        }
         syncStateToDB(newState);
     });
 
