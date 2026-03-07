@@ -1430,50 +1430,43 @@ function _wmApplyStyleToSelection(property, value) {
     const toCamel = p => p.replace(/-([a-z])/g, (_, l) => l.toUpperCase());
     const propCamel = toCamel(property);
 
-    // If nothing selected (collapsed cursor or no selection) -> apply to whole content
-    if (!selection.rangeCount || selection.getRangeAt(0).collapsed) {
-        // First, wrap any bare text nodes at the top level in a span with the style
-        [...editor.childNodes].forEach(node => {
-            if (node.nodeType === Node.TEXT_NODE && node.textContent !== '') {
-                const span = document.createElement('span');
-                span.style[propCamel] = value;
-                node.replaceWith(span);
-                span.appendChild(node);
-            }
-        });
-        // Then update all existing element children
-        editor.querySelectorAll('*').forEach(el => {
-            el.style[propCamel] = value;
-        });
-        // Also set on editor itself for visual consistency (new typing will inherit)
-        editor.style[propCamel] = value;
+    const range = selection.getRangeAt(0);
+
+    // If selection is collapsed, only apply to whole content if it's completely empty
+    if (range.collapsed) {
+        if (editor.textContent.trim() === '') {
+            editor.style[propCamel] = value;
+            return;
+        }
+        // Otherwise do nothing - user should select text
         return;
     }
 
-    const range = selection.getRangeAt(0);
-
-    // Check if the selection is fully inside an ancestor span that already has this property
+    // Check if the selection exactly matches an existing span ancestor
     let ancestor = range.commonAncestorContainer;
     if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentNode;
-    // Walk up to find a span with the same property already set
+    
     let existingSpan = null;
     let el = ancestor;
     while (el && el !== editor) {
         if (el.tagName === 'SPAN' && el.style[propCamel]) {
-            existingSpan = el;
-            break;
+            // Check if this span's content is exactly what is selected
+            const spanRange = document.createRange();
+            spanRange.selectNodeContents(el);
+            if (range.compareBoundaryPoints(Range.START_TO_START, spanRange) === 0 &&
+                range.compareBoundaryPoints(Range.END_TO_END, spanRange) === 0) {
+                existingSpan = el;
+                break;
+            }
         }
         el = el.parentNode;
     }
 
-    if (existingSpan && selection.containsNode(existingSpan, true)) {
-        // Update the existing span
+    if (existingSpan) {
         existingSpan.style[propCamel] = value;
-        // Also update all children with the same property to avoid inheritance overrides
         existingSpan.querySelectorAll('span').forEach(child => {
             child.style[propCamel] = value;
         });
-        selection.removeAllRanges();
         return;
     }
 

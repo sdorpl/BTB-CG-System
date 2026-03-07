@@ -29,6 +29,7 @@ const db = new sqlite3.Database(DB_FILE, (err) => {
             ensureDatabaseInitialized();
         } else {
             console.log("Database file already exists. Skipping initialization.");
+            loadStateFromDB();
         }
     }
 });
