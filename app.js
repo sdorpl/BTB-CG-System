@@ -186,15 +186,19 @@ function setupMonitorScaling() {
     if (!outer || !canvasWrap) return;
 
     _previewDoScale = () => {
-        const { width: ow, height: oh } = outer.getBoundingClientRect();
+        // Now that preview-canvas-outer is relative and inside a flex container,
+        // its size represents the ACTUAL available space for the video.
+        const ow = outer.clientWidth;
+        const oh = outer.clientHeight;
         if (!ow || !oh) return;
+        
         const scale = Math.min(ow / 1920, oh / 1080);
         const scaledW = 1920 * scale;
         const scaledH = 1080 * scale;
         const offX = (ow - scaledW) / 2;
         const offY = (oh - scaledH) / 2;
+        
         canvasWrap.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;
-        canvasWrap.style.transformOrigin = 'top left';
     };
 
     const ro = new ResizeObserver(_previewDoScale);

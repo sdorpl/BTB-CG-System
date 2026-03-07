@@ -166,101 +166,72 @@
     <div class="flex-1 flex flex-col min-w-0">
 
       <!-- MONITORS ROW -->
-      <div class="flex gap-2 p-2 border-b border-gray-800 bg-gray-925" style="height:55%">
+      <div class="flex gap-2 p-2 border-b border-gray-800 bg-gray-925" style="height:55%; min-height: 400px;">
 
         <!-- PREVIEW Monitor -->
-        <div class="flex-1 flex flex-col gap-2 min-w-0">
-          <!-- 16:9 enforced container -->
-          <div class="flex-1 relative overflow-hidden" id="preview-monitor-wrap">
-            <div
-              class="absolute inset-0 bg-black border-2 border-green-600 shadow-[0_0_15px_rgba(34,197,94,0.2)] rounded-sm overflow-hidden"
-              id="preview-monitor-inner">
-              <!-- Label bar -->
-              <div class="absolute top-0 left-0 right-0 h-7 bg-gray-900/90 flex items-center justify-between px-3 z-10">
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
-                    <button id="btn-toggle-safe-area" class="text-[9px] uppercase font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded px-1.5 py-0.5 transition-colors border border-gray-700">EBU Safe Area</button>
-                </div>
-                <span id="preview-name" class="text-[10px] text-gray-400 truncate max-w-[160px]">---</span>
-              </div>
-              <!-- Grid bg -->
-              <div class="absolute inset-0 opacity-10 monitor-grid pointer-events-none"></div>
-              <!-- Canvas area: fills monitor, no scroll -->
-              <div id="preview-canvas-outer" class="absolute inset-0 overflow-hidden">
-                <!-- scale wrapper, sized by JS -->
-                <div id="preview-canvas-wrap" style="position:absolute;top:0;left:0;transform-origin:top left;">
-                  <div id="preview-canvas" style="width:1920px;height:1080px;position:relative;"></div>
-                  <!-- EBU SAFE AREA OVERLAY (in 1920x1080 wrapper) -->
-                  <div class="ebu-safe-area hidden absolute inset-0 pointer-events-none z-50">
-                     <!-- Action Safe 93% -->
-                     <div style="position:absolute; left: 3.5%; right: 3.5%; top: 3.5%; bottom: 3.5%; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px;"></div>
-                     <!-- Title Safe 90% -->
-                     <div style="position:absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.6); border-radius: 4px;"></div>
-                     <!-- Crosshair -->
-                     <div style="position:absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dotted rgba(255,255,255,0.3);"></div>
-                     <div style="position:absolute; top: 50%; left: 0; right: 0; border-top: 1px dotted rgba(255,255,255,0.3);"></div>
-                     <div style="position:absolute; bottom: 5%; left: 50%; transform: translateX(-50%); font-family: monospace; font-size: 14px; color: rgba(255,255,255,0.6); font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">TITLE SAFE (90%)</div>
-                  </div>
-                </div>
-              </div>
-              <div id="preview-empty"
-                class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">
-                BRAK SYGNAŁU</div>
+        <div class="flex-1 flex flex-col min-w-0" id="preview-monitor-wrap" style="display: flex; flex-direction: column;">
+          <!-- Label bar ABOVE -->
+          <div class="h-7 bg-gray-900 border-t border-x border-green-600/50 rounded-t flex items-center justify-between px-3 shrink-0" style="height: 28px;">
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
+                <button id="btn-toggle-safe-area" class="text-[9px] uppercase font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded px-1.5 py-0.5 transition-colors border border-gray-700">EBU Safe Area</button>
             </div>
+            <span id="preview-name" class="text-[10px] text-gray-400 truncate max-w-[160px]">---</span>
+          </div>
+          <!-- Monitor Viewport -->
+          <div class="flex-1 relative bg-black border-2 border-green-600 shadow-[0_0_15px_rgba(34,197,94,0.1)] rounded-b overflow-hidden" id="preview-monitor-inner" style="flex: 1; position: relative; width: 100%;">
+            <!-- Grid bg -->
+            <div class="absolute inset-0 opacity-10 monitor-grid pointer-events-none"></div>
+            <!-- Canvas area -->
+            <div id="preview-canvas-outer" class="absolute inset-0 overflow-hidden">
+              <div id="preview-canvas-wrap" style="position:absolute;top:0;left:0;transform-origin:top left;">
+                <div id="preview-canvas" style="width:1920px;height:1080px;position:relative;"></div>
+                <div class="ebu-safe-area hidden absolute inset-0 pointer-events-none z-50">
+                   <div style="position:absolute; left: 3.5%; right: 3.5%; top: 3.5%; bottom: 3.5%; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px;"></div>
+                   <div style="position:absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.6); border-radius: 4px;"></div>
+                   <div style="position:absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dotted rgba(255,255,255,0.3);"></div>
+                   <div style="position:absolute; top: 50%; left: 0; right: 0; border-top: 1px dotted rgba(255,255,255,0.3);"></div>
+                </div>
+              </div>
+            </div>
+            <div id="preview-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">BRAK SYGNAŁU</div>
           </div>
           <!-- Controls below -->
-          <div class="h-10 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0">
+          <div class="h-10 mt-2 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 40px;">
             <span class="text-[10px] text-gray-500 font-mono pl-1">NEXT: <span id="preview-next-label">---</span></span>
             <div class="flex gap-1.5">
-              <button id="btn-edit-preview" disabled
-                class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">EDYTUJ</button>
-              <button id="btn-update-active" disabled
-                class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">Aktualizuj</button>
-              <button id="btn-take-preview" disabled
-                class="px-4 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-[10px] font-bold uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30">WEJDŹ
-                (TAKE)</button>
+              <button id="btn-edit-preview" disabled class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">EDYTUJ</button>
+              <button id="btn-update-active" disabled class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">Aktualizuj</button>
+              <button id="btn-take-preview" disabled class="px-4 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-[10px] font-bold uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30">WEJDŹ (TAKE)</button>
             </div>
           </div>
         </div>
 
         <!-- PROGRAM Monitor -->
-        <div class="flex-1 flex flex-col gap-2 min-w-0">
-          <div class="flex-1 relative overflow-hidden" id="program-monitor-wrap">
-            <div
-              class="absolute inset-0 bg-black border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.2)] rounded-sm overflow-hidden">
-              <!-- Label bar -->
-              <div class="absolute top-0 left-0 right-0 h-7 bg-gray-900/90 flex items-center justify-between px-3 z-10">
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
-                </div>
-                <span id="program-layers-label" class="text-[10px] text-red-400 font-bold animate-pulse hidden">ON AIR:
-                  <span id="program-layers-count">0</span> WARSTWY</span>
-              </div>
-              <!-- Live iframe mirroring output.html (same BroadcastChannel) -->
-              <iframe id="program-iframe" src="output.html" class="absolute inset-0 w-full h-full border-0"
-                style="pointer-events:none;"></iframe>
-              
-              <!-- EBU SAFE AREA OVERLAY (Absolute over iframe) -->
-              <div class="ebu-safe-area hidden absolute inset-0 pointer-events-none z-50">
-                     <!-- Action Safe 93% -->
-                     <div style="position:absolute; left: 3.5%; right: 3.5%; top: 3.5%; bottom: 3.5%; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px;"></div>
-                     <!-- Title Safe 90% -->
-                     <div style="position:absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.6); border-radius: 4px;"></div>
-                     <!-- Crosshair -->
-                     <div style="position:absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dotted rgba(255,255,255,0.3);"></div>
-                     <div style="position:absolute; top: 50%; left: 0; right: 0; border-top: 1px dotted rgba(255,255,255,0.3);"></div>
-                     <div style="position:absolute; bottom: 5%; left: 50%; transform: translateX(-50%); font-family: monospace; font-size: 14px; color: rgba(255,255,255,0.6); font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">TITLE SAFE (90%)</div>
-              </div>
-
-              <div id="program-empty"
-                class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">
-                BRAK SYGNAŁU</div>
+        <div class="flex-1 flex flex-col min-w-0" id="program-monitor-wrap" style="display: flex; flex-direction: column;">
+          <!-- Label bar ABOVE -->
+          <div class="h-7 bg-gray-900 border-t border-x border-red-600/50 rounded-t flex items-center justify-between px-3 shrink-0" style="height: 28px;">
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
             </div>
+            <span id="program-layers-label" class="text-[10px] text-red-400 font-bold animate-pulse hidden">ON AIR:
+              <span id="program-layers-count">0</span> WARSTWY</span>
           </div>
-          <div class="h-10 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0">
+          <!-- Monitor Viewport -->
+          <div class="flex-1 relative bg-black border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.1)] rounded-b overflow-hidden" style="flex: 1; position: relative; width: 100%;">
+            <iframe id="program-iframe" src="output.html" class="absolute inset-0 w-full h-full border-0" style="pointer-events:none;"></iframe>
+            <div class="ebu-safe-area hidden absolute inset-0 pointer-events-none z-50">
+               <div style="position:absolute; left: 3.5%; right: 3.5%; top: 3.5%; bottom: 3.5%; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px;"></div>
+               <div style="position:absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.6); border-radius: 4px;"></div>
+               <div style="position:absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dotted rgba(255,255,255,0.3);"></div>
+               <div style="position:absolute; top: 50%; left: 0; right: 0; border-top: 1px dotted rgba(255,255,255,0.3);"></div>
+            </div>
+            <div id="program-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">BRAK SYGNAŁU</div>
+          </div>
+          <!-- Controls below -->
+          <div class="h-10 mt-2 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 40px;">
             <span id="on-air-label" class="text-[10px] text-gray-500 font-bold pl-1">ON AIR: 0 LAYERS</span>
-            <button id="btn-clear-program"
-              class="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900/50 rounded text-[10px] font-bold uppercase transition-colors">WYCZYŚĆ</button>
+            <button id="btn-clear-program" class="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900/50 rounded text-[10px] font-bold uppercase transition-colors">WYCZYŚĆ</button>
           </div>
         </div>
       </div>
