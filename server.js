@@ -18,92 +18,83 @@ const DB_FILE = process.env.DATABASE_URL || path.join(__dirname, 'database.sqlit
 const JSON_FILE = path.join(__dirname, 'db.json');
 
 // Połączenie z bazą
+const dbExists = fs.existsSync(DB_FILE);
 const db = new sqlite3.Database(DB_FILE, (err) => {
     if (err) {
         console.error("Database connection error:", err.message);
     } else {
-        console.log("Connected to SQLite database.");
-        ensureDatabaseInitialized();
+        console.log(`Connected to SQLite database at ${DB_FILE}`);
+        if (!dbExists) {
+            console.log("Database file missing. Initializing...");
+            ensureDatabaseInitialized();
+        } else {
+            console.log("Database file already exists. Skipping initialization.");
+        }
     }
 });
 
 // Funkcja automatycznej inicjalizacji bazy danych przy pierwszym uruchomieniu
 function ensureDatabaseInitialized() {
+    console.log("Initializing database schema and data from db.json...");
     db.serialize(() => {
-        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'", (err, row) => {
-            if (err) {
-                console.error("Error checking database schema:", err.message);
-                return;
-            }
+        // Tworzenie schematu
+        db.run(`CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL)`);
+        db.run(`CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
+        db.run(`CREATE TABLE IF NOT EXISTS groups (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
+        db.run(`CREATE TABLE IF NOT EXISTS graphics (id TEXT PRIMARY KEY, templateId TEXT, name TEXT, groupId TEXT, visible INTEGER DEFAULT 0, data TEXT NOT NULL)`);
 
-            if (!row) {
-                console.log("Database tables missing. Initializing from db.json...");
-                
-                db.serialize(() => {
-                    // Tworzenie schematu
-                    db.run(`CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL)`);
-                    db.run(`CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
-                    db.run(`CREATE TABLE IF NOT EXISTS groups (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
-                    db.run(`CREATE TABLE IF NOT EXISTS graphics (id TEXT PRIMARY KEY, templateId TEXT, name TEXT, groupId TEXT, visible INTEGER DEFAULT 0, data TEXT NOT NULL)`);
+        // Migracja z db.json jeśli istnieje
+        if (fs.existsSync(JSON_FILE)) {
+            try {
+                const rawData = fs.readFileSync(JSON_FILE, 'utf8');
+                const state = JSON.parse(rawData);
 
-                    // Migracja z db.json jeśli istnieje
-                    if (fs.existsSync(JSON_FILE)) {
-                        try {
-                            const rawData = fs.readFileSync(JSON_FILE, 'utf8');
-                            const state = JSON.parse(rawData);
+                db.run('BEGIN TRANSACTION');
 
-                            db.run('BEGIN TRANSACTION');
+                if (state.settings) {
+                    db.run('INSERT INTO settings (id, data) VALUES (1, ?)', [JSON.stringify(state.settings)]);
+                }
 
-                            if (state.settings) {
-                                db.run('INSERT INTO settings (id, data) VALUES (1, ?)', [JSON.stringify(state.settings)]);
-                            }
+                if (state.templates && state.templates.length > 0) {
+                    const stmt = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
+                    for (const t of state.templates) {
+                        stmt.run(t.id, JSON.stringify(t));
+                    }
+                    stmt.finalize();
+                }
 
-                            if (state.templates && state.templates.length > 0) {
-                                const stmt = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
-                                for (const t of state.templates) {
-                                    stmt.run(t.id, JSON.stringify(t));
-                                }
-                                stmt.finalize();
-                            }
+                if (state.groups && state.groups.length > 0) {
+                    const stmt = db.prepare('INSERT INTO groups (id, data) VALUES (?, ?)');
+                    for (const g of state.groups) {
+                        stmt.run(g.id, JSON.stringify(g));
+                    }
+                    stmt.finalize();
+                }
 
-                            if (state.groups && state.groups.length > 0) {
-                                const stmt = db.prepare('INSERT INTO groups (id, data) VALUES (?, ?)');
-                                for (const g of state.groups) {
-                                    stmt.run(g.id, JSON.stringify(g));
-                                }
-                                stmt.finalize();
-                            }
+                if (state.graphics && state.graphics.length > 0) {
+                    const stmt = db.prepare('INSERT INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
+                    for (const g of state.graphics) {
+                        const visibleInt = g.visible ? 1 : 0;
+                        stmt.run(g.id, g.templateId || null, g.name || '', g.groupId || null, visibleInt, JSON.stringify(g));
+                    }
+                    stmt.finalize();
+                }
 
-                            if (state.graphics && state.graphics.length > 0) {
-                                const stmt = db.prepare('INSERT INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
-                                for (const g of state.graphics) {
-                                    const visibleInt = g.visible ? 1 : 0;
-                                    stmt.run(g.id, g.templateId || null, g.name || '', g.groupId || null, visibleInt, JSON.stringify(g));
-                                }
-                                stmt.finalize();
-                            }
-
-                            db.run('COMMIT', (err) => {
-                                if (!err) {
-                                    console.log('Database initialized successfully from db.json.');
-                                    loadStateFromDB(); // Teraz bezpiecznie ładujemy stan
-                                } else {
-                                    console.error("Transaction commit failed:", err.message);
-                                }
-                            });
-                        } catch (e) {
-                            console.error("Failed to migrate data from db.json:", e.message);
-                        }
+                db.run('COMMIT', (err) => {
+                    if (!err) {
+                        console.log('Database initialized successfully from db.json.');
+                        loadStateFromDB(); // Teraz bezpiecznie ładujemy stan
                     } else {
-                        console.log("db.json not found, database initialized with empty tables.");
-                        loadStateFromDB();
+                        console.error("Transaction commit failed during initialization:", err.message);
                     }
                 });
-            } else {
-                // Baza już zainicjalizowana, ładujemy stan
-                loadStateFromDB();
+            } catch (e) {
+                console.error("Failed to initialize database from db.json:", e.message);
             }
-        });
+        } else {
+            console.log("db.json not found, database initialized with empty tables.");
+            loadStateFromDB();
+        }
     });
 }
 
