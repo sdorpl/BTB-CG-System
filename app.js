@@ -25,6 +25,14 @@ async function init() {
         bindGlobalEvents();
         bindWysiwygModalEvents();
         document.getElementById('loading-overlay').classList.add('hidden');
+
+        document.getElementById('btn-toggle-safe-area')?.addEventListener('click', (e) => {
+            document.querySelectorAll('.ebu-safe-area').forEach(el => {
+                el.classList.toggle('hidden');
+            });
+            e.currentTarget.classList.toggle('text-white');
+            e.currentTarget.classList.toggle('bg-blue-600');
+        });
     });
 
     socket.on('stateUpdated', (newState) => {
@@ -48,20 +56,124 @@ function switchPage(page) {
     currentPage = page;
     const dash = document.getElementById('page-dashboard');
     const tpls = document.getElementById('page-templates');
+    const sets = document.getElementById('page-settings');
     const navD = document.getElementById('nav-dashboard');
     const navT = document.getElementById('nav-templates');
+    const navS = document.getElementById('nav-settings');
+
+    const activeClass = 'nav-tab px-3 py-1.5 rounded font-bold text-blue-400 bg-blue-600/10 border border-blue-600/20 text-xs';
+    const inactiveClass = 'nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors text-xs';
 
     if (page === 'dashboard') {
         dash.classList.remove('hidden');
         tpls.classList.add('hidden');
-        navD.className = 'nav-tab px-3 py-1.5 rounded font-bold text-blue-400 bg-blue-600/10 border border-blue-600/20 text-xs';
-        navT.className = 'nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors text-xs';
-    } else {
+        if (sets) sets.classList.add('hidden');
+        navD.className = activeClass;
+        navT.className = inactiveClass;
+        if (navS) navS.className = inactiveClass;
+    } else if (page === 'templates') {
         dash.classList.add('hidden');
         tpls.classList.remove('hidden');
-        navD.className = 'nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors text-xs';
-        navT.className = 'nav-tab px-3 py-1.5 rounded font-bold text-blue-400 bg-blue-600/10 border border-blue-600/20 text-xs';
+        if (sets) sets.classList.add('hidden');
+        navD.className = inactiveClass;
+        navT.className = activeClass;
+        if (navS) navS.className = inactiveClass;
         renderTemplateList();
+    } else if (page === 'settings') {
+        dash.classList.add('hidden');
+        tpls.classList.add('hidden');
+        if (sets) sets.classList.remove('hidden');
+        navD.className = inactiveClass;
+        navT.className = inactiveClass;
+        if (navS) navS.className = activeClass;
+        renderSettings();
+    }
+}
+
+function renderSettings() {
+    const wInput = document.getElementById('setting-res-width');
+    const hInput = document.getElementById('setting-res-height');
+    if (!wInput || !hInput) return;
+
+    wInput.value = state.settings?.resolution?.width || 1920;
+    hInput.value = state.settings?.resolution?.height || 1080;
+
+    // Font settings
+    const fontDropdown = document.getElementById('setting-global-font-family');
+    const fontGraphicsContainer = document.getElementById('setting-global-font-graphics');
+
+    if (fontDropdown) {
+        fontDropdown.value = state.settings?.globalFontFamily || 'Inter';
+    }
+
+    // Shadow settings
+    const shadowEnabled = document.getElementById('setting-shadow-enabled');
+    const shadowColor = document.getElementById('setting-shadow-color');
+    const shadowColorHex = document.getElementById('setting-shadow-color-hex');
+    const shadowBlur = document.getElementById('setting-shadow-blur');
+    const shadowOffsetX = document.getElementById('setting-shadow-offset-x');
+    const shadowOffsetY = document.getElementById('setting-shadow-offset-y');
+    const shadowControls = document.getElementById('setting-shadow-controls');
+
+    const globalShadow = state.settings?.globalShadow || { enabled: false, color: 'rgba(0,0,0,0.5)', blur: 4, offsetX: 0, offsetY: 2 };
+
+    if (shadowEnabled) {
+        shadowEnabled.checked = !!globalShadow.enabled;
+        if (shadowControls) {
+            shadowControls.className = shadowEnabled.checked ? 'space-y-3 transition-opacity block' : 'space-y-3 opacity-50 pointer-events-none transition-opacity';
+        }
+    }
+    if (shadowColor) shadowColor.value = globalShadow.color;
+    if (shadowColorHex) shadowColorHex.value = globalShadow.color;
+    if (shadowBlur) shadowBlur.value = globalShadow.blur;
+    if (shadowOffsetX) shadowOffsetX.value = globalShadow.offsetX;
+    if (shadowOffsetY) shadowOffsetY.value = globalShadow.offsetY;
+
+    if (fontGraphicsContainer) {
+        fontGraphicsContainer.innerHTML = '';
+        const globalGraphics = state.settings?.globalFontGraphics || [];
+
+        if (state.graphics.length === 0) {
+            fontGraphicsContainer.innerHTML = '<div class="text-[10px] text-gray-500 italic p-2">Brak grafik w Banku Grafik</div>';
+        } else {
+            state.graphics.forEach(g => {
+                const isChecked = globalGraphics.includes(g.id);
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 cursor-pointer hover:bg-gray-700 p-2 rounded';
+                label.innerHTML = `
+                    <input type="checkbox" class="global-font-cb w-3 h-3 text-blue-500 rounded bg-gray-900 border-gray-700" value="${g.id}" ${isChecked ? 'checked' : ''}>
+                    <span class="text-xs text-gray-300 font-medium">${g.name}</span>
+                `;
+                fontGraphicsContainer.appendChild(label);
+            });
+        }
+    }
+
+    const radiusInput = document.getElementById('setting-global-radius');
+    const radiusGraphicsContainer = document.getElementById('setting-global-radius-graphics');
+
+    if (radiusInput) {
+        radiusInput.value = state.settings?.globalBorderRadius || 0;
+    }
+
+    if (radiusGraphicsContainer) {
+        radiusGraphicsContainer.innerHTML = '';
+        const globalRadiusGraphics = state.settings?.globalRadiusGraphics || [];
+
+        if (state.graphics.length === 0) {
+            radiusGraphicsContainer.innerHTML = '<div class="text-[10px] text-gray-500 italic p-2">Brak grafik w Banku Grafik</div>';
+        } else {
+            state.graphics.forEach(g => {
+                const isChecked = globalRadiusGraphics.includes(g.id);
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 cursor-pointer hover:bg-gray-700 p-2 rounded';
+                label.innerHTML = `
+                    <input type="checkbox" class="global-radius-cb w-3 h-3 text-blue-500 rounded bg-gray-900 border-gray-700" value="${g.id}" ${isChecked ? 'checked' : ''}>
+                    <span class="text-xs text-gray-300 font-medium">${g.name}</span>
+                `;
+                radiusGraphicsContainer.appendChild(label);
+            });
+        }
     }
 }
 
@@ -211,9 +323,9 @@ function renderShotbox() {
             card.style.borderLeftColor = grp.color;
         }
 
-        // Action buttons (hover)
+        // Action buttons
         const actionBtns = `
-            <div class="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+            <div class="absolute top-1.5 right-1.5 flex gap-0.5 transition-all">
                 <button data-copy-id="${graphic.id}" title="Kopiuj" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-blue-900/60 text-gray-500 hover:text-blue-400 text-[10px] leading-none">📋</button>
                 <button data-delete-id="${graphic.id}" title="Usuń" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs leading-none">&times;</button>
             </div>`;
@@ -377,7 +489,7 @@ function refreshPreviewMonitor() {
     }
 
     if (window.__cgRenderer && canvas) {
-        window.__cgRenderer.renderPreview(canvas, [{ ...previewGraphic, visible: true }], state.templates);
+        window.__cgRenderer.renderPreview(canvas, [{ ...previewGraphic, visible: true }], state.templates, state.settings);
         // Force rescale after render so the canvas wrap is correctly sized/positioned
         if (_previewDoScale) requestAnimationFrame(_previewDoScale);
     } else if (canvas) {
@@ -460,209 +572,276 @@ function openInspector(id) {
 function renderInspectorBody(graphic) {
     const body = document.getElementById('inspector-body');
 
-    const noSubtitleTemplates = ['republika-lower-third', 'republika-composite', 'republika-ticker', 'republika-clock'];
-    const hasSubtitle = !noSubtitleTemplates.includes(graphic.templateId || '');
+
 
     body.innerHTML = `
-        <!-- ACCORDION: ZAWARTOŚĆ -->
-        <div class="accordion border-b border-gray-800">
-            <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="content">
-                <span class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-                    ZAWARTOŚĆ
-                </span>
-                <span class="accordion-arrow">+</span>
-            </button>
-            <div class="accordion-content open bg-gray-850/50 p-3 space-y-3">
-                <div>
-                    ${ctrlLabel('Nazwa')}
-                    <input type="text" data-field="name" value="${escAttr(graphic.name)}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                </div>
-
-                ${graphic.type === 'LOWER_THIRD' ? `
+        <!-- TAB MAIN -->
+        <div id="ins-tab-content-main" class="flex-1 flex flex-col shrink-0">
+            <!-- ACCORDION: ZAWARTOŚĆ -->
+            <div class="accordion border-b border-gray-800">
+                <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="content">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                        ZAWARTOŚĆ
+                    </span>
+                    <span class="accordion-arrow">+</span>
+                </button>
+                <div class="accordion-content open bg-gray-850/50 p-3 space-y-3">
                     <div>
-                        ${ctrlLabel('Tytuł')}
-                        <div style="background:#111827;border:1px solid #374151;border-radius:6px;padding:10px 12px;min-height:44px;cursor:pointer;position:relative;" id="title-preview-box">
-                            <div style="color:#fff;font-size:13px;line-height:1.4;max-height:80px;overflow:hidden;" id="title-preview-content">${graphic.titleHtml || graphic.title || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>'}</div>
-                            <button id="btn-open-wysiwyg" title="Edytuj tekst" style="position:absolute;top:6px;right:6px;width:26px;height:26px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:4px;color:#60a5fa;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;">&#9999;</button>
-                        </div>
+                        ${ctrlLabel('Nazwa')}
+                        <input type="text" data-field="name" value="${escAttr(graphic.name)}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                     </div>
-                    ${hasSubtitle ? `<div>
-                        ${ctrlLabel('Podtytuł')}
-                        <input type="text" data-field="subtitle" value="${escAttr(graphic.subtitle)}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+
+                    ${graphic.type === 'LOWER_THIRD' ? `
+                        <div>
+                            ${ctrlLabel('Tytuł')}
+                            <div style="background:#111827;border:1px solid #374151;border-radius:6px;padding:10px 12px;min-height:44px;cursor:pointer;position:relative;" id="title-preview-box">
+                                <div style="color:#fff;font-size:13px;line-height:1.4;max-height:80px;overflow:hidden;" id="title-preview-content">${graphic.titleHtml || graphic.title || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>'}</div>
+                                <button id="btn-open-wysiwyg" title="Edytuj tekst" style="position:absolute;top:6px;right:6px;width:26px;height:26px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:4px;color:#60a5fa;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;">&#9999;</button>
+                            </div>
+                        </div>
+
+
+                        ${['republika-composite', 'republika-lower-third', 'belka-exp-graphic', '528dc35a-546a-4e7f-8da7-a0c365f81680'].includes(graphic.templateId) ? `
+                        <div class="border-t border-gray-800 pt-3 mt-1">
+                            <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Grafika boczna</div>
+                            <div>
+                                ${ctrlLabel('URL obrazka')}
+                                <input type="text" data-field="sideImage" value="${escAttr(graphic.sideImage || '')}" placeholder="https://... lub puste = brak" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                            </div>
+                            <div class="mt-2">
+                                ${ctrlLabel('Wgraj z pliku')}
+                                <input type="file" id="side-image-upload" accept="image/*" class="w-full text-[10px] text-gray-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30">
+                            </div>
+                            ${graphic.sideImage ? `
+                            <div class="mt-2 relative">
+                                <img src="${graphic.sideImage}" class="w-full rounded border border-gray-700 object-cover" style="max-height:60px">
+                                <button id="btn-remove-side-image" class="absolute top-1 right-1 w-5 h-5 bg-red-900/80 hover:bg-red-700 text-white rounded flex items-center justify-center text-xs">&times;</button>
+                            </div>` : ''}
+                        </div>
+                        ` : ''}
+                    ` : ''}
+
+                    ${graphic.type === 'TICKER' ? `
+                        <div>
+                            ${ctrlLabel('Wiadomości (jedna na linię)')}
+                            <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono">${(graphic.items || []).join('\n')}</textarea>
+                        </div>
+                        <div>
+                            ${ctrlLabel('Prędkość paska (px/s)')}
+                            <input type="number" data-field="speed" value="${graphic.speed || 100}" min="10" step="10" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                        </div>
+                    ` : ''}
+
+                    ${graphic.type === 'IMAGE' ? `
+                        <div>
+                            ${ctrlLabel('URL Obrazka')}
+                            <input type="text" data-field="url" value="${escAttr(graphic.url)}" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                        </div>
+                        <div>
+                            ${ctrlLabel('Wgraj z pliku')}
+                            <input type="file" id="image-upload" accept="image/*" class="w-full text-[10px] text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <div>${ctrlLabel('Szerokość')}<input type="number" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="150" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                            <div>${ctrlLabel('Wysokość')}<input type="number" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="80" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        </div>
+                        ${graphic.url ? `<img src="${graphic.url}" class="w-full rounded border border-gray-700 object-contain" style="max-height:100px">` : ''}
+                    ` : ''}
+                </div>
+            </div>
+
+            <!-- ACCORDION: WYGLĄD -->
+            <div class="accordion border-b border-gray-800">
+                <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="appearance">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/><circle cx="6.5" cy="12.5" r="0.5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                        WYGLĄD
+                    </span>
+                    <span class="accordion-arrow">+</span>
+                </button>
+                <div class="accordion-content bg-gray-850/50 p-3 space-y-3">
+                    <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Tło i Belki</div>
+                    <div>
+                        ${ctrlLabel('Typ Tła')}
+                        <select data-field="style.background.type" class="w-full bg-gray-800 border border-gray-700 rounded p-1 text-[10px] text-blue-400 focus:outline-none focus:border-blue-500">
+                            <option value="solid" ${(graphic.style?.background?.type || 'solid') === 'solid' ? 'selected' : ''}>Jednolite (Solid)</option>
+                            <option value="gradient" ${graphic.style?.background?.type === 'gradient' ? 'selected' : ''}>Gradientowe</option>
+                        </select>
+                    </div>
+                    <div>
+                        ${ctrlLabel('Kolor Tła')}
+                        ${colorPickerHtml('style.background.color', graphic.style?.background?.color || '#1e3a8a')}
+                    </div>
+                    ${graphic.style?.background?.type === 'gradient' ? `
+                    <div>
+                        ${ctrlLabel('Kolor Tła 2')}
+                        ${colorPickerHtml('style.background.color2', graphic.style?.background?.color2 || '#3b82f6')}
+                    </div>
+                    <div>
+                        ${ctrlLabel('Kąt Gradientu')}
+                        <input type="number" data-field="style.background.gradientAngle" value="${graphic.style?.background?.gradientAngle ?? 135}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                     </div>` : ''}
-                ` : ''}
-
-                ${graphic.type === 'TICKER' ? `
-                    <div>
-                        ${ctrlLabel('Wiadomości (jedna na linię)')}
-                        <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono">${(graphic.items || []).join('\n')}</textarea>
-                    </div>
-                    <div>
-                        ${ctrlLabel('Prędkość paska (px/s)')}
-                        <input type="number" data-field="speed" value="${graphic.speed || 100}" min="10" step="10" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                    </div>
-                ` : ''}
-
-                ${graphic.type === 'IMAGE' ? `
-                    <div>
-                        ${ctrlLabel('URL Obrazka')}
-                        <input type="text" data-field="url" value="${escAttr(graphic.url)}" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                    </div>
-                    <div>
-                        ${ctrlLabel('Wgraj z pliku')}
-                        <input type="file" id="image-upload" accept="image/*" class="w-full text-[10px] text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30">
-                    </div>
-                    ${graphic.url ? `<img src="${graphic.url}" class="w-full rounded border border-gray-700 object-contain" style="max-height:100px">` : ''}
-                ` : ''}
-            </div>
-        </div>
-
-        <!-- ACCORDION: WYGLĄD -->
-        <div class="accordion border-b border-gray-800">
-            <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="appearance">
-                <span class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/><circle cx="6.5" cy="12.5" r="0.5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-                    WYGLĄD
-                </span>
-                <span class="accordion-arrow">+</span>
-            </button>
-            <div class="accordion-content bg-gray-850/50 p-3 space-y-3">
-                <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Tło i Belki</div>
-                <div>
-                    ${ctrlLabel('Typ Tła')}
-                    <select data-field="style.background.type" class="w-full bg-gray-800 border border-gray-700 rounded p-1 text-[10px] text-blue-400 focus:outline-none focus:border-blue-500">
-                        <option value="solid" ${(graphic.style?.background?.type || 'solid') === 'solid' ? 'selected' : ''}>Jednolite (Solid)</option>
-                        <option value="gradient" ${graphic.style?.background?.type === 'gradient' ? 'selected' : ''}>Gradientowe</option>
-                    </select>
-                </div>
-                <div>
-                    ${ctrlLabel('Kolor Tła')}
-                    ${colorPickerHtml('style.background.color', graphic.style?.background?.color || '#1e3a8a')}
-                </div>
-                ${graphic.style?.background?.type === 'gradient' ? `
-                <div>
-                    ${ctrlLabel('Kolor Tła 2')}
-                    ${colorPickerHtml('style.background.color2', graphic.style?.background?.color2 || '#3b82f6')}
-                </div>
-                <div>
-                    ${ctrlLabel('Kąt Gradientu')}
-                    <input type="number" data-field="style.background.gradientAngle" value="${graphic.style?.background?.gradientAngle ?? 135}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                </div>` : ''}
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        ${ctrlLabel('Zaokrąglenie')}
-                        <input type="number" data-field="style.background.borderRadius" value="${graphic.style?.background?.borderRadius ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                    </div>
-                    <div>
-                        ${ctrlLabel('Obramowanie (px)')}
-                        <input type="number" data-field="style.background.borderWidth" value="${graphic.style?.background?.borderWidth ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                    </div>
-                </div>
-                <div>
-                    ${ctrlLabel('Kolor Akcentu / Obramowania')}
-                    ${colorPickerHtml('style.background.borderColor', graphic.style?.background?.borderColor || '#3b82f6')}
-                </div>
-
-                <div class="border-t border-gray-800 pt-3 mt-2">
-                    <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Typografia</div>
-                    ${ctrlLabel('Kolor Czcionki')}
-                    ${colorPickerHtml('style.typography.color', graphic.style?.typography?.color || '#ffffff')}
-                </div>
-
-                ${['republika-composite', 'republika-lower-third'].includes(graphic.templateId) ? `
-                <div class="border-t border-gray-800 pt-3 mt-2">
-                    <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Grafika boczna</div>
-                    <div>
-                        ${ctrlLabel('URL obrazka')}
-                        <input type="text" data-field="sideImage" value="${escAttr(graphic.sideImage || '')}" placeholder="https://... lub puste = brak" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                    </div>
-                    <div class="mt-2">
-                        ${ctrlLabel('Wgraj z pliku')}
-                        <input type="file" id="side-image-upload" accept="image/*" class="w-full text-[10px] text-gray-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30">
-                    </div>
-                    ${graphic.sideImage ? `
-                    <div class="mt-2 relative">
-                        <img src="${graphic.sideImage}" class="w-full rounded border border-gray-700 object-cover" style="max-height:60px">
-                        <button id="btn-remove-side-image" class="absolute top-1 right-1 w-5 h-5 bg-red-900/80 hover:bg-red-700 text-white rounded flex items-center justify-center text-xs">&times;</button>
-                    </div>` : ''}
-                </div>
-                ` : ''}
-            </div>
-        </div>
-
-        <!-- ACCORDION: POZYCJA -->
-        <div class="accordion border-b border-gray-800">
-            <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="layout">
-                <span class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                    POZYCJA I WYMIARY
-                </span>
-                <span class="accordion-arrow">+</span>
-            </button>
-            <div class="accordion-content bg-gray-850/50 p-3">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>${ctrlLabel('Pozycja X')}<input type="number" data-field="layout.x" value="${graphic.layout?.x ?? 100}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                    <div>${ctrlLabel('Pozycja Y')}<input type="number" data-field="layout.y" value="${graphic.layout?.y ?? 800}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                    <div>${ctrlLabel('Szerokość')}<input type="number" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                    <div>${ctrlLabel('Wysokość')}<input type="number" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                    <div>${ctrlLabel('Warstwa (Z-Index)')}<input type="number" data-field="layout.layer" value="${graphic.layout?.layer ?? 1}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                    <div>${ctrlLabel('Skala')}<input type="number" data-field="layout.scale" value="${graphic.layout?.scale ?? 1}" step="0.1" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ACCORDION: ANIMACJA -->
-        <div class="accordion border-b border-gray-800">
-            <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="animation">
-                <span class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    ANIMACJA
-                </span>
-                <span class="accordion-arrow">+</span>
-            </button>
-            <div class="accordion-content bg-gray-850/50 p-3 space-y-4">
-                <!-- IN animation -->
-                <div>
-                    <div class="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-2">Wejście (IN)</div>
-                    <div class="space-y-2">
-                        ${ctrlLabel('Typ')}
-                        ${animTypeSelect('animation.in.type', graphic.animation?.in?.type || 'slide', 'in')}
-                        ${directionBtns('animation.in.direction', graphic.animation?.in?.direction || 'left', 'blue', graphic.animation?.in?.type || 'slide')}
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>${ctrlLabel('Czas (s)')}<input type="number" data-field="animation.in.duration" value="${graphic.animation?.in?.duration ?? 0.5}" step="0.05" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                            <div>${ctrlLabel('Opóźnienie (s)')}<input type="number" data-field="animation.in.delay" value="${graphic.animation?.in?.delay ?? 0}" step="0.05" min="0" max="10" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            ${ctrlLabel('Zaokrąglenie')}
+                            <input type="number" data-field="style.background.borderRadius" value="${graphic.style?.background?.borderRadius ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                         </div>
-                        ${ctrlLabel('Krzywa (Easing)')}
-                        ${easingSelect('animation.in.ease', graphic.animation?.in?.ease || 'ease-out')}
-                    </div>
-                </div>
-
-                <!-- OUT animation -->
-                <div class="border-t border-gray-800 pt-4">
-                    <div class="text-[9px] font-bold text-orange-400 uppercase tracking-wider mb-2">Wyjście (OUT)</div>
-                    <div class="space-y-2">
-                        ${ctrlLabel('Typ')}
-                        ${animTypeSelect('animation.out.type', graphic.animation?.out?.type || 'fade', 'out')}
-                        ${directionBtns('animation.out.direction', graphic.animation?.out?.direction || 'left', 'orange', graphic.animation?.out?.type || 'fade')}
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>${ctrlLabel('Czas (s)')}<input type="number" data-field="animation.out.duration" value="${graphic.animation?.out?.duration ?? 0.3}" step="0.05" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                            <div>${ctrlLabel('Opóźnienie (s)')}<input type="number" data-field="animation.out.delay" value="${graphic.animation?.out?.delay ?? 0}" step="0.05" min="0" max="10" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>
+                            ${ctrlLabel('Obramowanie (px)')}
+                            <input type="number" data-field="style.background.borderWidth" value="${graphic.style?.background?.borderWidth ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                         </div>
-                        ${ctrlLabel('Krzywa (Easing)')}
-                        ${easingSelect('animation.out.ease', graphic.animation?.out?.ease || 'ease-in', true)}
+                    </div>
+                    <div>
+                        ${ctrlLabel('Kolor Akcentu / Obramowania')}
+                        ${colorPickerHtml('style.background.borderColor', graphic.style?.background?.borderColor || '#3b82f6')}
+                    </div>
+
+                    <div class="border-t border-gray-800 pt-3 mt-2">
+                        <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Typografia</div>
+                        ${ctrlLabel('Kolor Czcionki')}
+                        ${colorPickerHtml('style.typography.color', graphic.style?.typography?.color || '#ffffff')}
                     </div>
                 </div>
+            </div>
 
-                <!-- Preview Anim button -->
-                <div class="border-t border-gray-800 pt-3">
-                    <button id="btn-preview-anim" class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-[10px] font-bold transition-colors">
-                        ▶ Podgląd animacji wejścia
-                    </button>
+            <!-- ACCORDION: POZYCJA -->
+            <div class="accordion border-b border-gray-800">
+                <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="layout">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                        POZYCJA I WYMIARY
+                    </span>
+                    <span class="accordion-arrow">+</span>
+                </button>
+                <div class="accordion-content bg-gray-850/50 p-3">
+                    <div class="mb-3 space-y-2">
+                        <div>
+                            ${ctrlLabel('Pozycja oparta na stronach')}
+                            <select data-field="layout.side" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                <option value="custom" ${(!graphic.layout?.side || graphic.layout.side === 'custom') ? 'selected' : ''}>Niestandardowa (XY)</option>
+                                <option value="top-left" ${graphic.layout?.side === 'top-left' ? 'selected' : ''}>Góra - Lewo</option>
+                                <option value="top-center" ${graphic.layout?.side === 'top-center' ? 'selected' : ''}>Góra - Środek</option>
+                                <option value="top-right" ${graphic.layout?.side === 'top-right' ? 'selected' : ''}>Góra - Prawo</option>
+                                <option value="center-left" ${graphic.layout?.side === 'center-left' ? 'selected' : ''}>Środek - Lewo</option>
+                                <option value="center" ${graphic.layout?.side === 'center' ? 'selected' : ''}>Środek (Centrum)</option>
+                                <option value="center-right" ${graphic.layout?.side === 'center-right' ? 'selected' : ''}>Środek - Prawo</option>
+                                <option value="bottom-left" ${graphic.layout?.side === 'bottom-left' ? 'selected' : ''}>Dół - Lewo</option>
+                                <option value="bottom-center" ${graphic.layout?.side === 'bottom-center' ? 'selected' : ''}>Dół - Środek</option>
+                                <option value="bottom-right" ${graphic.layout?.side === 'bottom-right' ? 'selected' : ''}>Dół - Prawo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2" id="layout-custom-xy" style="${(!graphic.layout?.side || graphic.layout.side === 'custom') ? '' : 'opacity: 0.5; pointer-events: none;'}">
+                        <div>${ctrlLabel('Pozycja X')}<input type="number" data-field="layout.x" value="${graphic.layout?.x ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Pozycja Y')}<input type="number" data-field="layout.y" value="${graphic.layout?.y ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 mt-2" id="layout-margins" style="${(graphic.layout?.side && graphic.layout.side !== 'custom') ? '' : 'opacity: 0.5; pointer-events: none;'}">
+                        <div>${ctrlLabel('Margines X (px)')}<input type="number" data-field="layout.marginX" value="${graphic.layout?.marginX ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Margines Y (px)')}<input type="number" data-field="layout.marginY" value="${graphic.layout?.marginY ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div>${ctrlLabel('Szerokość')}<input type="number" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Wysokość')}<input type="number" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Warstwa (Z-Index)')}<input type="number" data-field="layout.layer" value="${graphic.layout?.layer ?? 1}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Skala')}<input type="number" data-field="layout.scale" value="${graphic.layout?.scale ?? 1}" step="0.1" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                    </div>
+
+                    <div class="border-t border-gray-800 pt-3 mt-3">
+                        <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Powiązania (Dokowanie)</div>
+                        <div class="space-y-4">
+                            <!-- Y DOCKING -->
+                            <div>
+                                ${ctrlLabel('Przyklej po osi Y (Góra/Dół zależy od celu)')}
+                                <div class="text-[10px] text-gray-500 mb-1">Przytrzymaj Ctrl, aby wybrać wiele elementów</div>
+                                <select multiple data-field="layout.attachedToGraphicId" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-[10px] focus:border-blue-500 focus:outline-none text-white h-24">
+                                    <option value="" ${(!graphic.layout?.attachedToGraphicId || (Array.isArray(graphic.layout.attachedToGraphicId) && graphic.layout.attachedToGraphicId.length === 0)) ? 'selected' : ''}>Brak (Niezależna pozycja Y)</option>
+                                    ${state.graphics.filter(g => g.id !== graphic.id).map(g => `<option value="${g.id}" ${(Array.isArray(graphic.layout?.attachedToGraphicId) ? graphic.layout.attachedToGraphicId.includes(g.id) : graphic.layout?.attachedToGraphicId === g.id) ? 'selected' : ''}>[${g.name}] ${g.title || 'Bez tytułu'}</option>`).join('')}
+                                </select>
+                                <div class="mt-2">
+                                    ${ctrlLabel('Przesunięcie Y gdy Cel jest na żywo (px)')}
+                                    <input type="number" data-field="layout.attachOffsetY" value="${graphic.layout?.attachOffsetY ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                            </div>
+                            
+                            <!-- X DOCKING -->
+                            <div class="border-t border-gray-800 pt-2">
+                                ${ctrlLabel('Przyklej po osi X (Lewo/Prawo zależy od celu)')}
+                                <div class="text-[10px] text-gray-500 mb-1">Przytrzymaj Ctrl, aby wybrać wiele elementów</div>
+                                <select multiple data-field="layout.attachedToGraphicIdX" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-[10px] focus:border-blue-500 focus:outline-none text-white h-24">
+                                    <option value="" ${(!graphic.layout?.attachedToGraphicIdX || (Array.isArray(graphic.layout.attachedToGraphicIdX) && graphic.layout.attachedToGraphicIdX.length === 0)) ? 'selected' : ''}>Brak (Niezależna pozycja X)</option>
+                                    ${state.graphics.filter(g => g.id !== graphic.id).map(g => `<option value="${g.id}" ${(Array.isArray(graphic.layout?.attachedToGraphicIdX) ? graphic.layout.attachedToGraphicIdX.includes(g.id) : graphic.layout?.attachedToGraphicIdX === g.id) ? 'selected' : ''}>[${g.name}] ${g.title || 'Bez tytułu'}</option>`).join('')}
+                                </select>
+                                <div class="mt-2">
+                                    ${ctrlLabel('Przesunięcie X gdy Cel jest na żywo (px)')}
+                                    <input type="number" data-field="layout.attachOffsetX" value="${graphic.layout?.attachOffsetX ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                            </div>
+
+                            <div class="text-[10px] text-gray-500 mt-1">Przykład: -100px u góry podniesie element do góry. -100px na dole przesunie go w lewo. Element gładko wyląduje z powrotem na swojej bazowej pozycji, kiedy wszystkie docelowe grafiki (cele) znikną z ekranu.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    `;
+
+        <!-- TAB ANIMATION -->
+        <div id="ins-tab-content-anim" class="hidden flex-1 flex flex-col shrink-0">
+            <!--ACCORDION: ANIMACJA-->
+            <div class="accordion border-b border-gray-800">
+                <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="animation">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                        ANIMACJA
+                    </span>
+                    <span class="accordion-arrow">+</span>
+                </button>
+                <div class="accordion-content bg-gray-850/50 p-3 space-y-4">
+                    <!-- IN animation -->
+                    <div>
+                        <div class="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-2">Wejście (IN)</div>
+                        <div class="space-y-2">
+                            ${ctrlLabel('Typ')}
+                            ${animTypeSelect('animation.in.type', graphic.animation?.in?.type || 'slide', 'in')}
+                            ${directionBtns('animation.in.direction', graphic.animation?.in?.direction || 'left', 'blue', graphic.animation?.in?.type || 'slide')}
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>${ctrlLabel('Czas (s)')}<input type="number" data-field="animation.in.duration" value="${graphic.animation?.in?.duration ?? 0.5}" step="0.05" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                                <div>${ctrlLabel('Opóźnienie (s)')}<input type="number" data-field="animation.in.delay" value="${graphic.animation?.in?.delay ?? 0}" step="0.05" min="0" max="10" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                            </div>
+                            ${ctrlLabel('Krzywa (Easing)')}
+                            ${easingSelect('animation.in.ease', graphic.animation?.in?.ease || 'ease-out')}
+                        </div>
+                    </div>
+
+                    <!-- OUT animation -->
+                    <div class="border-t border-gray-800 pt-4">
+                        <div class="text-[9px] font-bold text-orange-400 uppercase tracking-wider mb-2">Wyjście (OUT)</div>
+                        <div class="space-y-2">
+                            ${ctrlLabel('Typ')}
+                            ${animTypeSelect('animation.out.type', graphic.animation?.out?.type || 'fade', 'out')}
+                            ${directionBtns('animation.out.direction', graphic.animation?.out?.direction || 'left', 'orange', graphic.animation?.out?.type || 'fade')}
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>${ctrlLabel('Czas (s)')}<input type="number" data-field="animation.out.duration" value="${graphic.animation?.out?.duration ?? 0.3}" step="0.05" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                                <div>${ctrlLabel('Opóźnienie (s)')}<input type="number" data-field="animation.out.delay" value="${graphic.animation?.out?.delay ?? 0}" step="0.05" min="0" max="10" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                            </div>
+                            ${ctrlLabel('Krzywa (Easing)')}
+                            ${easingSelect('animation.out.ease', graphic.animation?.out?.ease || 'ease-in', true)}
+                        </div>
+                    </div>
+
+                    <!-- Preview Anim button -->
+                    <div class="border-t border-gray-800 pt-3">
+                        <button id="btn-preview-anim" class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-[10px] font-bold transition-colors">
+                            ▶ Podgląd animacji wejścia
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+`;
 
     // --- Bind all inputs ---
     body.querySelectorAll('[data-field]').forEach(el => {
@@ -678,7 +857,7 @@ function renderInspectorBody(graphic) {
     // Color picker sync
     body.querySelectorAll('.color-hex-input').forEach(hexInput => {
         const fieldPath = hexInput.getAttribute('data-field');
-        const colInput = body.querySelector(`input[type=color][data-field="${fieldPath}"]`);
+        const colInput = body.querySelector(`input[type="color"][data-field= "${fieldPath}"]`);
         if (colInput) {
             colInput.addEventListener('input', () => { hexInput.value = colInput.value; });
             hexInput.addEventListener('input', () => {
@@ -798,7 +977,11 @@ function handleInspectorChange(el, graphic) {
     let value = el.value;
 
     // Special cases
-    if (field === 'items') {
+    if (el.type === 'checkbox') {
+        value = el.checked;
+    } else if (el.multiple) {
+        value = Array.from(el.selectedOptions).map(opt => opt.value).filter(val => val !== "");
+    } else if (field === 'items') {
         value = value.split('\n');
     } else if (el.type === 'number') {
         value = parseFloat(value) || 0;
@@ -816,6 +999,12 @@ function handleInspectorChange(el, graphic) {
     deepSet(g, field, value);
     saveState();
 
+    // Re-render inspector when background type changes (shows/hides gradient fields) or layout side changes
+    if (field === 'style.background.type' || field === 'layout.side') {
+        openInspector(g.id);
+        return;
+    }
+
     // Also update preview if same graphic
     if (previewGraphic?.id === g.id) {
         previewGraphic = JSON.parse(JSON.stringify(g));
@@ -826,10 +1015,76 @@ function handleInspectorChange(el, graphic) {
 // ===========================================================
 // WYSIWYG Helper
 // ===========================================================
+// Normalize HTML: flatten redundant nested spans (same CSS property)
+function _wmNormalizeHtml(root) {
+    // 1. Convert <font> tags to spans
+    root.querySelectorAll('font').forEach(fontEl => {
+        const span = document.createElement('span');
+        if (fontEl.getAttribute('face')) span.style.fontFamily = fontEl.getAttribute('face');
+        if (fontEl.getAttribute('color')) span.style.color = fontEl.getAttribute('color');
+        if (fontEl.getAttribute('size')) {
+            const sizeMap = { '1': '10px', '2': '13px', '3': '16px', '4': '18px', '5': '24px', '6': '32px', '7': '48px' };
+            span.style.fontSize = sizeMap[fontEl.getAttribute('size')] || '18px';
+        }
+        span.innerHTML = fontEl.innerHTML;
+        fontEl.replaceWith(span);
+    });
+
+    // 2. Merge outer span styles into inner span when inner span only has text
+    // Walk all spans and if a span has only 1 child span, merge parent styles into child
+    let changed = true;
+    while (changed) {
+        changed = false;
+        root.querySelectorAll('span').forEach(outer => {
+            // If outer has exactly one child and that child is also a span
+            if (outer.childNodes.length === 1 && outer.firstChild?.tagName === 'SPAN') {
+                const inner = outer.firstChild;
+                // Merge outer style into inner (inner wins on conflict)
+                outer.style.cssText.split(';').forEach(rule => {
+                    const [prop, val] = rule.split(':').map(s => s.trim());
+                    if (prop && val && !inner.style[prop]) {
+                        inner.style[prop] = val;
+                    }
+                });
+                // Replace outer with inner
+                outer.replaceWith(inner);
+                changed = true;
+            }
+        });
+    }
+
+    // 3. Strip empty spans
+    root.querySelectorAll('span').forEach(span => {
+        if (span.innerHTML === '') span.remove();
+    });
+
+    // 4. Convert block-level divs/p to <br> separators to preserve line breaks inline
+    root.querySelectorAll('div,p').forEach(block => {
+        if (block.parentElement === root) {
+            // Replace block with a fragment: its innerHTML + a <br>
+            const frag = document.createDocumentFragment();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = block.innerHTML;
+            while (tempDiv.firstChild) frag.appendChild(tempDiv.firstChild);
+            // Add br only if there's content after this block
+            if (block.nextSibling) {
+                frag.appendChild(document.createElement('br'));
+            }
+            block.replaceWith(frag);
+        }
+    });
+}
+
 function saveWysiwyg(editorEl, graphicId) {
     const g = state.graphics.find(g => g.id === graphicId);
     if (!g) return;
-    const html = editorEl.innerHTML;
+
+    // Normalize and sanitize HTML before saving
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = editorEl.innerHTML;
+    _wmNormalizeHtml(tempDiv);
+    const html = tempDiv.innerHTML;
+
     if (g.type === 'TICKER') {
         const rawItems = html.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
         g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
@@ -851,6 +1106,7 @@ function saveWysiwyg(editorEl, graphicId) {
     }
 }
 
+
 // ===========================================================
 // WYSIWYG MODAL
 // ===========================================================
@@ -866,7 +1122,7 @@ function openWysiwygModal(graphicId) {
         _wmSavedHtml = (g.items || []).join('<br>');
     } else {
         const tpl = state.templates.find(t => t.id === g.templateId);
-        _wmSavedHtml = g.titleHtml || (g.titleLines && g.titleLines.length > 0 ? g.titleLines.map(l => `<div style="font-size:${l.fontSize || 48}px;font-weight:${l.fontWeight || '800'};color:${l.color || '#fff'};font-family:'${l.fontFamily || 'Inter'}',sans-serif;text-transform:${l.textTransform || 'uppercase'}">${l.text}</div>`).join('') : (g.title || tpl?.defaultFields?.title || ''));
+        _wmSavedHtml = g.titleHtml || (g.titleLines && g.titleLines.length > 0 ? g.titleLines.map(l => `<div style="font-size:${l.fontSize || 48}px;font-weight:${l.fontWeight || '800'};color:${l.color || '#fff'};font-family:'${l.fontFamily || 'Inter'}',sans-serif;text-transform:${l.textTransform || 'uppercase'}" > ${l.text}</div> `).join('') : (g.title || tpl?.defaultFields?.title || ''));
     }
 
     const modal = document.getElementById('modal-wysiwyg');
@@ -877,6 +1133,37 @@ function openWysiwygModal(graphicId) {
     modal.classList.remove('hidden');
     if (titleEl) titleEl.textContent = g.name;
     editor.innerHTML = _wmSavedHtml;
+
+    // Set editor base font from graphic's typography settings so new typing uses the right font
+    const defaultFont = g.style?.typography?.fontFamily || 'Bahnschrift';
+    const defaultFontSize = (g.style?.typography?.fontSize || 24) + 'px';
+    editor.style.fontFamily = defaultFont;
+    editor.style.fontSize = defaultFontSize;
+
+    // Sync toolbar state: read font/size from the loaded HTML
+    const _syncToolbar = () => {
+        const fontSel = document.getElementById('wm-font');
+        const sizeSel = document.getElementById('wm-size');
+        if (!fontSel || !sizeSel) return;
+        // Find first element with an inline font-family style
+        const styledEl = editor.querySelector('[style*="font-family"]');
+        if (styledEl) {
+            const ff = styledEl.style.fontFamily.replace(/['",]/g, '').trim();
+            const matchOpt = [...fontSel.options].find(o => o.value.toLowerCase() === ff.toLowerCase() || o.text.toLowerCase() === ff.toLowerCase());
+            if (matchOpt) fontSel.value = matchOpt.value;
+        } else {
+            // No style in HTML, use graphic's default
+            const matchOpt = [...fontSel.options].find(o => o.value.toLowerCase() === defaultFont.toLowerCase() || o.text.toLowerCase() === defaultFont.toLowerCase());
+            if (matchOpt) fontSel.value = matchOpt.value;
+        }
+        const styledElSize = editor.querySelector('[style*="font-size"]');
+        if (styledElSize) {
+            const fs = parseInt(styledElSize.style.fontSize);
+            const matchOpt = [...sizeSel.options].find(o => parseInt(o.value) === fs);
+            if (matchOpt) sizeSel.value = matchOpt.value;
+        }
+    };
+    setTimeout(_syncToolbar, 50);
 
     const bgColor = g.style?.background?.color || '#0047ab';
     if (bgInput) bgInput.value = bgColor;
@@ -931,7 +1218,7 @@ function _wmRefreshPreview(instant = true) {
         }
 
         tempG.visible = true;
-        window.__cgRenderer.renderPreview(canvas, [tempG], state.templates, { instant: instant });
+        window.__cgRenderer.renderPreview(canvas, [tempG], state.templates, state.settings, { instant: instant });
     }, 150); // fast 150ms debounce
 }
 
@@ -978,30 +1265,19 @@ function bindWysiwygModalEvents() {
 
     document.getElementById('wm-font')?.addEventListener('change', e => {
         editor.focus();
-        // Wymuszamy dodanie span ze stylem zamiast tagu <font> i nadpisujemy stare
-        document.execCommand('styleWithCSS', false, true);
-        document.execCommand('fontName', false, e.target.value);
+        _wmApplyStyleToSelection('fontFamily', e.target.value);
         _wmRefreshPreview();
     });
 
     document.getElementById('wm-size')?.addEventListener('change', e => {
         editor.focus();
-        document.execCommand('styleWithCSS', false, true);
-        document.execCommand('fontSize', false, e.target.value);
+        _wmApplyStyleToSelection('fontSize', e.target.value + 'px');
+        _wmRefreshPreview();
+    });
 
-        // fontSize z execCommand i css styleWithCSS jest zbugowany na niektórych przeglądarkach dla niestandardowych wartości, nadal próbując wcisnąć <font size="x"> lub niestandardowe span. Obejście standardowe:
-        document.execCommand('fontSize', false, '7');
-        editor.querySelectorAll('.wm-editor-content font[size="7"], font[size="7"]').forEach(f => {
-            const span = document.createElement('span');
-            span.style.fontSize = e.target.value + 'px';
-            span.innerHTML = f.innerHTML;
-            f.replaceWith(span);
-        });
-        // Dla pewności podmieniamy także wygenerowane span'y bez rozmiaru bezpośredniego
-        editor.querySelectorAll('span[style*="font-size: 7"]').forEach(f => {
-            f.style.fontSize = e.target.value + 'px';
-        });
-
+    document.getElementById('wm-line-height')?.addEventListener('change', e => {
+        editor.focus();
+        _wmApplyLineHeight(e.target.value);
         _wmRefreshPreview();
     });
 
@@ -1028,11 +1304,117 @@ function bindWysiwygModalEvents() {
         const src = document.getElementById('wm-html-source');
         if (src?.style.display !== 'none') src.value = editor.innerHTML;
     });
+    // Intercept Enter key: insert <br> instead of letting browser create <div>/<p> blocks
+    editor.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const sel = window.getSelection();
+            if (!sel.rangeCount) return;
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            const br = document.createElement('br');
+            range.insertNode(br);
+            // Move cursor after the <br>
+            range.setStartAfter(br);
+            range.setEndAfter(br);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            _wmRefreshPreview();
+        }
+    });
 
     document.getElementById('wysiwyg-save')?.addEventListener('click', () => _wmClose(true));
     document.getElementById('wysiwyg-cancel')?.addEventListener('click', () => _wmClose(false));
     document.getElementById('wysiwyg-modal-close')?.addEventListener('click', () => _wmClose(false));
-    document.getElementById('modal-wysiwyg')?.addEventListener('click', e => { if (e.target === e.currentTarget) _wmClose(false); });
+}
+
+function _wmApplyLineHeight(lh) {
+    const editor = document.getElementById('wm-editor');
+    if (!editor) return;
+    // Apply line-height directly on the editor element -
+    // avoid execCommand formatBlock which creates unwanted <div> wrappers
+    editor.style.lineHeight = lh;
+    // Also apply to any existing block-level children
+    editor.querySelectorAll('div, p, span').forEach(el => {
+        el.style.lineHeight = lh;
+    });
+}
+
+function _wmApplyStyleToSelection(property, value) {
+    const editor = document.getElementById('wm-editor');
+    const selection = window.getSelection();
+
+    // Helper: get the camelCase property name for a CSS property
+    const toCamel = p => p.replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+    const propCamel = toCamel(property);
+
+    // If nothing selected (collapsed cursor or no selection) -> apply to whole content
+    if (!selection.rangeCount || selection.getRangeAt(0).collapsed) {
+        // First, wrap any bare text nodes at the top level in a span with the style
+        [...editor.childNodes].forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE && node.textContent !== '') {
+                const span = document.createElement('span');
+                span.style[propCamel] = value;
+                node.replaceWith(span);
+                span.appendChild(node);
+            }
+        });
+        // Then update all existing element children
+        editor.querySelectorAll('*').forEach(el => {
+            el.style[propCamel] = value;
+        });
+        // Also set on editor itself for visual consistency (new typing will inherit)
+        editor.style[propCamel] = value;
+        return;
+    }
+
+    const range = selection.getRangeAt(0);
+
+    // Check if the selection is fully inside an ancestor span that already has this property
+    let ancestor = range.commonAncestorContainer;
+    if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentNode;
+    // Walk up to find a span with the same property already set
+    let existingSpan = null;
+    let el = ancestor;
+    while (el && el !== editor) {
+        if (el.tagName === 'SPAN' && el.style[propCamel]) {
+            existingSpan = el;
+            break;
+        }
+        el = el.parentNode;
+    }
+
+    if (existingSpan && selection.containsNode(existingSpan, true)) {
+        // Just update the existing span's style in-place — no new nesting
+        existingSpan.style[propCamel] = value;
+        // Also update all children with the same property
+        existingSpan.querySelectorAll('[style]').forEach(child => {
+            if (child.style[propCamel]) child.style[propCamel] = value;
+        });
+        selection.removeAllRanges();
+        return;
+    }
+
+    // Wrap selection in a new span with the style
+    const span = document.createElement('span');
+    span.style[propCamel] = value;
+
+    try {
+        range.surroundContents(span);
+    } catch (e) {
+        // Range crosses element boundaries — extract and re-wrap
+        const fragment = range.extractContents();
+        // If the fragment only contains one span child, update it instead of nesting
+        if (fragment.childNodes.length === 1 && fragment.firstChild.tagName === 'SPAN') {
+            fragment.firstChild.style[propCamel] = value;
+            range.insertNode(fragment);
+        } else {
+            span.appendChild(fragment);
+            range.insertNode(span);
+        }
+    }
+
+    selection.removeAllRanges();
 }
 
 // ===========================================================
@@ -1043,8 +1425,8 @@ function renderTemplateList() {
     list.innerHTML = '';
     state.templates.forEach(tpl => {
         const item = document.createElement('div');
-        item.className = `p-3 border-b border-gray-700 cursor-pointer hover:bg-gray-750 text-sm ${currentTemplateId === tpl.id ? 'bg-blue-900/40 border-l-4 border-l-blue-500' : ''}`;
-        item.innerHTML = `<div class="font-medium truncate text-xs text-white">${tpl.name}</div><div class="text-[10px] text-gray-500 font-mono">${tpl.type}</div>`;
+        item.className = `p-3 border-b border-gray - 700 cursor-pointer hover:bg-gray - 750 text-sm ${currentTemplateId === tpl.id ? 'bg-blue-900/40 border-l-4 border-l-blue-500' : ''} `;
+        item.innerHTML = `<div class="font-medium truncate text-xs text-white" > ${tpl.name}</div> <div class="text-[10px] text-gray-500 font-mono">${tpl.type}</div>`;
         item.onclick = () => openTemplateEditor(tpl.id);
         list.appendChild(item);
     });
@@ -1102,7 +1484,7 @@ function saveCurrentTemplate() {
     btn.textContent = '✓ Zapisano!';
     btn.classList.replace('bg-blue-600', 'bg-green-600');
     setTimeout(() => {
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Zapisz`;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Zapisz`;
         btn.classList.replace('bg-green-600', 'bg-blue-600');
     }, 2000);
 }
@@ -1120,9 +1502,9 @@ function openTemplateSelectorModal() {
         const card = document.createElement('div');
         card.className = 'cursor-pointer bg-gray-800 hover:bg-gray-700 border-2 border-gray-700 hover:border-blue-500 rounded-lg p-4 transition-all group';
         card.innerHTML = `
-            <h4 class="font-bold text-sm text-white group-hover:text-blue-400 transition-colors">${tpl.name}</h4>
-            <p class="text-[10px] font-mono text-gray-500 mt-1">${tpl.type} · ID: ${tpl.id}</p>
-        `;
+    <h4 class="font-bold text-sm text-white group-hover:text-blue-400 transition-colors" > ${tpl.name}</h4>
+        <p class="text-[10px] font-mono text-gray-500 mt-1">${tpl.type} · ID: ${tpl.id}</p>
+`;
         card.onclick = () => {
             createGraphicFromTemplate(tpl);
             modal.classList.add('hidden');
@@ -1132,6 +1514,7 @@ function openTemplateSelectorModal() {
 }
 
 function createGraphicFromTemplate(tpl) {
+    const defaultFontFamily = (state.settings && state.settings.globalFontFamily) ? state.settings.globalFontFamily : 'Arial';
     const newG = {
         id: crypto.randomUUID(),
         type: tpl.type,
@@ -1163,7 +1546,7 @@ function createGraphicFromTemplate(tpl) {
             },
             typography: {
                 color: tpl.defaultFields?.titleColor || '#ffffff',
-                fontFamily: 'Arial',
+                fontFamily: defaultFontFamily,
                 fontSize: tpl.defaultFields?.titleSize || 30,
                 fontWeight: 'bold'
             },
@@ -1189,14 +1572,14 @@ function createGraphicFromTemplate(tpl) {
 // 11. HELPER FUNCTIONS
 // ===========================================================
 function ctrlLabel(text) {
-    return `<label class="block text-[9px] text-gray-500 uppercase font-semibold mb-1">${text}</label>`;
+    return `<label class="block text-[9px] text-gray-500 uppercase font-semibold mb-1" > ${text}</label> `;
 }
 
 function colorPickerHtml(field, value) {
-    return `<div class="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded p-1">
-        <input type="color" data-field="${field}" value="${value}" class="h-6 w-8 rounded bg-transparent cursor-pointer border-none p-0 shrink-0">
+    return `<div class="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded p-1" >
+    <input type="color" data-field="${field}" value="${value}" class="h-6 w-8 rounded bg-transparent cursor-pointer border-none p-0 shrink-0">
         <input type="text" data-field="${field}" value="${value}" class="color-hex-input bg-transparent text-[10px] font-mono flex-1 focus:outline-none text-gray-300 min-w-0">
-    </div>`;
+        </div>`;
 }
 
 function animTypeSelect(field, value, animDir = '') {
@@ -1208,10 +1591,10 @@ function animTypeSelect(field, value, animDir = '') {
         ['none', '✕ Brak (Cut)'],
     ];
     // onchange re-opens inspector so direction buttons update
-    const onChange = animDir ? `onchange="(function(sel){var g=state.graphics.find(g=>g.id===selectedGraphicId);if(g){deepSet(g,'${field}',sel.value);saveState();openInspector(g.id);};})(this)"` : '';
+    const onChange = animDir ? `onchange="(function(sel){var g=state.graphics.find(g=>g.id===selectedGraphicId);if(g){deepSet(g, '${field}', sel.value);saveState();openInspector(g.id);};})(this)"` : '';
     return `<select data-field="${field}" ${onChange} class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
-        ${opts.map(([v, l]) => `<option value="${v}" ${value === v ? 'selected' : ''}>${l}</option>`).join('')}
-    </select>`;
+            ${opts.map(([v, l]) => `<option value="${v}" ${value === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>`;
 }
 
 function directionBtns(field, value, color, animType) {
@@ -1227,8 +1610,8 @@ function directionBtns(field, value, color, animType) {
         ? 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px;'
         : 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px;opacity:0.3;pointer-events:none;';
     return `<div style="${wrapStyle}">
-        ${dirs.map(([v, l]) => `<button data-dir-field="${field}" data-dir-value="${v}" style="height:28px;border-radius:4px;font-size:14px;font-weight:bold;border:1px solid;cursor:pointer;transition:all .1s;${value === v ? c.active : c.inactive}">${l}</button>`).join('')}
-    </div>`;
+            ${dirs.map(([v, l]) => `<button data-dir-field="${field}" data-dir-value="${v}" style="height:28px;border-radius:4px;font-size:14px;font-weight:bold;border:1px solid;cursor:pointer;transition:all .1s;${value === v ? c.active : c.inactive}">${l}</button>`).join('')}
+        </div>`;
 }
 
 function easingSelect(field, value, isOut = false) {
@@ -1243,8 +1626,8 @@ function easingSelect(field, value, isOut = false) {
         ['steps(4, end)', 'Steps'],
     ];
     return `<select data-field="${field}" class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
-        ${opts.map(([v, l]) => `<option value="${v}" ${value === v ? 'selected' : ''}>${l}</option>`).join('')}
-    </select>`;
+            ${opts.map(([v, l]) => `<option value="${v}" ${value === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>`;
 }
 
 function escAttr(str) {
@@ -1277,6 +1660,167 @@ function bindGlobalEvents() {
     // Navigation
     document.getElementById('nav-dashboard').onclick = () => switchPage('dashboard');
     document.getElementById('nav-templates').onclick = () => switchPage('templates');
+    const navSbtn = document.getElementById('nav-settings');
+    if (navSbtn) navSbtn.onclick = () => switchPage('settings');
+
+    // Inspector Tabs
+    const tabMain = document.getElementById('ins-tab-main');
+    const tabAnim = document.getElementById('ins-tab-anim');
+    if (tabMain && tabAnim) {
+        tabMain.onclick = () => {
+            document.getElementById('ins-tab-content-main')?.classList.remove('hidden');
+            document.getElementById('ins-tab-content-anim')?.classList.add('hidden');
+            tabMain.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
+            tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
+        };
+        tabAnim.onclick = () => {
+            document.getElementById('ins-tab-content-main')?.classList.add('hidden');
+            document.getElementById('ins-tab-content-anim')?.classList.remove('hidden');
+            tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
+            tabMain.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
+        };
+    }
+
+    // Settings
+    const wInput = document.getElementById('setting-res-width');
+    const hInput = document.getElementById('setting-res-height');
+    if (wInput) wInput.addEventListener('change', (e) => {
+        if (!state.settings) state.settings = {};
+        if (!state.settings.resolution) state.settings.resolution = {};
+        state.settings.resolution.width = parseInt(e.target.value) || 1920;
+        saveState();
+    });
+    if (hInput) hInput.addEventListener('change', (e) => {
+        if (!state.settings) state.settings = {};
+        if (!state.settings.resolution) state.settings.resolution = {};
+        state.settings.resolution.height = parseInt(e.target.value) || 1080;
+        saveState();
+    });
+
+    const fontDropdown = document.getElementById('setting-global-font-family');
+    const fontCbContainer = document.getElementById('setting-global-font-graphics');
+
+    if (fontDropdown) {
+        fontDropdown.addEventListener('change', (e) => {
+            if (!state.settings) state.settings = {};
+            state.settings.globalFontFamily = e.target.value;
+            saveState();
+
+            // Force a preview refresh if global font overrides the currently previewed graphic
+            if (previewGraphic && state.settings.globalFontGraphics?.includes(previewGraphic.id)) {
+                refreshPreviewMonitor();
+            }
+        });
+    }
+
+    if (fontCbContainer) {
+        fontCbContainer.addEventListener('change', (e) => {
+            if (e.target.classList.contains('global-font-cb')) {
+                if (!state.settings) state.settings = {};
+                if (!state.settings.globalFontGraphics) state.settings.globalFontGraphics = [];
+
+                const graphicId = e.target.value;
+                const isChecked = e.target.checked;
+
+                if (isChecked) {
+                    if (!state.settings.globalFontGraphics.includes(graphicId)) {
+                        state.settings.globalFontGraphics.push(graphicId);
+                    }
+                } else {
+                    state.settings.globalFontGraphics = state.settings.globalFontGraphics.filter(id => id !== graphicId);
+                }
+
+                saveState();
+
+                if (previewGraphic && previewGraphic.id === graphicId) {
+                    refreshPreviewMonitor();
+                }
+            }
+        });
+    }
+
+    const radiusInput = document.getElementById('setting-global-radius');
+    const radiusCbContainer = document.getElementById('setting-global-radius-graphics');
+
+    if (radiusInput) {
+        radiusInput.addEventListener('change', (e) => {
+            if (!state.settings) state.settings = {};
+            state.settings.globalBorderRadius = parseInt(e.target.value) || 0;
+            saveState();
+
+            if (previewGraphic && state.settings.globalRadiusGraphics?.includes(previewGraphic.id)) {
+                refreshPreviewMonitor();
+            }
+        });
+    }
+
+    if (radiusCbContainer) {
+        radiusCbContainer.addEventListener('change', (e) => {
+            if (e.target.classList.contains('global-radius-cb')) {
+                if (!state.settings) state.settings = {};
+                if (!state.settings.globalRadiusGraphics) state.settings.globalRadiusGraphics = [];
+
+                const graphicId = e.target.value;
+                const isChecked = e.target.checked;
+
+                if (isChecked) {
+                    if (!state.settings.globalRadiusGraphics.includes(graphicId)) {
+                        state.settings.globalRadiusGraphics.push(graphicId);
+                    }
+                } else {
+                    state.settings.globalRadiusGraphics = state.settings.globalRadiusGraphics.filter(id => id !== graphicId);
+                }
+
+                saveState();
+
+                if (previewGraphic && previewGraphic.id === graphicId) {
+                    refreshPreviewMonitor();
+                }
+            }
+        });
+    }
+
+    // Shadow Events
+    const updateGlobalShadow = (field, value) => {
+        if (!state.settings) state.settings = {};
+        if (!state.settings.globalShadow) state.settings.globalShadow = { enabled: false, color: 'rgba(0,0,0,0.5)', blur: 4, offsetX: 0, offsetY: 2 };
+        state.settings.globalShadow[field] = value;
+        saveState();
+        refreshPreviewMonitor(); // global shadow applies to all, so always refresh preview
+    };
+
+    const shadowEnabled = document.getElementById('setting-shadow-enabled');
+    const shadowColor = document.getElementById('setting-shadow-color');
+    const shadowColorHex = document.getElementById('setting-shadow-color-hex');
+    const shadowBlur = document.getElementById('setting-shadow-blur');
+    const shadowOffsetX = document.getElementById('setting-shadow-offset-x');
+    const shadowOffsetY = document.getElementById('setting-shadow-offset-y');
+    const shadowControls = document.getElementById('setting-shadow-controls');
+
+    if (shadowEnabled) {
+        shadowEnabled.addEventListener('change', (e) => {
+            updateGlobalShadow('enabled', e.target.checked);
+            if (shadowControls) {
+                shadowControls.className = e.target.checked ? 'space-y-3 transition-opacity block' : 'space-y-3 opacity-50 pointer-events-none transition-opacity';
+            }
+        });
+    }
+
+    if (shadowColor && shadowColorHex) {
+        shadowColor.addEventListener('input', (e) => {
+            shadowColorHex.value = e.target.value;
+            updateGlobalShadow('color', e.target.value);
+        });
+        shadowColorHex.addEventListener('change', (e) => {
+            shadowColor.value = e.target.value;
+            updateGlobalShadow('color', e.target.value);
+        });
+    }
+
+    if (shadowBlur) shadowBlur.addEventListener('change', (e) => updateGlobalShadow('blur', parseInt(e.target.value) || 0));
+    if (shadowOffsetX) shadowOffsetX.addEventListener('change', (e) => updateGlobalShadow('offsetX', parseInt(e.target.value) || 0));
+    if (shadowOffsetY) shadowOffsetY.addEventListener('change', (e) => updateGlobalShadow('offsetY', parseInt(e.target.value) || 0));
+
 
     // Reset DB
     document.getElementById('reset-db-btn').onclick = async () => {
@@ -1328,6 +1872,24 @@ function bindGlobalEvents() {
         renderShotbox();
         updateProgramMonitor();
     };
+
+    const clearBankBtn = document.getElementById('btn-clear-bank');
+    if (clearBankBtn) {
+        clearBankBtn.onclick = () => {
+            if (confirm('Czy na pewno chcesz usunąć WSZYSTKIE elementy z banku grafik?')) {
+                if (confirm('Jesteś absolutnie pewien? Tej operacji nie można prosto cofnąć.')) {
+                    state.graphics = [];
+                    selectedGraphicId = null;
+                    previewGraphic = null;
+                    closeInspector();
+                    saveState();
+                    renderShotbox();
+                    refreshPreviewMonitor();
+                    updateProgramMonitor();
+                }
+            }
+        };
+    }
 
     document.getElementById('btn-new-graphic').onclick = openTemplateSelectorModal;
     document.getElementById('modal-tpl-close').onclick = () => document.getElementById('modal-template-selector').classList.add('hidden');

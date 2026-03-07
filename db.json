@@ -3,6 +3,34 @@
     "resolution": {
       "width": 1920,
       "height": 1080
+    },
+    "globalFontFamily": "Bahnschrift",
+    "globalFontGraphics": [
+      "90208c00-623d-4202-aaa1-46cbb1a49290",
+      "1b3de3d9-3513-4bea-9f4c-9ad3f81d0f09",
+      "e81baea2-f245-43b4-b50d-eafc68bc6d19",
+      "500c87f9-1ce8-4b8f-98b3-4f29a00c95d2",
+      "316d84aa-fc27-48c4-ba72-f3f5bee285eb",
+      "d23d4600-7428-4a18-a92c-3bdf8b98054b",
+      "ffa9cd68-875d-45dd-a571-970f3f0749ae",
+      "29820277-16c5-46f5-a193-16e692697635",
+      "f349ea2c-8642-40f0-ac50-8db2b79636c7",
+      "9d53a666-0fff-4c34-9bbf-9ef91e7a2452",
+      "50da9cab-b766-4283-aa04-c3ee3dc879ea",
+      "fc45fbf4-a9a9-4892-92a0-7f63f3a3ac83",
+      "29199870-d2fc-4415-a454-87e642d1543d",
+      "5c9bf877-89a9-44ff-ab55-292f94fd377e",
+      "8f122d0f-e8c5-4c73-a272-fff860364a71",
+      "9c56ac3f-bfb6-4b17-98de-5e7da078aa36",
+      "ab70671a-4a6e-40df-b52a-e91b5c961651",
+      "64c00f5c-41dd-4c61-8c44-898ae8fa5aa8"
+    ],
+    "globalShadow": {
+      "enabled": true,
+      "color": "rgba(0,0,0,0.5)",
+      "blur": 10,
+      "offsetX": 1,
+      "offsetY": 3
     }
   },
   "templates": [
@@ -12,7 +40,7 @@
       "type": "LOWER_THIRD",
       "version": 1,
       "html_template": "\n<div class=\"lt-container\">\n    <div class=\"plate\">\n        <h1 class=\"title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
-      "css_template": "\n.lt-container {\n    padding: 0;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n}\n.plate {\n    background: {{PRIMARY_COLOR}};\n    padding: 20px 40px;\n    border-left: 10px solid {{SECONDARY_COLOR}};\n    color: white;\n    display: inline-block;\n    box-shadow: 0 10px 30px rgba(0,0,0,0.3);\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n.title {\n    margin: 0;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    letter-spacing: -1px;\n}\n",
+      "css_template": "\n.lt-container {\n    padding: 0;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n}\n.plate {\n    background: {{PRIMARY_BG}};\n    padding: 20px 40px;\n    border-left: 10px solid {{SECONDARY_COLOR}};\n    color: white;\n    display: inline-block;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n.title {\n    margin: 0;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    letter-spacing: -1px;\n}\n",
       "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const plate = root.querySelector('.plate'); root.__slt_show = () => { const delay = \"{{ANIMATION_DELAY}}\" || 0; const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0]; if(el) el.style.transitionDelay = `${delay}s`; if(plate) { plate.style.opacity = '1'; plate.style.transform = \"{{ANIMATION_IDENTITY}}\"; } }; root.__slt_hide = () => {\n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0];\n        if(el) el.style.transitionDelay = '{{ANIMATION_OUT_DELAY}}s';\n        if (typeof plate !== 'undefined' && plate) {\n            plate.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            plate.style.opacity = '0';\n            plate.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
       "defaultFields": {
         "title": "VinciFlow Title",
@@ -30,7 +58,7 @@
       "type": "LOWER_THIRD",
       "version": 1,
       "html_template": "<div class=\"modern-lt-container\">\n    <div class=\"modern-plate\">\n        <h1 class=\"modern-title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
-      "css_template": ".modern-lt-container {\n    padding: 0;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n}\n.modern-plate {\n    background: linear-gradient(135deg, {{PRIMARY_COLOR}}, {{SECONDARY_COLOR}});\n    padding: 24px 48px;\n    border-radius: 12px;\n    color: white;\n    display: inline-block;\n    box-shadow: 0 20px 40px rgba(0,0,0,0.4);\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border: 1px solid rgba(255,255,255,0.1);\n    backdrop-filter: blur(10px);\n}\n.modern-title {\n    margin: 0;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    letter-spacing: 1px;\n    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);\n}\n.modern-plate {\n    position: relative;\n    overflow: hidden;\n}\n.modern-plate::after {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 50%;\n    height: 100%;\n    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);\n    transform: skewX(-20deg);\n    animation: shine 6s infinite;\n}\n@keyframes shine {\n    0% { left: -100%; }\n    20% { left: 200%; }\n    100% { left: 200%; }\n}",
+      "css_template": ".modern-lt-container {\n    padding: 0;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n}\n.modern-plate {\n    background: {{PRIMARY_BG}};\n    padding: 24px 48px;\n    border-radius: 12px;\n    color: white;\n    display: inline-block;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border: 1px solid rgba(255,255,255,0.1);\n    backdrop-filter: blur(10px);\n}\n.modern-title {\n    margin: 0;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    letter-spacing: 1px;\n    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);\n}\n.modern-plate {\n    position: relative;\n    overflow: hidden;\n}\n.modern-plate::after {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 50%;\n    height: 100%;\n    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);\n    transform: skewX(-20deg);\n    animation: shine 6s infinite;\n}\n@keyframes shine {\n    0% { left: -100%; }\n    20% { left: 200%; }\n    100% { left: 200%; }\n}",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const plate = root.querySelector('.modern-plate');\n\n    root.__slt_show = () => {\n        const delay = \"{{ANIMATION_DELAY}}\" || 0;\n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0];\n        if(el) el.style.transitionDelay = `${delay}s`;\n        plate.style.opacity = '1';\n        plate.style.transform = \"{{ANIMATION_IDENTITY}}\";\n    };\n\n    root.__slt_hide = () => {\n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0];\n        if(el) el.style.transitionDelay = '{{ANIMATION_OUT_DELAY}}s';\n        if (typeof plate !== 'undefined' && plate) {\n            plate.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            plate.style.opacity = '0';\n            plate.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
       "defaultFields": {
         "title": "Modern Title",
@@ -44,7 +72,7 @@
       "type": "TICKER",
       "version": 1,
       "html_template": "<div class=\"modern-ticker\"><div class=\"ticker-label\">BREAKING NEWS</div><div class=\"ticker-content\"><div class=\"ticker-track\">{{#each ITEMS}}<div class=\"ticker-item\"><span class=\"dot\"></span>{{this}}</div>{{/each}}</div></div></div>",
-      "css_template": ".modern-ticker { position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; display: flex; font-family: 'Inter', sans-serif; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); z-index: 1000; } .ticker-label { background: #dc2626; color: white; font-weight: 900; font-size: 24px; padding: 0 30px; display: flex; align-items: center; text-transform: uppercase; z-index: 2; border-right: 4px solid #991b1b; white-space: nowrap; } .ticker-content { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); flex: 1; overflow: hidden; position: relative; display: flex; align-items: center; } .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 20s linear infinite; padding-left: 100%; } .ticker-item { color: white; font-size: 24px; font-weight: 500; display: flex; align-items: center; margin-right: 80px; } .dot { display: inline-block; width: 10px; height: 10px; background: {{BORDER_COLOR}}; border-radius: 50%; margin-right: 15px; } @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
+      "css_template": ".modern-ticker { position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; display: flex; font-family: 'Inter', sans-serif; box-shadow: {{BOX_SHADOW}}; z-index: 1000; } .ticker-label { background: #dc2626; color: white; font-weight: 900; font-size: 24px; padding: 0 30px; display: flex; align-items: center; text-transform: uppercase; z-index: 2; border-right: 4px solid #991b1b; white-space: nowrap; } .ticker-content { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); flex: 1; overflow: hidden; position: relative; display: flex; align-items: center; } .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 20s linear infinite; padding-left: 100%; } .ticker-item { color: white; font-size: 24px; font-weight: 500; display: flex; align-items: center; margin-right: 80px; } .dot { display: inline-block; width: 10px; height: 10px; background: {{BORDER_COLOR}}; border-radius: 50%; margin-right: 15px; } @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
       "js_template": "(() => { \n    const root = document.getElementById(\"{{ID}}\"); \n    const container = root.querySelector('.modern-ticker'); \n    const tickerTrack = root.querySelector('.ticker-track'); \n    \n    root.__slt_show = () => { \n        const delay = \"{{ANIMATION_DELAY}}\" || 0; \n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0]; \n        if(el) el.style.transitionDelay = `${delay}s`; \n        container.style.transform = \"{{ANIMATION_IDENTITY}}\"; \n        \n        if (tickerTrack) { \n            setTimeout(() => { \n                const trackWidth = tickerTrack.scrollWidth || 0; \n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50); \n                if (speedPxPerSec > 0 && trackWidth > 0) { \n                    const durationInSeconds = trackWidth / speedPxPerSec; \n                    tickerTrack.style.animation = 'none'; \n                    void tickerTrack.offsetWidth; \n                    tickerTrack.style.animation = `ticker-scroll ${durationInSeconds}s linear infinite`; \n                } \n            }, 100); \n        } \n    }; \n    \n    root.__slt_hide = () => {\n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0];\n        if(el) el.style.transitionDelay = '{{ANIMATION_OUT_DELAY}}s';\n        if (typeof container !== 'undefined' && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
       "defaultFields": {
         "items": [
@@ -61,7 +89,7 @@
       "type": "LOWER_THIRD",
       "version": 1,
       "html_template": "<div class=\"rep-container\">\n    <div class=\"rep-left-panel\">\n        <div class=\"rep-clock\">00:00</div>\n    </div>\n    <div class=\"rep-content-area\">\n        <div class=\"rep-top-bar\">\n            <div class=\"rep-title\">{{{TITLE}}}</div>\n            <div class=\"rep-side-graphic\"></div>\n        </div>\n        <div class=\"rep-bottom-bar\">\n            <div class=\"ticker-track\">\n                {{#if ITEMS}}\n                    {{#each ITEMS}}\n                    <div class=\"ticker-item\">{{this}}</div>\n                    <div class=\"ticker-sep\"></div>\n                    {{/each}}\n                {{else}}\n                    <div class=\"ticker-item\">GODZ. 18:00, ZAJEZDNIA KULTURY, KOLEJOWA 3, PLESZEW</div>\n                    <div class=\"ticker-sep\"></div>\n                    <div class=\"ticker-item\">KLUB \"GAZETY POLSKIEJ\" ŁÓDŹ ZAPRASZA</div>\n                    <div class=\"ticker-sep\"></div>\n                {{/if}}\n            </div>\n        </div>\n    </div>\n</div>",
-      "css_template": "#{{ID}} .rep-container {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    display: flex;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: 0 10px 30px rgba(0,0,0,0.5);\n    min-height: 120px;\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-left-panel {\n    width: 150px;\n    background: {{PRIMARY_COLOR}};\n    color: white;\n    display: flex;\n    flex-direction: column;\n    z-index: 2;\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-logo {\n    flex: 1;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    background: {{SECONDARY_COLOR}};\n}\n#{{ID}} .rep-logo img {\n    max-width: var(--v-width, 90%);\n    box-sizing: border-box;\n    max-height: 60px;\n    object-fit: contain;\n    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));\n}\n#{{ID}} .rep-clock {\n    height: 40px;\n    background: #000c24;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 28px;\n    font-weight: 700;\n    letter-spacing: 1px;\n}\n#{{ID}} .rep-content-area {\n    flex: 1;\n    display: flex;\n    flex-direction: column;\n    overflow: hidden;\n}\n#{{ID}} .rep-top-bar {\n    flex: 1;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    align-items: center;\n    padding: 0 30px;\n    position: relative;\n    overflow: hidden;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 300px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{SECONDARY_COLOR}} 0%, transparent 100%);\n}\n#{{ID}} .rep-bottom-bar {\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    position: relative;\n    overflow: hidden;\n}\n#{{ID}} .ticker-track {\n    display: flex;\n    align-items: center;\n    white-space: nowrap;\n    animation: rep-scroll 25s linear infinite;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: 24px;\n    font-weight: 600;\n    text-transform: uppercase;\n    padding: 0 20px;\n}\n#{{ID}} .ticker-sep {\n    width: 12px;\n    height: 24px;\n    background: {{BORDER_COLOR}};\n    transform: skewX(-30deg);\n    margin: 0 10px;\n}\n@keyframes rep-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
+      "css_template": "#{{ID}} .rep-container {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    display: flex;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    min-height: 120px;\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-left-panel {\n    width: 150px;\n    background: {{PRIMARY_BG}};\n    color: white;\n    display: flex;\n    flex-direction: column;\n    z-index: 2;\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-logo {\n    flex: 1;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    background: {{SECONDARY_COLOR}};\n}\n#{{ID}} .rep-logo img {\n    max-width: var(--v-width, 90%);\n    box-sizing: border-box;\n    max-height: 60px;\n    object-fit: contain;\n    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));\n}\n#{{ID}} .rep-clock {\n    height: 40px;\n    background: #000c24;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 28px;\n    font-weight: 700;\n    letter-spacing: 1px;\n}\n#{{ID}} .rep-content-area {\n    flex: 1;\n    display: flex;\n    flex-direction: column;\n    overflow: hidden;\n}\n#{{ID}} .rep-top-bar {\n    flex: 1;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    align-items: center;\n    padding: 0 30px;\n    position: relative;\n    overflow: hidden;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 300px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{SECONDARY_COLOR}} 0%, transparent 100%);\n}\n#{{ID}} .rep-bottom-bar {\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    position: relative;\n    overflow: hidden;\n}\n#{{ID}} .ticker-track {\n    display: flex;\n    align-items: center;\n    white-space: nowrap;\n    animation: rep-scroll 25s linear infinite;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: 24px;\n    font-weight: 600;\n    text-transform: uppercase;\n    padding: 0 20px;\n}\n#{{ID}} .ticker-sep {\n    width: 12px;\n    height: 24px;\n    background: {{BORDER_COLOR}};\n    transform: skewX(-30deg);\n    margin: 0 10px;\n}\n@keyframes rep-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-container\");\n    const clockEl = root.querySelector(\".rep-clock\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    let timer;\n    const updateTime = () => {\n        const now = new Date();\n        const h = String(now.getHours());\n        const m = String(now.getMinutes()).padStart(2, \"0\");\n        if(clockEl) clockEl.textContent = h + \":\" + m;\n    };\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n        updateTime();\n        timer = setInterval(updateTime, 1000);\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n        if (typeof timer !== \"undefined\") clearInterval(timer);\n    };\n})();",
       "defaultFields": {
         "title": "MECHANIZM WARUNKOWOŚCI W RAMACH KREDYTU SAFE",
@@ -77,8 +105,8 @@
       "name": "Republika Lower Third",
       "type": "LOWER_THIRD",
       "version": 1,
-      "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
-      "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: 80px;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    align-items: center;\n    padding: 0 30px;\n    overflow: hidden;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: 0 10px 30px rgba(0,0,0,0.5);\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
+      "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
+      "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
       "defaultFields": {
         "title": "MECHANIZM WARUNKOWOŚCI",
@@ -95,7 +123,7 @@
       "type": "TICKER",
       "version": 1,
       "html_template": "<div class=\"rep-bottom-bar\">\n    <div class=\"ticker-track\">\n        {{#if ITEMS}}\n            {{#each ITEMS}}\n            <div class=\"ticker-item\">{{this}}</div>\n            <div class=\"ticker-sep\"></div>\n            {{/each}}\n        {{else}}\n            <div class=\"ticker-item\">GODZ. 18:00, ZAJEZDNIA KULTURY, KOLEJOWA 3, PLESZEW</div>\n            <div class=\"ticker-sep\"></div>\n            <div class=\"ticker-item\">KLUB \"GAZETY POLSKIEJ\" ŁÓDŹ ZAPRASZA</div>\n            <div class=\"ticker-sep\"></div>\n        {{/if}}\n    </div>\n</div>",
-      "css_template": "#{{ID}} .rep-bottom-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    overflow: hidden;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: 0 5px 15px rgba(0,0,0,0.3);\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .ticker-track {\n    display: flex;\n    align-items: center;\n    white-space: nowrap;\n    animation: rep-scroll 25s linear infinite;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: 24px;\n    font-weight: 600;\n    text-transform: uppercase;\n    padding: 0 20px;\n}\n#{{ID}} .ticker-sep {\n    width: 12px;\n    height: 24px;\n    background: {{BORDER_COLOR}};\n    transform: skewX(-30deg);\n    margin: 0 10px;\n}\n@keyframes rep-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
+      "css_template": "#{{ID}} .rep-bottom-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    overflow: hidden;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .ticker-track {\n    display: flex;\n    align-items: center;\n    white-space: nowrap;\n    animation: rep-scroll 25s linear infinite;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: 24px;\n    font-weight: 600;\n    text-transform: uppercase;\n    padding: 0 20px;\n}\n#{{ID}} .ticker-sep {\n    width: 12px;\n    height: 24px;\n    background: {{BORDER_COLOR}};\n    transform: skewX(-30deg);\n    margin: 0 10px;\n}\n@keyframes rep-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-bottom-bar\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n        if (tickerTrack) {\n            setTimeout(() => {\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const durationInSeconds = trackWidth / speedPxPerSec;\n                    tickerTrack.style.animation = \"none\";\n                    void tickerTrack.offsetWidth;\n                    tickerTrack.style.animation = \"rep-scroll \" + durationInSeconds + \"s linear infinite\";\n                }\n            }, 100);\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
       "defaultFields": {},
       "defaultLayout": {
@@ -109,7 +137,7 @@
       "type": "CLOCK",
       "version": 1,
       "html_template": "<div class=\"rep-left-panel\">\n    <div class=\"rep-clock\">00:00</div>\n</div>",
-      "css_template": "#{{ID}} .rep-left-panel {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 150px;\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    flex-direction: column;\n    overflow: hidden;\n    transform-origin: left center;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: 0 10px 30px rgba(0,0,0,0.5);\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-clock {\n    height: 40px;\n    background: {{PRIMARY_COLOR}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 28px;\n    font-weight: 700;\n    letter-spacing: 1px;\n}",
+      "css_template": "#{{ID}} .rep-left-panel {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 150px;\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    flex-direction: column;\n    overflow: hidden;\n    transform-origin: left center;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-clock {\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 28px;\n    font-weight: 700;\n    letter-spacing: 1px;\n}",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-left-panel\");\n    const clockEl = root.querySelector(\".rep-clock\");\n    let timer;\n    const updateTime = () => {\n        const now = new Date();\n        const h = String(now.getHours());\n        const m = String(now.getMinutes()).padStart(2, \"0\");\n        if(clockEl) clockEl.textContent = h + \":\" + m;\n    };\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n        updateTime();\n        timer = setInterval(updateTime, 1000);\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n        if (typeof timer !== \"undefined\") clearInterval(timer);\n    };\n})();",
       "defaultFields": {},
       "defaultLayout": {
@@ -123,7 +151,7 @@
       "type": "IMAGE",
       "version": 1,
       "html_template": "<div class=\"rep-logo-box\">\n    <img class=\"rep-logo-img\" src=\"{{LOGO_URL}}\" alt=\"Logo\" />\n</div>",
-      "css_template": "#{{ID}} .rep-logo-box {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 150px;\n    height: 80px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    box-sizing: border-box;\n    box-shadow: 0 10px 30px rgba(0,0,0,0.5);\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-logo-img {\n    max-width: 90%;\n    max-height: 60px;\n    object-fit: contain;\n    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));\n}",
+      "css_template": "#{{ID}} .rep-logo-box {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: {{#if LOGO_WIDTH}}{{LOGO_WIDTH}}px{{else}}150px{{/if}};\n    height: {{#if LOGO_HEIGHT}}{{LOGO_HEIGHT}}px{{else}}80px{{/if}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    box-sizing: border-box;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-logo-img {\n    max-width: 100%;\n    max-height: 100%;\n    object-fit: contain;\n    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));\n}",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-logo-box\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
       "defaultFields": {
         "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/TV_Republika_logo_2024.svg/200px-TV_Republika_logo_2024.svg.png"
@@ -139,7 +167,7 @@
       "type": "LOWER_THIRD",
       "version": 1,
       "html_template": "<div class=\"na-zywo-wrapper\">\n    <div class=\"na-zywo-container\">\n        <span class=\"na-zywo-dot\"></span>\n        <span class=\"na-zywo-text\">{{{TITLE}}}</span>\n    </div>\n</div>",
-      "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: 0 4px 12px rgba(0,0,0,0.5);\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background-color: {{PRIMARY_COLOR}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n#{{ID}} .na-zywo-dot {\n    width: 14px;\n    height: 14px;\n    background-color: #ffffff;\n    border-radius: 50%;\n    margin-right: 12px;\n    animation: pulse-dot 1s infinite alternate;\n    box-shadow: 0 0 5px rgba(255,255,255,0.8);\n}\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n@keyframes pulse-dot {\n    0% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
+      "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n#{{ID}} .na-zywo-dot {\n    width: 14px;\n    height: 14px;\n    background-color: #ffffff;\n    border-radius: 50%;\n    margin-right: 12px;\n    animation: pulse-dot 1s infinite alternate;\n    box-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n@keyframes pulse-dot {\n    0% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const wrapper = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        if(wrapper) {\n            wrapper.style.transitionDelay = delay + \"s\";\n            void wrapper.offsetWidth;\n            wrapper.style.opacity = \"1\";\n            wrapper.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        if (wrapper) {\n            wrapper.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            wrapper.style.opacity = \"0\";\n            wrapper.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
       "defaultFields": {
         "title": "NA ŻYWO",
@@ -158,7 +186,7 @@
       "type": "LOWER_THIRD",
       "version": 1,
       "html_template": "<div class=\"na-zywo-wrapper\">\n    <div class=\"na-zywo-container\">\n        \n        <span class=\"na-zywo-text\">{{{TITLE}}}</span>\n    </div>\n</div>",
-      "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: 0 4px 12px rgba(0,0,0,0.5);\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background-color: {{PRIMARY_COLOR}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
+      "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const wrapper = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        if(wrapper) {\n            wrapper.style.transitionDelay = delay + \"s\";\n            void wrapper.offsetWidth;\n            wrapper.style.opacity = \"1\";\n            wrapper.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        if (wrapper) {\n            wrapper.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            wrapper.style.opacity = \"0\";\n            wrapper.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
       "defaultFields": {
         "title": "WARSZAWA",
@@ -171,6 +199,35 @@
         "layer": 99,
         "scale": 1.5
       }
+    },
+    {
+      "id": "528dc35a-546a-4e7f-8da7-a0c365f81680",
+      "name": "belka exp",
+      "type": "LOWER_THIRD",
+      "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
+      "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "defaultFields": {
+        "title": "Sample Title",
+        "primaryColor": "#ffffff"
+      },
+      "version": 1
+    },
+    {
+      "id": "belka-exp-graphic",
+      "name": "Belka EXP z Grafiką",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-main-content\">\n        <div class=\"rep-title\">{{{TITLE}}}</div>\n    </div>\n    {{#if SIDE_IMAGE}}\n        <div class=\"rep-right-image\">\n            <img src=\"{{SIDE_IMAGE}}\" alt=\"Graphic\" />\n        </div>\n    {{/if}}\n</div>",
+      "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-main-content {\n    flex: 1;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-right-image {\n    margin-left: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    height: 100%;\n}\n#{{ID}} .rep-right-image img {\n    max-height: 80px;\n    max-width: 150px;\n    object-fit: contain;\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "defaultFields": {
+        "title": "Tytuł z grafiką",
+        "primaryColor": "#ffffff",
+        "primaryBg": "#c8102e",
+        "titleColor": "#ffffff",
+        "sideImage": ""
+      }
     }
   ],
   "graphics": [
@@ -179,7 +236,7 @@
       "type": "LOWER_THIRD",
       "visible": false,
       "name": "Belka Główna",
-      "title": "KCOM MNIE ZNISZCZYĆDRAMATYCZNY APEL BARNEJA O POMOC",
+      "title": "TEST BELEKFont size",
       "subtitle": "CHOROSZCZ",
       "variant": "standard",
       "animation": {
@@ -200,18 +257,18 @@
       },
       "style": {
         "background": {
-          "color": "#4242c2",
-          "borderColor": "#860404",
+          "color": "#32324d",
+          "borderColor": "#030202",
           "type": "gradient",
           "color2": "#461467",
-          "borderWidth": 4,
-          "borderRadius": 8
+          "borderWidth": 1,
+          "borderRadius": 0
         },
         "typography": {
           "color": "#ffffff",
           "fontFamily": "Inter",
-          "fontSize": 25,
-          "fontWeight": "700"
+          "fontSize": 0,
+          "fontWeight": "400"
         },
         "subtitleTypography": {
           "color": "#ffffff"
@@ -219,10 +276,9 @@
       },
       "templateId": "republika-lower-third",
       "layout": {
-        "height": 44,
         "width": 1810,
         "x": 180,
-        "y": 895,
+        "y": 855,
         "layer": 1,
         "scale": 1
       },
@@ -232,7 +288,7 @@
           "text": "BRUTALNY ATAK TUSKA NA WOLNOŚĆ SŁOWA",
           "fontSize": 25,
           "fontFamily": "Inter",
-          "fontWeight": "700",
+          "fontWeight": "400",
           "color": "#ffffff",
           "textTransform": "uppercase"
         },
@@ -240,7 +296,7 @@
           "text": "SŁUŻBY ŻURKA I TUSKA CHCĄ ODEBRAĆ REPUBLICE KONCESJĘ",
           "fontSize": 25,
           "fontFamily": "Inter",
-          "fontWeight": "700",
+          "fontWeight": "400",
           "color": "#ffffff",
           "textTransform": "uppercase"
         },
@@ -248,19 +304,161 @@
           "text": "",
           "fontSize": 25,
           "fontFamily": "Inter",
-          "fontWeight": "700",
+          "fontWeight": "400",
           "color": "#ffffff",
           "textTransform": "uppercase"
         }
       ],
-      "titleHtml": "<font face=\"Roboto Condensed\" style=\"font-size: xxx-large;\">KCOM MNIE ZNISZCZYĆ</font><div><font face=\"Roboto Condensed\" style=\"font-size: xxx-large;\">DRAMATYCZNY APEL BARNEJA O POMOC</font></div>",
+      "titleHtml": "<div style=\"line-height: 1;\"><span style=\"font-size: xxx-large; font-weight: bold; font-family: Bahnschrift;\">TEST BELEK</span></div><div style=\"line-height: 1;\"><span style=\"font-size: 24px;\"><span style=\"font-size: 32px;\"><span style=\"font-size: 24px; font-style: italic;\"><span style=\"line-height: 1; font-family: Bahnschrift;\">Font size</span></span></span></span></div>",
       "sideImage": "data:image/jpeg;base64,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"
+    },
+    {
+      "id": "6f6d9625-5a3a-460f-9d45-07a44145a92b",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka Główna (kopia)",
+      "title": "KCOM MNIE ZNISZCZYĆzmasowane ataki w stronę Barneja",
+      "subtitle": "CHOROSZCZ",
+      "variant": "standard",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "top",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "out": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": ""
+        }
+      },
+      "style": {
+        "background": {
+          "color": "#c32222",
+          "borderColor": "#860404",
+          "type": "solid",
+          "color2": "#461467",
+          "borderWidth": 1,
+          "borderRadius": 0
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Inter",
+          "fontSize": 0,
+          "fontWeight": "400"
+        },
+        "subtitleTypography": {
+          "color": "#ffffff"
+        }
+      },
+      "templateId": "republika-lower-third",
+      "layout": {
+        "width": 1810,
+        "x": 180,
+        "y": 855,
+        "layer": 1,
+        "scale": 1
+      },
+      "showSubtitle": true,
+      "titleLines": [
+        {
+          "text": "BRUTALNY ATAK TUSKA NA WOLNOŚĆ SŁOWA",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        },
+        {
+          "text": "SŁUŻBY ŻURKA I TUSKA CHCĄ ODEBRAĆ REPUBLICE KONCESJĘ",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        },
+        {
+          "text": "",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        }
+      ],
+      "titleHtml": "<div style=\"line-height: 1;\"><span style=\"font-size: xxx-large; font-weight: bold; font-family: Bahnschrift;\">KCOM MNIE ZNISZCZYĆ</span></div><div style=\"line-height: 1;\"><span style=\"font-size: 24px;\"><span style=\"font-size: 32px;\"><span style=\"font-size: 24px; font-style: italic;\"><span style=\"line-height: 1; font-family: Bahnschrift;\">zmasowane ataki w stronę Barneja</span></span></span></span></div>",
+      "sideImage": ""
     },
     {
       "id": "90208c00-623d-4202-aaa1-46cbb1a49290",
       "type": "TICKER",
-      "visible": false,
+      "visible": true,
       "name": "Ticker Pilny",
+      "title": "Test\nMulti",
+      "subtitle": "Podtytuł",
+      "variant": "standard",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in-out"
+        },
+        "out": {
+          "type": "zoom",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        }
+      },
+      "style": {
+        "background": {
+          "color": "#d32222",
+          "opacity": 1,
+          "type": "gradient",
+          "color2": "#990000",
+          "borderColor": "#f0f0f0"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold",
+          "textTransform": "capitalize"
+        },
+        "subtitleTypography": {
+          "color": "#ff0000"
+        }
+      },
+      "templateId": "republika-ticker",
+      "items": [
+        "Niespodziewana decyzja banku centralnego w sprawie stóp procentowych, rynki reagują spadkami.",
+        "Masowa ewakuacja mieszkańców na południu kraju w związku z rosnącym poziomem rzek.",
+        "Za kilka minut rozpocznie się specjalna konferencja prasowa premiera dotycząca bezpieczeństwa.",
+        "Ogromne utrudnienia w ruchu lotniczym nad Europą z powodu globalnej awarii systemu radarowego.",
+        "Osiągnięto historyczne porozumienie na międzynarodowym szczycie klimatycznym w Genewie.",
+        "Karambol na autostradzie A4, trasa w obu kierunkach jest całkowicie zablokowana.",
+        "Rekordowe wzrosty akcji spółek technologicznych po ogłoszeniu nowych przełomowych wynalazków."
+      ],
+      "layout": {
+        "y": 980,
+        "x": 180,
+        "layer": 4
+      },
+      "speed": 160,
+      "groupId": "8a6900f5-c9fb-410a-9cb8-f7e90ac308f2"
+    },
+    {
+      "id": "64c00f5c-41dd-4c61-8c44-898ae8fa5aa8",
+      "type": "TICKER",
+      "visible": true,
+      "name": "Ticker zwykły",
       "title": "Test\nMulti",
       "subtitle": "Podtytuł",
       "variant": "standard",
@@ -282,14 +480,15 @@
       },
       "style": {
         "background": {
-          "color": "#d32222",
+          "color": "#ffffff",
           "opacity": 1,
           "type": "gradient",
-          "color2": "#990000",
-          "borderColor": "#0032c7"
+          "color2": "#e0e0e0",
+          "borderColor": "#e00000",
+          "gradientAngle": 160
         },
         "typography": {
-          "color": "#ffffff",
+          "color": "#170d4a",
           "fontFamily": "Arial",
           "fontSize": 30,
           "fontWeight": "bold",
@@ -310,7 +509,7 @@
       "layout": {
         "y": 980,
         "x": 180,
-        "layer": 4
+        "layer": 3
       },
       "speed": 160,
       "groupId": "8a6900f5-c9fb-410a-9cb8-f7e90ac308f2"
@@ -318,7 +517,7 @@
     {
       "id": "1b3de3d9-3513-4bea-9f4c-9ad3f81d0f09",
       "type": "CLOCK",
-      "visible": false,
+      "visible": true,
       "name": "zegarek",
       "title": "Test\nMulti",
       "subtitle": "Oprawca Kononowicza",
@@ -343,13 +542,14 @@
       },
       "style": {
         "background": {
-          "color": "#403276",
+          "color": "#901414",
           "opacity": 1,
           "borderColor": "#12175e",
           "borderWidth": 0,
-          "borderRadius": 0,
+          "borderRadius": 12,
           "type": "gradient",
-          "color2": "#364153"
+          "color2": "#942424",
+          "gradientAngle": 160
         },
         "typography": {
           "color": "#ffffff",
@@ -643,8 +843,117 @@
       "id": "na-zywo-instance-01",
       "type": "LOWER_THIRD",
       "visible": true,
-      "name": "Live Badge",
-      "title": "NA ŻYWO",
+      "name": "NA ŻYWO",
+      "title": "na żywo",
+      "subtitle": "BIAŁYSTOK",
+      "introText": "",
+      "variant": "custom",
+      "templateId": "na-zywo-badge",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.9,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.8,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#b91c1c",
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 4,
+          "color2": "#8f2e24",
+          "gradientAngle": 160
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 24,
+          "fontWeight": "bold"
+        }
+      },
+      "layout": {
+        "x": 50,
+        "y": 50,
+        "layer": 1,
+        "scale": 1
+      },
+      "groupId": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc",
+      "titleHtml": "<span style=\"font-family: &quot;Roboto Condensed&quot;;\"><b><span style=\"font-size: 24px; font-family: Bahnschrift;\">na żywo</span></b></span>"
+    },
+    {
+      "id": "accbbc51-9603-4638-9013-17ff8fe9625c",
+      "type": "LOWER_THIRD",
+      "visible": true,
+      "name": "NA ŻYWO (kopia)",
+      "title": "tylko w btb info",
+      "subtitle": "BIAŁYSTOK",
+      "introText": "",
+      "variant": "custom",
+      "templateId": "na-zywo-badge",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.9,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.8,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#ffcc00",
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 11,
+          "color2": "#d3a012",
+          "gradientAngle": 160
+        },
+        "typography": {
+          "color": "#000000",
+          "fontFamily": "Arial",
+          "fontSize": 24,
+          "fontWeight": "bold"
+        }
+      },
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "layer": 1,
+        "scale": 1,
+        "side": "top-right",
+        "marginX": 50,
+        "marginY": 50
+      },
+      "groupId": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc",
+      "titleHtml": "<span style=\"font-family: Bahnschrift;\">tylko w btb info</span>"
+    },
+    {
+      "id": "b9bb1f87-0d16-4e53-a68f-4f7c64abc4bf",
+      "type": "LOWER_THIRD",
+      "visible": true,
+      "name": "WYDANIE SPECJALNE",
+      "title": "WYDANIE SPECJALNE",
       "subtitle": "BIAŁYSTOK",
       "introText": "",
       "variant": "custom",
@@ -682,20 +991,751 @@
         }
       },
       "layout": {
-        "x": 50,
-        "y": 50,
+        "x": 180,
+        "y": 930,
         "layer": 1,
-        "scale": 1.2
+        "scale": 1,
+        "attachedToGraphicId": "6f6d9625-5a3a-460f-9d45-07a44145a92b",
+        "attachOffsetY": -130
       },
-      "groupId": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc"
+      "groupId": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc",
+      "titleHtml": "<span style=\"font-family: Bahnschrift;\"><b><span style=\"font-size: 24px;\">WYDANIE SPECJALNE</span></b></span>"
     },
     {
       "id": "8f122d0f-e8c5-4c73-a272-fff860364a71",
       "type": "LOWER_THIRD",
       "visible": true,
-      "name": "Belka Miasto (18:28:45)",
-      "title": "WARSZAWA/MOKOTÓW",
-      "titleHtml": "WARSZAWA/MOKOTÓW",
+      "name": "MIASTO",
+      "title": "BIAŁYSTOK",
+      "titleHtml": "<span style=\"font-size: 24px; font-family: Bahnschrift;\"><b>BIAŁYSTOK</b></span>",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "city-bar",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in-out"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#ffffff",
+          "color2": "#e0e0e0",
+          "gradientAngle": 160,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#000000",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc",
+      "layout": {
+        "x": 50,
+        "y": 105,
+        "scale": 1,
+        "layer": 2,
+        "attachedToGraphicId": "",
+        "attachOffsetY": 0
+      }
+    },
+    {
+      "id": "851a3ce1-2484-4cbb-b873-66ee3b07d99f",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka Miasto (18:28:45) (kopia)",
+      "title": "WARSZAWA/Mokotów",
+      "titleHtml": "<b><span style=\"font-size: 24px; line-height: 1; font-family: Bahnschrift;\">WARSZAWA/Mokotów</span></b>",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "city-bar",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#ffffff",
+          "color2": "#894848",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#000000",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc",
+      "layout": {
+        "x": 50,
+        "y": 100,
+        "scale": 1,
+        "layer": 2
+      }
+    },
+    {
+      "id": "4194a0c8-011d-48b4-9db1-2ccbe2964ae0",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Lw  (19:14:38)",
+      "title": "VinciFlow Title",
+      "titleHtml": "VinciFlow Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "system-standard",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#2563eb",
+          "color2": "#facc15",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "4c3b9464-6f2f-434d-9f98-74f189a5393f",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Lw  (19:18:59)",
+      "title": "VinciFlow Title",
+      "titleHtml": "VinciFlow Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "system-standard",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#2563eb",
+          "color2": "#facc15",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "9c56ac3f-bfb6-4b17-98de-5e7da078aa36",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Plakietka NA ŻYWO (19:21:29)",
+      "title": "NA ŻYWO",
+      "titleHtml": "NA ŻYWO",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "na-zywo-badge",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#b91c1c",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 100,
+        "scale": 1,
+        "layer": 99
+      }
+    },
+    {
+      "id": "4736499f-4140-4c85-9c75-b8aa4d09e49a",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (17:36:58)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "f3b191dc-4646-477e-95c6-bff222db1d24",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (17:55:53)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "3da42fcf-fe51-4f25-82e3-a2967e63b996",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (18:07:03)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "b4efc77e-a87e-4f0a-9f38-42a413f3ecd7",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (18:07:43)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "5e751639-404d-479b-ba06-eb9dbb2712bc",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "belka exp (18:26:40)",
+      "title": "Sample Title",
+      "titleHtml": "<div style=\"line-height: 1.4;\"><span style=\"font-size: 64px;\">Sample Title</span></div>",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "528dc35a-546a-4e7f-8da7-a0c365f81680",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "bottom",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "cubic-bezier(0.2, 0.8, 0.2, 1)"
+        },
+        "out": {
+          "type": "zoom",
+          "direction": "top",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "cubic-bezier(0.2, 0.8, 0.2, 1)"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#7e3e3e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 180,
+        "y": 855,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "e81baea2-f245-43b4-b50d-eafc68bc6d19",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:31:56)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "500c87f9-1ce8-4b8f-98b3-4f29a00c95d2",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka Miasto (20:34:29)",
+      "title": "WARSZAWA",
+      "titleHtml": "WARSZAWA",
       "subtitle": "Subtitle",
       "introText": "PILNE",
       "items": [
@@ -736,7 +1776,7 @@
         },
         "typography": {
           "color": "#000000",
-          "fontFamily": "Arial",
+          "fontFamily": "Bahnschrift",
           "fontSize": 30,
           "fontWeight": "bold"
         },
@@ -747,12 +1787,940 @@
           "fontWeight": "normal"
         }
       },
-      "groupId": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc",
+      "groupId": null,
       "layout": {
-        "x": 50,
-        "y": 100,
+        "x": 100,
+        "y": 150,
+        "scale": 1.5,
+        "layer": 99
+      }
+    },
+    {
+      "id": "316d84aa-fc27-48c4-ba72-f3f5bee285eb",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:34:47)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
         "scale": 1,
-        "layer": 2
+        "layer": 1
+      },
+      "sideImage": "data:image/webp;base64,UklGRsQBAABXRUJQVlA4TLgBAAAvOoAMEA6IkSTHbfJPxUkwBj80sKdfobiAu+UhAaxsk/0PCAIAlo1m27Zt27Zt62wj33bgtm0k0Rhk77l2vfOGuS1reI7LVQhQTOOUk+x5QYwClyRLD7Ig9h/2vRLGsIIkCcMh3pl7QxfZCBgCtF4DVJ36wJ//nnJy2PMNkw1+eTmSrYT64bLvJzeXVeQHw1QHQJSqy4Rl6HS1IAasYsAaFoQ9R1J/QmsYgIlVslZh3xQdOdARp2yT2oxMYsf57DTbvMFHgLuFXE1koaY9pK2Bmnk/IWpKugpzMDOx48gpwZWCmBkdd4TsoZ8JHWcnhZALpmTf78wNS4+eEob84gjn9o5DXZ5+OoG7dPGxpeOqTK5++jkv+I5bEHZPeM0oe6N+/DFtRthnmNO27TiizRgzBi3ZceiIcNrOyQ4sw78ZBnLedv51kKPWUE6U3T2h078bXE8Vu0LB94PYCNWE+zeTzus4SwOkEzqdlbqTkPMfjn9EV2F/jUTCmHnbv6OcGjclAOv0Oon8yQlczSpo+q55/B+9twb4xRPc4fcfHwDB9dRKsOctTq815oO7fczruENbSP/+Tz0Mhg=="
+    },
+    {
+      "id": "d23d4600-7428-4a18-a92c-3bdf8b98054b",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:36:26)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "ffa9cd68-875d-45dd-a571-970f3f0749ae",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:37:16)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "29820277-16c5-46f5-a193-16e692697635",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka Miasto (20:38:10)",
+      "title": "WARSZAWA",
+      "titleHtml": "WARSZAWA",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "city-bar",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#000000",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 150,
+        "scale": 1.5,
+        "layer": 99
+      }
+    },
+    {
+      "id": "f349ea2c-8642-40f0-ac50-8db2b79636c7",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:38:43)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "9d53a666-0fff-4c34-9bbf-9ef91e7a2452",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:40:40)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "50da9cab-b766-4283-aa04-c3ee3dc879ea",
+      "type": "IMAGE",
+      "visible": false,
+      "name": "Republika Logo (20:43:31)",
+      "title": "Title",
+      "titleHtml": "Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-logo",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#0047AB",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 910,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "fc45fbf4-a9a9-4892-92a0-7f63f3a3ac83",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:48:01)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "29199870-d2fc-4415-a454-87e642d1543d",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "belka exp (20:48:54)",
+      "title": "Sample Title",
+      "titleHtml": "Sample Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "528dc35a-546a-4e7f-8da7-a0c365f81680",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "5c9bf877-89a9-44ff-ab55-292f94fd377e",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:52:11)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "<span style=\"font-size: 56px;\"><span style=\"font-size: 64px;\"><span style=\"font-size: 48px;\">Tytuł z grafiką</span></span></span>",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#233c76",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1,
+        "height": 0,
+        "width": 0
+      },
+      "sideImage": "data:image/png;base64,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"
+    },
+    {
+      "id": "ab70671a-4a6e-40df-b52a-e91b5c961651",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (16:03:38)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "bf8cfb56-ce70-4814-9595-d72364a8b264",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (20:32:16)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "d5bcde21-2e8f-42a0-95dc-21fa69f0f05b",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (20:32:16) (kopia)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffff00",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "9f44c724-e1ce-415e-a3e4-633b33981313",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (21:11:55)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#0000FF",
+          "color2": "#00FF00",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
       }
     }
   ],

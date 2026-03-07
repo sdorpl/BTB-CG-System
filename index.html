@@ -133,6 +133,8 @@
       <button id="nav-templates"
         class="nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors">Template
         Editor</button>
+      <button id="nav-settings"
+        class="nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors">Ustawienia</button>
       <div class="h-4 w-px bg-gray-700"></div>
       <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded text-green-400">
         <div class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
@@ -175,7 +177,10 @@
               id="preview-monitor-inner">
               <!-- Label bar -->
               <div class="absolute top-0 left-0 right-0 h-7 bg-gray-900/90 flex items-center justify-between px-3 z-10">
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
+                    <button id="btn-toggle-safe-area" class="text-[9px] uppercase font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded px-1.5 py-0.5 transition-colors border border-gray-700">EBU Safe Area</button>
+                </div>
                 <span id="preview-name" class="text-[10px] text-gray-400 truncate max-w-[160px]">---</span>
               </div>
               <!-- Grid bg -->
@@ -185,6 +190,17 @@
                 <!-- scale wrapper, sized by JS -->
                 <div id="preview-canvas-wrap" style="position:absolute;top:0;left:0;transform-origin:top left;">
                   <div id="preview-canvas" style="width:1920px;height:1080px;position:relative;"></div>
+                  <!-- EBU SAFE AREA OVERLAY (in 1920x1080 wrapper) -->
+                  <div class="ebu-safe-area hidden absolute inset-0 pointer-events-none z-50">
+                     <!-- Action Safe 93% -->
+                     <div style="position:absolute; left: 3.5%; right: 3.5%; top: 3.5%; bottom: 3.5%; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px;"></div>
+                     <!-- Title Safe 90% -->
+                     <div style="position:absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.6); border-radius: 4px;"></div>
+                     <!-- Crosshair -->
+                     <div style="position:absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dotted rgba(255,255,255,0.3);"></div>
+                     <div style="position:absolute; top: 50%; left: 0; right: 0; border-top: 1px dotted rgba(255,255,255,0.3);"></div>
+                     <div style="position:absolute; bottom: 5%; left: 50%; transform: translateX(-50%); font-family: monospace; font-size: 14px; color: rgba(255,255,255,0.6); font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">TITLE SAFE (90%)</div>
+                  </div>
                 </div>
               </div>
               <div id="preview-empty"
@@ -214,13 +230,28 @@
               class="absolute inset-0 bg-black border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.2)] rounded-sm overflow-hidden">
               <!-- Label bar -->
               <div class="absolute top-0 left-0 right-0 h-7 bg-gray-900/90 flex items-center justify-between px-3 z-10">
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
+                </div>
                 <span id="program-layers-label" class="text-[10px] text-red-400 font-bold animate-pulse hidden">ON AIR:
                   <span id="program-layers-count">0</span> WARSTWY</span>
               </div>
               <!-- Live iframe mirroring output.html (same BroadcastChannel) -->
               <iframe id="program-iframe" src="output.html" class="absolute inset-0 w-full h-full border-0"
                 style="pointer-events:none;"></iframe>
+              
+              <!-- EBU SAFE AREA OVERLAY (Absolute over iframe) -->
+              <div class="ebu-safe-area hidden absolute inset-0 pointer-events-none z-50">
+                     <!-- Action Safe 93% -->
+                     <div style="position:absolute; left: 3.5%; right: 3.5%; top: 3.5%; bottom: 3.5%; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px;"></div>
+                     <!-- Title Safe 90% -->
+                     <div style="position:absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.6); border-radius: 4px;"></div>
+                     <!-- Crosshair -->
+                     <div style="position:absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dotted rgba(255,255,255,0.3);"></div>
+                     <div style="position:absolute; top: 50%; left: 0; right: 0; border-top: 1px dotted rgba(255,255,255,0.3);"></div>
+                     <div style="position:absolute; bottom: 5%; left: 50%; transform: translateX(-50%); font-family: monospace; font-size: 14px; color: rgba(255,255,255,0.6); font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">TITLE SAFE (90%)</div>
+              </div>
+
               <div id="program-empty"
                 class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">
                 BRAK SYGNAŁU</div>
@@ -239,6 +270,15 @@
         <div class="h-9 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
           <span class="text-[10px] font-bold uppercase text-gray-400">Bank Grafik</span>
           <div class="flex gap-2">
+            <button id="btn-clear-bank"
+              class="text-[10px] bg-red-900/40 hover:bg-red-900 text-red-500 hover:text-red-400 border border-red-900/50 px-3 py-1 rounded font-medium transition-colors flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+              </svg>
+              Wyczyść
+            </button>
             <button id="btn-new-graphic"
               class="text-[10px] bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white font-medium transition-colors flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -273,7 +313,7 @@
       <!-- Inspector Active Content -->
       <div id="inspector-content" class="hidden flex flex-col h-full">
         <!-- Header -->
-        <div class="p-2 bg-black/20 border-b border-gray-800 flex justify-between items-center text-xs text-gray-500">
+        <div class="p-2 bg-black/20 border-b border-gray-800 flex justify-between items-center text-xs text-gray-500 shrink-0">
           <span class="font-bold uppercase text-gray-300">Inspektor</span>
           <select id="inspector-type-select"
             class="bg-gray-800 border border-gray-700 rounded text-[10px] px-1 py-0.5 text-blue-400 font-mono focus:outline-none">
@@ -284,8 +324,14 @@
           </select>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar" id="inspector-body">
-          <!-- Accordion sections injected here -->
+        <!-- Inspector Tabs -->
+        <div class="flex bg-gray-900 border-b border-gray-800 shrink-0">
+          <button id="ins-tab-main" class="flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors">WYGLĄD I TREŚĆ</button>
+          <button id="ins-tab-anim" class="flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors">ANIMACJA</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col" id="inspector-body">
+          <!-- Sections injected here by app.js -->
         </div>
 
         <!-- Footer -->
@@ -385,6 +431,132 @@
       </div>
     </div>
   </div>
+  <!-- ============================================================ SETTINGS PAGE == -->
+  <div id="page-settings" class="hidden flex flex-1 overflow-y-auto custom-scrollbar bg-gray-950 p-6">
+    <div class="max-w-2xl w-full mx-auto flex flex-col gap-6">
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-5">
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          Ustawienia globalne
+        </h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">Rozdzielczość wyjścia (Program)</label>
+            <div class="flex items-center gap-4">
+              <div class="flex-1">
+                <label class="block text-[10px] text-gray-500 mb-1">Szerokość (px)</label>
+                <input type="number" id="setting-res-width" value="1920"
+                  class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
+              </div>
+              <div class="text-gray-500 mt-4">&times;</div>
+              <div class="flex-1">
+                <label class="block text-[10px] text-gray-500 mb-1">Wysokość (px)</label>
+                <input type="number" id="setting-res-height" value="1080"
+                  class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
+              </div>
+            </div>
+            <p class="text-[10px] text-gray-500 mt-2">Domyślna rozdzielczość używana na żywo w oknie WYJŚCIE. Odśwież
+              okno wyjścia po każdej zmianie rozdzielczości w celu zastosowania.</p>
+          </div>
+
+          <div class="pt-4 border-t border-gray-800">
+            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">Globalna Czcionka</label>
+            <div class="mb-3">
+              <label class="block text-[10px] text-gray-500 mb-1">Krój czcionki (Font Family)</label>
+              <select id="setting-global-font-family"
+                class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
+                <option value="Inter">Inter</option>
+                <option value="Roboto Condensed">Roboto Condensed</option>
+                <option value="Arial">Arial</option>
+                <option value="Helvetica">Helvetica</option>
+                <option value="Bahnschrift">Bahnschrift</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Georgia">Georgia</option>
+                <option value="monospace">Monospace</option>
+              </select>
+              <p class="text-[10px] text-gray-500 mt-2">Wybierz styl czcionki. Ten styl będzie również domyślnie używany
+                przy dodawaniu nowych elementów.</p>
+            </div>
+
+            <div class="mt-4">
+              <label class="block text-[10px] text-gray-500 mb-2">Zastosuj wymuszenie globalnej czcionki dla elementów z
+                Banku Grafik:</label>
+              <div id="setting-global-font-graphics"
+                class="bg-gray-800 border border-gray-700 rounded p-3 max-h-60 overflow-y-auto custom-scrollbar flex flex-col gap-2">
+                <!-- Checkboxes will be injected here via app.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- GLOBAL BORDER RADIUS -->
+          <div class="pt-4 border-t border-gray-800">
+            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">Globalne Zaokrąglenie (Border Radius)</label>
+            <div class="mb-3">
+              <label class="block text-[10px] text-gray-500 mb-1">Promień zaokrąglenia (px)</label>
+              <input type="number" id="setting-global-radius" value="0"
+                class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
+              <p class="text-[10px] text-gray-500 mt-2">Wybierz wartość zaokrąglenia, która wymusi obłe krawędzie na wybranych elementach.</p>
+            </div>
+
+            <div class="mt-4">
+              <label class="block text-[10px] text-gray-500 mb-2">Zastosuj wymuszenie zaokrąglenia dla elementów z Banku Grafik:</label>
+              <div id="setting-global-radius-graphics"
+                class="bg-gray-800 border border-gray-700 rounded p-3 max-h-60 overflow-y-auto custom-scrollbar flex flex-col gap-2">
+                <!-- Checkboxes will be injected here via app.js -->
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-gray-800">
+            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">Globalny Cień (Shadow)</label>
+            <div class="mb-3 flex items-center gap-2">
+              <input type="checkbox" id="setting-shadow-enabled"
+                class="w-3 h-3 bg-gray-800 border-gray-600 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 cursor-pointer">
+              <label for="setting-shadow-enabled" class="text-[10px] text-gray-300 cursor-pointer">Włącz globalny cień
+                dla wszystkich elementów</label>
+            </div>
+
+            <div id="setting-shadow-controls" class="space-y-3 opacity-50 pointer-events-none transition-opacity">
+              <div>
+                <label class="block text-[10px] text-gray-500 mb-1">Kolor Cienia</label>
+                <div class="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded p-1 max-w-[200px]">
+                  <input type="color" id="setting-shadow-color" value="#000000"
+                    class="h-6 w-8 rounded bg-transparent cursor-pointer border-none p-0 shrink-0">
+                  <input type="text" id="setting-shadow-color-hex" value="rgba(0,0,0,0.5)"
+                    class="bg-transparent text-[10px] font-mono flex-1 focus:outline-none text-gray-300 min-w-0">
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-[10px] text-gray-500 mb-1">Rozmycie</label>
+                  <input type="number" id="setting-shadow-blur" value="4"
+                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-gray-500 mb-1">Offset X</label>
+                  <input type="number" id="setting-shadow-offset-x" value="0"
+                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-gray-500 mb-1">Offset Y</label>
+                  <input type="number" id="setting-shadow-offset-y" value="2"
+                    class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================================ TEMPLATE SELECTOR MODAL == -->
   <div id="modal-template-selector" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
@@ -399,19 +571,29 @@
     </div>
   </div>
 
-  <!-- ============================================================ WYSIWYG EDIT MODAL == -->
   <div id="modal-wysiwyg" class="hidden fixed inset-0 bg-black/80 z-60 flex items-center justify-center p-4"
     style="z-index:60">
+    <style>
+      /* Editor base font - do NOT use !important so applied spans are visible */
+      #wm-editor {
+        font-size: 18px;
+      }
+
+      /* But preserve the pulsing dot in preview if it uses font-size (unlikely, but for safety) */
+      #wm-preview-canvas * {
+        font-size: inherit;
+      }
+    </style>
     <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl flex flex-col"
       style="width:min(98vw,1500px);height:min(96vh,920px);" onclick="event.stopPropagation()">
       <!-- Modal Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-800 shrink-0">
+      <div class="flex items-center justify-between px-5 py-2 border-b border-gray-800 shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-xs font-bold">T</div>
           <span class="font-bold text-sm">Edytor Tekstu — <span id="wysiwyg-modal-title"
               class="text-blue-400 font-mono text-xs"></span></span>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
           <button id="wysiwyg-cancel"
             class="px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs font-medium">Anuluj</button>
           <button id="wysiwyg-save"
@@ -421,25 +603,25 @@
         </div>
       </div>
 
-      <!-- Modal Body: editor left, preview right -->
-      <div class="flex flex-1 min-h-0">
+      <!-- Modal Body: editor TOP, preview BOTTOM -->
+      <div class="flex flex-col flex-1 min-h-0">
 
-        <!-- LEFT: Editor -->
-        <div class="flex flex-col" style="width:440px;border-right:1px solid #1f2937;">
+        <!-- TOP: Editor (wide, narrow) -->
+        <div class="flex flex-col shrink-0" style="border-bottom:1px solid #1f2937;">
           <!-- Toolbar -->
           <div id="wm-toolbar"
-            style="display:flex;flex-wrap:wrap;gap:3px;padding:8px;background:#111827;border-bottom:1px solid #1f2937;">
+            style="display:flex;flex-wrap:wrap;gap:3px;padding:6px 8px;background:#111827;border-bottom:1px solid #1f2937;align-items:center;">
             <button data-cmd="bold" title="Bold"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;font-weight:bold;cursor:pointer;font-size:13px;"><b>B</b></button>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;font-weight:bold;cursor:pointer;font-size:12px;"><b>B</b></button>
             <button data-cmd="italic" title="Italic"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;cursor:pointer;font-size:13px;"><i>I</i></button>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;cursor:pointer;font-size:12px;"><i>I</i></button>
             <button data-cmd="underline" title="Underline"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;cursor:pointer;font-size:13px;"><u>U</u></button>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;cursor:pointer;font-size:12px;"><u>U</u></button>
             <button data-cmd="strikeThrough" title="Strikethrough"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:13px;"><s>S</s></button>
-            <div style="width:1px;background:#374151;margin:2px;"></div>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:12px;"><s>S</s></button>
+            <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
             <select id="wm-font" title="Font Family"
-              style="height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
+              style="height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
               <option>Roboto Condensed</option>
               <option>Bahnschrift</option>
               <option>Inter</option>
@@ -450,7 +632,7 @@
               <option>monospace</option>
             </select>
             <select id="wm-size" title="Font Size"
-              style="height:28px;width:58px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
+              style="height:26px;width:54px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
               <option value="24">24px</option>
               <option value="32">32px</option>
               <option value="40">40px</option>
@@ -461,55 +643,65 @@
               <option value="96">96px</option>
               <option value="120">120px</option>
             </select>
-            <div style="width:1px;background:#374151;margin:2px;"></div>
+            <select id="wm-line-height" title="Interlinia (line-height)"
+              style="height:26px;width:60px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#a78bfa;font-size:10px;padding:0 4px;cursor:pointer;">
+              <option value="1">× 1.0</option>
+              <option value="1.1">× 1.1</option>
+              <option value="1.2">× 1.2</option>
+              <option value="1.3">× 1.3</option>
+              <option value="1.4" selected>× 1.4</option>
+              <option value="1.5">× 1.5</option>
+              <option value="1.6">× 1.6</option>
+              <option value="1.8">× 1.8</option>
+              <option value="2">× 2.0</option>
+              <option value="2.5">× 2.5</option>
+            </select>
+            <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
             <label title="Kolor tekstu"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">
-              <span style="font-size:12px;color:#e5e7eb;font-weight:bold;">A</span>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">
+              <span style="font-size:11px;color:#e5e7eb;font-weight:bold;">A</span>
               <input id="wm-color" type="color" value="#ffffff" style="position:absolute;width:0;height:0;opacity:0;">
             </label>
-            <div style="width:1px;background:#374151;margin:2px;"></div>
+            <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
             <button data-cmd="justifyLeft" title="Align Left"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;">&#8676;</button>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:10px;">&#8676;</button>
             <button data-cmd="justifyCenter" title="Center"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;">≡</button>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:10px;">≡</button>
             <button data-cmd="justifyRight" title="Align Right"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;">&#8677;</button>
-            <div style="width:1px;background:#374151;margin:2px;"></div>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:10px;">&#8677;</button>
+            <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
             <button data-cmd="removeFormat" title="Clear Formatting"
-              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:12px;">✕</button>
+              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;">✕</button>
+            <div style="flex:1;"></div>
+            <!-- Background color picker (compact) -->
+            <label title="Kolor tła podglądu" style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+              <input id="wm-bg" type="color" value="#0047ab"
+                style="height:22px;width:28px;border:1px solid #374151;border-radius:3px;cursor:pointer;background:transparent;">
+              <span style="font-size:9px;color:#6b7280;">Tło</span>
+            </label>
           </div>
 
-          <!-- Background color for editor (shows on transparent areas) -->
-          <div class="px-3 py-2 text-[9px] text-gray-500 uppercase font-semibold border-b border-gray-800">Kolor tła
-            edytora</div>
-          <div
-            style="padding:8px;background:#111827;border-bottom:1px solid #1f2937;display:flex;align-items:center;gap:8px;">
-            <input id="wm-bg" type="color" value="#0047ab"
-              style="height:28px;width:36px;border:1px solid #374151;border-radius:4px;cursor:pointer;background:transparent;">
-            <span style="font-size:10px;color:#6b7280;">Podświetlenie tła edytora (nie zmienia szablonu)</span>
-          </div>
-
-          <!-- Editor Area -->
-          <div class="flex-1 overflow-y-auto" style="padding:16px;background:#0f172a;">
+          <!-- Editor Area (compact, 18px font, no visual font-size) -->
+          <div class="overflow-y-auto" style="padding:8px 12px;background:#0f172a;max-height:160px;min-height:60px;">
             <div id="wm-editor" contenteditable="true" spellcheck="false"
-              style="min-height:100px;color:#fff;font-size:48px;font-family:Roboto Condensed,sans-serif;line-height:1.2;outline:none;white-space:pre-wrap;word-break:break-word;">
+              style="color:#fff;font-size:18px;font-family:Roboto Condensed,sans-serif;line-height:1.4;outline:none;white-space:pre-wrap;word-break:break-word;">
             </div>
           </div>
 
           <!-- HTML source view (collapsed by default) -->
-          <div class="border-t border-gray-800">
+          <div style="border-top:1px solid #1f2937;">
             <button id="toggle-html-view"
-              style="width:100%;padding:6px 12px;background:#111827;color:#6b7280;font-size:10px;text-align:left;border:none;cursor:pointer;">▶
+              style="width:100%;padding:4px 12px;background:#111827;color:#6b7280;font-size:9px;text-align:left;border:none;cursor:pointer;">▶
               Pokaż źródło HTML</button>
             <textarea id="wm-html-source"
-              style="display:none;width:100%;height:80px;background:#0d1117;color:#86efac;font-family:monospace;font-size:10px;border:none;padding:8px;resize:none;"></textarea>
+              style="display:none;width:100%;height:60px;background:#0d1117;color:#86efac;font-family:monospace;font-size:9px;border:none;padding:6px;resize:none;"></textarea>
           </div>
         </div>
 
-        <!-- RIGHT: Live Preview -->
-        <div class="flex-1 flex flex-col min-w-0 bg-gray-950">
+        <!-- BOTTOM: Live Preview -->
+        <div class="flex-1 flex flex-col min-h-0 bg-gray-950">
           <div
-            class="px-4 py-2 border-b border-gray-800 text-[10px] text-gray-500 uppercase font-semibold flex items-center justify-between">
+            class="px-4 py-1 border-b border-gray-800 text-[9px] text-gray-500 uppercase font-semibold flex items-center justify-between shrink-0">
             <span>Podgląd na żywo</span>
             <span class="text-[9px] text-gray-600">1920 × 1080</span>
           </div>
@@ -518,12 +710,12 @@
             style="overflow:hidden;position:relative;">
             <!-- wrap is sized to the scaled dimensions by JS -->
             <div id="wm-preview-wrap" style="position:relative;overflow:hidden;flex-shrink:0;">
-              <!-- canvas is 1920×1080 and scaled via transform; absolute so it doesn't affect layout -->
+              <!-- actual preview container -->
               <div id="wm-preview-canvas"
                 style="width:1920px;height:1080px;position:absolute;top:0;left:0;background:#000;"></div>
             </div>
           </div>
-          <div class="px-4 py-2 border-t border-gray-800 text-[10px] text-gray-500">
+          <div class="px-4 py-1 border-t border-gray-800 text-[9px] text-gray-500 shrink-0">
             Zmiany występują w podglądzie • Na antenie pojawi się po kliknięciu TAKE
           </div>
         </div>
@@ -534,7 +726,8 @@
 
   <div id="loading-overlay" class="fixed inset-0 bg-gray-950 z-50 flex items-center justify-center">
     <div class="text-center">
-      <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div>
+      <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-3">
+      </div>
       <p class="text-gray-400 text-sm">Loading CG Engine...</p>
     </div>
   </div>

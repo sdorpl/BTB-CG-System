@@ -8,13 +8,15 @@
     let activeGraphics = {}; // Map of graphic.id -> DOM element metadata
     let templates = [];
 
-    // Layout Util ported from TemplateUtils
-    function getLayoutTransform(layout, autoScale = 1) {
-        const x = layout?.x || 0;
-        const y = layout?.y || 0;
+    function getLayoutTransform(layout, autoScale = 1, offsetY = 0, offsetX = 0) {
+        const isCustom = !layout?.side || layout.side === 'custom';
+        const x = isCustom ? (layout?.x || 0) : 0;
+        const y = isCustom ? (layout?.y || 0) : 0;
+        const finalY = y + offsetY;
+        const finalX = x + offsetX;
         const scale = layout?.scale || 1;
         const rotation = layout?.rotation || 0;
-        return `scale(${autoScale}) translate(${x}px, ${y}px) scale(${scale}) rotate(${rotation}deg)`;
+        return `scale(${autoScale}) translate(${finalX}px, ${finalY}px) scale(${scale}) rotate(${rotation}deg)`;
     }
 
     // Safely assign GSAP global (may not be available in all contexts)
@@ -33,6 +35,7 @@
     function handleStateUpdate(state) {
         templates = state.templates || [];
         const graphics = state.graphics || [];
+        const settings = state.settings || {};
 
         // Diffing
         const currentActiveIds = Object.keys(activeGraphics);
@@ -49,7 +52,7 @@
         // 2. Add or Update visible graphics
         newActiveGraphics.forEach(graphic => {
             if (!activeGraphics[graphic.id]) {
-                showGraphic(graphic);
+                showGraphic(graphic, settings, graphics);
             } else {
                 // It's already visible but properties might have changed (text editing)
                 // For now, if text is edited live, we re-render it. 
@@ -59,26 +62,33 @@
                     title: graphic.title, subtitle: graphic.subtitle,
                     titleHtml: graphic.titleHtml, titleLines: graphic.titleLines,
                     layout: graphic.layout, animation: graphic.animation,
-                    style: graphic.style, sideImage: graphic.sideImage
+                    style: graphic.style, sideImage: graphic.sideImage,
+                    activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(graphic.id)) ? settings.globalFontFamily : null
+
                 });
 
                 if (existingHash !== newHash) {
+                    console.log('HASH MISMATCH FOR:', graphic.id);
+                    console.log('OLD HASH:', existingHash);
+                    console.log('NEW HASH:', newHash);
                     // Update properties by fast re-render without out-animation
                     container.removeChild(activeGraphics[graphic.id].el);
                     delete activeGraphics[graphic.id];
-                    showGraphic(graphic);
+                    showGraphic(graphic, settings, graphics);
                 }
             }
         });
+        
+        recalculateAttachments(graphics);
     }
 
-    function showGraphic(data) {
+    function showGraphic(data, settings = {}, allGraphics = []) {
         const tpl = templates.find(t => t.id === data.templateId);
         if (!tpl) return;
 
         const instanceId = `lt_${data.id.replace(/-/g, '')}`;
         const df = tpl.defaultFields || {};
-        const ctx = buildPreviewContext(data, tpl, instanceId);
+        const ctx = buildPreviewContext(data, tpl, instanceId, settings);
 
         const prepareStr = (str) => {
             try {
@@ -91,8 +101,34 @@
         // Construct Layout Wrapper Element (matches VinciFlowGraphic return)
         const layoutStyleWrapper = document.createElement('div');
         const autoScale = 1;
+        
+        let initialOffsetY = 0;
+        let initialOffsetX = 0;
+        
+        if (data.layout?.attachedToGraphicId) {
+            const parentIds = Array.isArray(data.layout.attachedToGraphicId) ? data.layout.attachedToGraphicId : (data.layout.attachedToGraphicId ? [data.layout.attachedToGraphicId] : []);
+            const parentVisible = parentIds.some(pid => {
+                const p = allGraphics.find(g => g.id === pid);
+                return p && p.visible;
+            });
+            if (parentVisible) {
+                initialOffsetY = data.layout.attachOffsetY || 0;
+            }
+        }
+
+        if (data.layout?.attachedToGraphicIdX) {
+            const parentIdsX = Array.isArray(data.layout.attachedToGraphicIdX) ? data.layout.attachedToGraphicIdX : (data.layout.attachedToGraphicIdX ? [data.layout.attachedToGraphicIdX] : []);
+            const parentVisibleX = parentIdsX.some(pid => {
+                const p = allGraphics.find(g => g.id === pid);
+                return p && p.visible;
+            });
+            if (parentVisibleX) {
+                initialOffsetX = data.layout.attachOffsetX || 0;
+            }
+        }
+
         // Apply layout transform to outer wrapper
-        layoutStyleWrapper.style.transform = getLayoutTransform(data.layout, autoScale);
+        layoutStyleWrapper.style.transform = getLayoutTransform(data.layout, autoScale, initialOffsetY, initialOffsetX);
         layoutStyleWrapper.style.transformOrigin = '0 0';
         layoutStyleWrapper.style.position = 'absolute';
         layoutStyleWrapper.style.top = '0';
@@ -129,6 +165,53 @@
             // By prefixing common generic classes with the parent instance ID, we sandbox the CSS.
             cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
 
+            // Gradient override: if the graphic uses a gradient background, force it onto
+            // all elements that only have background-color set (which doesn't support gradients).
+            const bgData = data.style?.background || {};
+            const globalRadiusGraphics = settings?.globalRadiusGraphics || [];
+            const isGlobalRadius = globalRadiusGraphics.includes(data.id);
+            const borderRadius = isGlobalRadius ? (settings.globalBorderRadius || 0) : (bgData.borderRadius || 0);
+
+            if (bgData.type === 'gradient') {
+                const angle = bgData.gradientAngle || 135;
+                const c1 = bgData.color || '#1e3a8a';
+                const c2 = bgData.color2 || '#3b82f6';
+                const gradientVal = `linear-gradient(${angle}deg, ${c1}, ${c2})`;
+                // Target container/bar elements specifically, not child decorative elements
+                cssStr += `\n/* gradient override */`;
+                cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { background: ${gradientVal} !important; background-color: transparent !important; }`;
+            }
+
+            if (isGlobalRadius || bgData.borderRadius > 0) {
+                cssStr += `\n/* border radius override */`;
+                cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { border-radius: ${borderRadius}px !important; overflow: hidden !important; }`;
+            }
+
+            // Layout side override
+            if (data.layout?.side && data.layout.side !== 'custom') {
+                const parts = data.layout.side.split('-');
+                const ySide = parts[0];
+                const xSide = parts.length > 1 ? parts[1] : 'center';
+                
+                const yS = (data.layout.side === 'center') ? 'center' : ySide;
+                const xS = (data.layout.side === 'center') ? 'center' : xSide;
+
+                const mx = data.layout?.marginX || 0;
+                const my = data.layout?.marginY || 0;
+
+                cssStr += `\n/* Side Layout */`;
+                cssStr += `\n#${instanceId} { display: flex; width: 100%; height: 100%; box-sizing: border-box; pointer-events: none; }`;
+                cssStr += `\n#${instanceId} > * { pointer-events: auto; position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; }`;
+                
+                if (yS === 'top') cssStr += `\n#${instanceId} { align-items: flex-start; padding-top: ${my}px; }`;
+                else if (yS === 'bottom') cssStr += `\n#${instanceId} { align-items: flex-end; padding-bottom: ${my}px; }`;
+                else if (yS === 'center') cssStr += `\n#${instanceId} { align-items: center; }`;
+
+                if (xS === 'left') cssStr += `\n#${instanceId} { justify-content: flex-start; padding-left: ${mx}px; }`;
+                else if (xS === 'right') cssStr += `\n#${instanceId} { justify-content: flex-end; padding-right: ${mx}px; }`;
+                else if (xS === 'center') cssStr += `\n#${instanceId} { justify-content: center; }`;
+            }
+
             const style = document.createElement('style');
             style.textContent = cssStr;
             layoutStyleWrapper.appendChild(style);
@@ -144,7 +227,8 @@
                 title: data.title, subtitle: data.subtitle,
                 titleHtml: data.titleHtml, titleLines: data.titleLines,
                 layout: data.layout, animation: data.animation,
-                style: data.style, sideImage: data.sideImage
+                style: data.style, sideImage: data.sideImage,
+                activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(data.id)) ? settings.globalFontFamily : null
             }),
             isHiding: false
         };
@@ -221,6 +305,49 @@
         }
     }
 
+    function recalculateAttachments(graphics) {
+        // Allow DOM to process additions/removals first
+        setTimeout(() => {
+            graphics.forEach(graphic => {
+                if (!graphic.visible) return;
+                const meta = activeGraphics[graphic.id];
+                if (!meta || !meta.el || meta.isHiding) return;
+
+                let offsetY = 0;
+                let offsetX = 0;
+                
+                if (graphic.layout?.attachedToGraphicId) {
+                    const parentIds = Array.isArray(graphic.layout.attachedToGraphicId) ? graphic.layout.attachedToGraphicId : (graphic.layout.attachedToGraphicId ? [graphic.layout.attachedToGraphicId] : []);
+                    const parentVisible = parentIds.some(pid => {
+                        const p = graphics.find(g => g.id === pid);
+                        return p && p.visible;
+                    });
+                    if (parentVisible) {
+                        offsetY = graphic.layout.attachOffsetY || 0;
+                    }
+                }
+
+                if (graphic.layout?.attachedToGraphicIdX) {
+                    const parentIdsX = Array.isArray(graphic.layout.attachedToGraphicIdX) ? graphic.layout.attachedToGraphicIdX : (graphic.layout.attachedToGraphicIdX ? [graphic.layout.attachedToGraphicIdX] : []);
+                    const parentVisibleX = parentIdsX.some(pid => {
+                        const p = graphics.find(g => g.id === pid);
+                        return p && p.visible;
+                    });
+                    if (parentVisibleX) {
+                        offsetX = graphic.layout.attachOffsetX || 0;
+                    }
+                }
+
+                const currentTransform = meta.el.style.transform;
+                const targetTransform = getLayoutTransform(graphic.layout, 1, offsetY, offsetX);
+                
+                // Set CSS transition to smoothly glide elements if they change their target Y
+                meta.el.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+                meta.el.style.transform = targetTransform;
+            });
+        }, 50);
+    }
+
     function removeElement(id, meta) {
         if (meta.el && meta.el.parentNode) {
             meta.el.parentNode.removeChild(meta.el);
@@ -234,7 +361,7 @@
     const previewInstances = new WeakMap();
 
     window.__cgRenderer = {
-        renderPreview(containerEl, graphics, tpls, options = {}) {
+        renderPreview(containerEl, graphics, tpls, settings = {}, options = {}) {
             if (!containerEl) return;
             let instances = previewInstances.get(containerEl);
             if (!instances) { instances = {}; previewInstances.set(containerEl, instances); }
@@ -264,7 +391,7 @@
                 }
 
                 const instanceId = `prev${graphic.id.replace(/-/g, '')}`;
-                const context = buildPreviewContext(graphic, tpl, instanceId);
+                const context = buildPreviewContext(graphic, tpl, instanceId, settings);
 
                 const prepareStr = (str) => {
                     if (!str) return '';
@@ -306,9 +433,66 @@
                 innerContainer.style.left = '0';
 
                 const styleEl = document.createElement('style');
+
+                if (options.instant) {
+                    // Rewrite the CSS to force-show elements:
+                    // 1. Replace opacity: 0 with opacity: 1 (initial hidden state → visible)
+                    cssStr = cssStr.replace(/opacity\s*:\s*0\b/g, 'opacity: 1');
+                    // 2. Replace transform values that hide elements off-screen with identity
+                    cssStr = cssStr.replace(/transform\s*:\s*(translateX\([^)]+\)|translateY\([^)]+\)|scale\([^)]+\)|scaleX\([^)]+\))/g, 'transform: none');
+                }
+
+                // Gradient override: if the graphic uses a gradient background, force it onto
+                // all elements that only have background-color set (which doesn't support gradients).
+                const bgData2 = graphic.style?.background || {};
+                const globalRadiusGraphicsPrev = settings?.globalRadiusGraphics || [];
+                const isGlobalRadiusPrev = globalRadiusGraphicsPrev.includes(graphic.id);
+                const borderRadiusPrev = isGlobalRadiusPrev ? (settings.globalBorderRadius || 0) : (bgData2.borderRadius || 0);
+
+                if (bgData2.type === 'gradient') {
+                    const angle2 = bgData2.gradientAngle || 135;
+                    const c1_2 = bgData2.color || '#1e3a8a';
+                    const c2_2 = bgData2.color2 || '#3b82f6';
+                    const gradientVal2 = `linear-gradient(${angle2}deg, ${c1_2}, ${c2_2})`;
+                    // Target container/bar elements specifically, not child decorative elements
+                    cssStr += `\n/* gradient override */`;
+                    cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { background: ${gradientVal2} !important; background-color: transparent !important; }`;
+                }
+
+                if (isGlobalRadiusPrev || bgData2.borderRadius > 0) {
+                    cssStr += `\n/* border radius override */`;
+                    cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { border-radius: ${borderRadiusPrev}px !important; overflow: hidden !important; }`;
+                }
+
+                // Layout side override
+                if (graphic.layout?.side && graphic.layout.side !== 'custom') {
+                    const parts = graphic.layout.side.split('-');
+                    const ySide = parts[0];
+                    const xSide = parts.length > 1 ? parts[1] : 'center';
+                    
+                    const yS = (graphic.layout.side === 'center') ? 'center' : ySide;
+                    const xS = (graphic.layout.side === 'center') ? 'center' : xSide;
+
+                    const mx = graphic.layout?.marginX || 0;
+                    const my = graphic.layout?.marginY || 0;
+
+                    cssStr += `\n/* Side Layout */`;
+                    cssStr += `\n#${instanceId} { display: flex; width: 100%; height: 100%; box-sizing: border-box; pointer-events: none; }`;
+                    cssStr += `\n#${instanceId} > * { pointer-events: auto; position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; }`;
+                    
+                    if (yS === 'top') cssStr += `\n#${instanceId} { align-items: flex-start; padding-top: ${my}px; }`;
+                    else if (yS === 'bottom') cssStr += `\n#${instanceId} { align-items: flex-end; padding-bottom: ${my}px; }`;
+                    else if (yS === 'center') cssStr += `\n#${instanceId} { align-items: center; }`;
+
+                    if (xS === 'left') cssStr += `\n#${instanceId} { justify-content: flex-start; padding-left: ${mx}px; }`;
+                    else if (xS === 'right') cssStr += `\n#${instanceId} { justify-content: flex-end; padding-right: ${mx}px; }`;
+                    else if (xS === 'center') cssStr += `\n#${instanceId} { justify-content: center; }`;
+                }
+
                 styleEl.textContent = cssStr;
                 if (options.instant) {
-                    styleEl.textContent += `\n#${instanceId} * { transition: none !important; animation: none !important; }`;
+                    // Also kill all transitions and animations globally
+                    styleEl.textContent += `\n#${instanceId}, #${instanceId} * { transition: none !important; transition-delay: 0s !important; animation: none !important; }`;
                 }
                 innerContainer.appendChild(styleEl);
 
@@ -324,36 +508,74 @@
                 containerEl.appendChild(layoutStyleWrapper);
                 instances[graphic.id] = layoutStyleWrapper;
 
-                // Run template JS (simplified, no animation)
-                if (tpl.js_template) {
+                // Run template JS identical to showGraphic
+                const rootEl = document.getElementById(instanceId);
+                if (rootEl && tpl.js_template) {
+                    const jsCode = prepareStr(tpl.js_template);
                     try {
-                        let jsCode = Handlebars.compile(tpl.js_template)(context);
-                        const fn = new Function('document', 'gsap', `
-                        var fakeGsap = { to: ()=>{}, from: ()=>{}, fromTo: ()=>{}, set: ()=>{}, timeline: ()=>({to:()=>({})}) };
-                        var _gsap = gsap || fakeGsap;
-                        try { ${jsCode} } catch(e){}
-                    `);
-                        fn(document, window.gsap || null);
-                    } catch (e) { }
+                        const wrappedCode = [
+                            '(function(root, gsap) {',
+                            '    try {',
+                            jsCode,
+                            '    } catch (e) {',
+                            '        console.error("PREVIEW INNER TEMPLATE ERROR:", e);',
+                            '    }',
+                            `})(document.getElementById("${instanceId}"), window.gsap);`
+                        ].join('\n');
+                        // eslint-disable-next-line no-eval
+                        eval(wrappedCode);
+                    } catch (e) {
+                        console.error("Vinci JS error", e);
+                    }
                 }
 
-                // Trigger __slt_show if available
-                const rootEl = document.getElementById(instanceId);
+                // Trigger __slt_show and force instant visibility
                 if (rootEl && typeof rootEl.__slt_show === 'function') {
                     try {
-                        if (options.instant) rootEl.__slt_show();
-                        else setTimeout(() => rootEl.__slt_show(), 50);
-                    } catch (e) { }
+                        rootEl.__slt_show();
+                    } catch (e) { console.error("__slt_show error:", e); }
+                }
+
+                if (options.instant && rootEl) {
+                    // Use rAF to ensure DOM is committed before forcing styles
+                    requestAnimationFrame(() => {
+                        // Force GSAP tweens to complete
+                        if (window.gsap) {
+                            try {
+                                window.gsap.getTweensOf(rootEl).forEach(t => t.progress(1));
+                                window.gsap.getTweensOf(rootEl.querySelectorAll('*')).forEach(t => t.progress(1));
+                            } catch (e) { }
+                        }
+                        // Force all child elements visible - unconditionally override opacity and transform
+                        // This handles CSS-transition based templates where __slt_show sets properties
+                        // but they haven't taken effect yet
+                        const forceVisible = (el) => {
+                            el.style.setProperty('opacity', '1', 'important');
+                            el.style.setProperty('transform', 'none', 'important');
+                            el.style.setProperty('transition', 'none', 'important');
+                        };
+                        rootEl.querySelectorAll('*').forEach(forceVisible);
+                    });
+                } else if (!rootEl) {
+                    // fallback
+                } else if (!rootEl.__slt_show) {
+                    rootEl.style.display = 'block';
                 }
             });
         }
     };
 
-    function buildPreviewContext(graphic, tpl, instanceId) {
+    function buildPreviewContext(graphic, tpl, instanceId, settings = {}) {
         const animIn = graphic.animation?.in || {};
         const animOut = graphic.animation?.out || {};
         const bgStyle = graphic.style?.background || {};
         const typo = graphic.style?.typography || {};
+
+        let activeFontFamily = typo.fontFamily || 'Arial';
+        if (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(graphic.id)) {
+            activeFontFamily = settings.globalFontFamily || activeFontFamily;
+        }
+
         const inDuration = animIn.duration ?? 0.5;
         const outDuration = animOut.duration ?? 0.3;
         const inDirection = animIn.direction || 'left';
@@ -361,10 +583,10 @@
         const IDENTITY = 'translateX(0px) translateY(0px) scale(1)';
         const dirMap = { left: 'translateX(-1920px)', right: 'translateX(1920px)', top: 'translateY(-1080px)', bottom: 'translateY(1080px)' };
         const bg = bgStyle.type === 'gradient'
-            ? `linear-gradient(${bgStyle.gradientAngle || 135}deg, ${bgStyle.color || tpl.defaultFields?.primaryColor || '#1e3a8a'}, ${bgStyle.color2 || '#3b82f6'})`
-            : (bgStyle.color || tpl.defaultFields?.primaryColor || '#1e3a8a');
+            ? `linear-gradient(${bgStyle.gradientAngle || 135}deg, ${bgStyle.color || '#1e3a8a'}, ${bgStyle.color2 || '#3b82f6'})`
+            : (bgStyle.color || '#1e3a8a');
 
-        let rawTitle = graphic.titleHtml || (graphic.titleLines?.length ? graphic.titleLines.map(l => `<div style="font-size:${l.fontSize || 48}px;font-weight:${l.fontWeight || '800'};color:${l.color || '#fff'};font-family:'${l.fontFamily || 'Inter'}',sans-serif;text-transform:${l.textTransform || 'uppercase'}">${l.text}</div>`).join('') : (graphic.title || tpl.defaultFields?.title || ''));
+        let rawTitle = graphic.titleHtml || (graphic.titleLines?.length ? graphic.titleLines.map(l => `<div style="font-size:${l.fontSize || 48}px;font-weight:${l.fontWeight || '800'};color:${l.color || '#fff'};font-family:'${l.fontFamily || activeFontFamily}',sans-serif;text-transform:${l.textTransform || 'uppercase'}">${l.text}</div>`).join('') : (graphic.title || tpl.defaultFields?.title || ''));
 
         if (rawTitle && typeof rawTitle === 'string' && rawTitle.includes('<font')) {
             const tempDiv = document.createElement('div');
@@ -404,6 +626,11 @@
             return item;
         });
 
+        const globalShadow = settings?.globalShadow || { enabled: false };
+        const shadowStr = globalShadow.enabled
+            ? `${globalShadow.offsetX ?? 0}px ${globalShadow.offsetY ?? 2}px ${globalShadow.blur ?? 4}px ${globalShadow.color || 'rgba(0,0,0,0.5)'}`
+            : 'none';
+
         return {
             ID: instanceId,
             TITLE: rawTitle,
@@ -412,21 +639,22 @@
             ITEMS: rawItems,
             ITEMS_JSON: JSON.stringify(rawItems),
             TICKER_SPEED: graphic.speed || 100,
-            PRIMARY_COLOR: bgStyle.color || tpl.defaultFields?.primaryColor || '#1e3a8a',
+            PRIMARY_COLOR: bgStyle.color || '#1e3a8a',
             PRIMARY_BG: bg,
-            SECONDARY_COLOR: graphic.accentColor || tpl.defaultFields?.secondaryColor || '#000000',
+            SECONDARY_COLOR: graphic.accentColor || bgStyle.borderColor || '#000000',
             BORDER_COLOR: bgStyle.borderColor || '#3b82f6',
             TITLE_COLOR: typo.color || '#ffffff',
             SUBTITLE_COLOR: graphic.style?.subtitleTypography?.color || '#eeeeee',
-            FONT_FAMILY: typo.fontFamily || 'Arial',
+            FONT_FAMILY: activeFontFamily,
             FONT_SIZE: typo.fontSize || 30,
             TITLE_SIZE: typo.fontSize || tpl.defaultFields?.titleSize || 48,
             TITLE_WEIGHT: typo.fontWeight || '800',
             TITLE_TRANSFORM: typo.textTransform || 'uppercase',
-            TITLE_FONT: typo.fontFamily || 'Arial',
+            BOX_SHADOW: shadowStr,
+            TITLE_FONT: activeFontFamily,
             SUBTITLE_SIZE: graphic.style?.subtitleTypography?.fontSize || tpl.defaultFields?.subtitleSize || 24,
             BACKGROUND: bg,
-            BORDER_RADIUS: bgStyle.borderRadius || 0,
+            BORDER_RADIUS: (settings && settings.globalRadiusGraphics && settings.globalRadiusGraphics.includes(graphic.id)) ? (settings.globalBorderRadius || 0) : (bgStyle.borderRadius || 0),
             BORDER_WIDTH: bgStyle.borderWidth || 0,
             ANIMATION_DURATION: inDuration,
             ANIMATION_DELAY: (animIn.delay || 0),
@@ -461,6 +689,9 @@
             V_WIDTH: tpl.defaultLayout?.width || 1920,
             V_HEIGHT: tpl.defaultLayout?.height || 1080,
             SIDE_IMAGE: graphic.sideImage || '',
+            LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
+            LOGO_WIDTH: graphic.layout?.width || null,
+            LOGO_HEIGHT: graphic.layout?.height || null,
         };
     }
 

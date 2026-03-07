@@ -1,0 +1,11 @@
+services:
+  cg-control:
+    build: .
+    container_name: cg-control-pro
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=/app/data/database.sqlite
+    restart: unless-stopped
