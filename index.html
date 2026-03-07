@@ -171,18 +171,19 @@
         <!-- PREVIEW Monitor -->
         <div class="flex-1 flex flex-col gap-2 min-w-0">
           <!-- 16:9 enforced container -->
-          <div class="flex-1 relative overflow-hidden" id="preview-monitor-wrap">
-            <div
-              class="absolute inset-0 bg-black border-2 border-green-600 shadow-[0_0_15px_rgba(34,197,94,0.2)] rounded-sm overflow-hidden"
-              id="preview-monitor-inner">
-              <!-- Label bar -->
-              <div class="absolute top-0 left-0 right-0 h-7 bg-gray-900/90 flex items-center justify-between px-3 z-10">
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
-                    <button id="btn-toggle-safe-area" class="text-[9px] uppercase font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded px-1.5 py-0.5 transition-colors border border-gray-700">EBU Safe Area</button>
-                </div>
-                <span id="preview-name" class="text-[10px] text-gray-400 truncate max-w-[160px]">---</span>
+          <div class="flex-1 flex flex-col min-w-0" id="preview-monitor-wrap">
+            <!-- Label bar above monitor -->
+            <div class="h-7 bg-gray-900/90 flex items-center justify-between px-3 shrink-0 rounded-t border-t border-x border-green-600/50">
+              <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
+                  <button id="btn-toggle-safe-area" class="text-[9px] uppercase font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded px-1.5 py-0.5 transition-colors border border-gray-700">EBU Safe Area</button>
               </div>
+              <span id="preview-name" class="text-[10px] text-gray-400 truncate max-w-[160px]">---</span>
+            </div>
+            <!-- Monitor Inner Viewport -->
+            <div
+              class="flex-1 relative bg-black border-2 border-green-600 shadow-[0_0_15px_rgba(34,197,94,0.1)] rounded-b overflow-hidden"
+              id="preview-monitor-inner">
               <!-- Grid bg -->
               <div class="absolute inset-0 opacity-10 monitor-grid pointer-events-none"></div>
               <!-- Canvas area: fills monitor, no scroll -->
@@ -225,17 +226,18 @@
 
         <!-- PROGRAM Monitor -->
         <div class="flex-1 flex flex-col gap-2 min-w-0">
-          <div class="flex-1 relative overflow-hidden" id="program-monitor-wrap">
-            <div
-              class="absolute inset-0 bg-black border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.2)] rounded-sm overflow-hidden">
-              <!-- Label bar -->
-              <div class="absolute top-0 left-0 right-0 h-7 bg-gray-900/90 flex items-center justify-between px-3 z-10">
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
-                </div>
-                <span id="program-layers-label" class="text-[10px] text-red-400 font-bold animate-pulse hidden">ON AIR:
-                  <span id="program-layers-count">0</span> WARSTWY</span>
+          <div class="flex-1 flex flex-col min-w-0" id="program-monitor-wrap">
+            <!-- Label bar above monitor -->
+            <div class="h-7 bg-gray-900/90 flex items-center justify-between px-3 shrink-0 rounded-t border-t border-x border-red-600/50">
+              <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
               </div>
+              <span id="program-layers-label" class="text-[10px] text-red-400 font-bold animate-pulse hidden">ON AIR:
+                <span id="program-layers-count">0</span> WARSTWY</span>
+            </div>
+            <!-- Monitor Inner Viewport -->
+            <div
+              class="flex-1 relative bg-black border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.1)] rounded-b overflow-hidden">
               <!-- Live iframe mirroring output.html (same BroadcastChannel) -->
               <iframe id="program-iframe" src="output.html" class="absolute inset-0 w-full h-full border-0"
                 style="pointer-events:none;"></iframe>
