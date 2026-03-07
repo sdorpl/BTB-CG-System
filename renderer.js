@@ -638,6 +638,7 @@
             INTRO_TEXT: graphic.introText || 'PILNE',
             ITEMS: rawItems,
             ITEMS_JSON: JSON.stringify(rawItems),
+            LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
             TICKER_SPEED: graphic.speed || 100,
             PRIMARY_COLOR: bgStyle.color || '#1e3a8a',
             PRIMARY_BG: bg,

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-const dbPath = path.join(__dirname, 'database.sqlite');
+const dbPath = path.join(__dirname, 'init_db.sqlite');
 const jsonPath = path.join(__dirname, 'db.json');
 
 // Jeśli plik db.json nie istnieje, nie mamy czego migrować
