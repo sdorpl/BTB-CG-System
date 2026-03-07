@@ -666,7 +666,11 @@ function renderInspectorBody(graphic) {
                 </button>
                 <div class="accordion-content bg-gray-850/50 p-3 space-y-3">
                     <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Tło i Belki</div>
-                    <div>
+                    <label class="flex items-center gap-2 cursor-pointer mb-2">
+                        <input type="checkbox" data-field="style.background.transparent" ${graphic.style?.background?.transparent ? 'checked' : ''} class="w-3 h-3 text-blue-500 rounded bg-gray-900 border-gray-700">
+                        <span class="text-[10px] text-gray-300 font-medium">Transparentne tło (ukryj box)</span>
+                    </label>
+                    <div ${graphic.style?.background?.transparent ? 'style="display:none"' : ''}>
                         ${ctrlLabel('Typ Tła')}
                         <select data-field="style.background.type" class="w-full bg-gray-800 border border-gray-700 rounded p-1 text-[10px] text-blue-400 focus:outline-none focus:border-blue-500">
                             <option value="solid" ${(graphic.style?.background?.type || 'solid') === 'solid' ? 'selected' : ''}>Jednolite (Solid)</option>
@@ -708,6 +712,7 @@ function renderInspectorBody(graphic) {
                     </div>
                 </div>
             </div>
+
 
             <!-- ACCORDION: POZYCJA -->
             <div class="accordion border-b border-gray-800">
