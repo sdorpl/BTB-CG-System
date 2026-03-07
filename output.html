@@ -5,10 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1920, initial-scale=1.0">
     <title>CG Output Page</title>
+    <!-- Fonts (matches index.html) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto+Condensed:ital,wght@0,300;0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+
     <!-- GSAP for animations (as required by templates) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <!-- Handlebars for template compilation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"></script>
+    <script src="renderer.js"></script>
     <style>
         /* Base styles for output */
         body,
@@ -54,6 +63,23 @@
 <body>
     <div id="render-container"></div>
     <script src="renderer.js"></script>
+    <script>
+        // Auto-scale for preview purposes when opened in a standard browser window
+        function applyScale() {
+            const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            // Only scale down if the window is smaller than 1920x1080, 
+            // to ensure pixel-perfect rendering in OBS which is usually exactly 1920x1080.
+            if (scale < 1) {
+                document.getElementById('render-container').style.transform = `scale(${scale})`;
+                document.getElementById('render-container').style.transformOrigin = 'top left';
+            } else {
+                document.getElementById('render-container').style.transform = 'none';
+            }
+        }
+        window.addEventListener('resize', applyScale);
+        window.addEventListener('DOMContentLoaded', applyScale);
+        applyScale();
+    </script>
 </body>
 
 </html>

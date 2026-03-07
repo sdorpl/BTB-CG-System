@@ -1,67 +1,549 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CG Control Panel</title>
-    <!-- Tailwind CSS for Premium UI -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                        dark: '#0f172a',
-                        darker: '#020617',
-                        card: 'rgba(30, 41, 59, 0.7)'
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    }
-                }
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CG Control Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto+Condensed:ital,wght@0,300;0,400;0,700;1,400&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'gray-850': '#1a2030',
+            'gray-925': '#0d1320',
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
         }
-    </script>
-    <link rel="stylesheet" href="style.css">
+      }
+    }
+  </script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 2px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+    }
+
+    textarea {
+      tab-size: 2;
+    }
+
+    [contenteditable]:focus {
+      outline: none;
+    }
+
+    .inspector-input {
+      width: 100%;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 0.25rem;
+      padding: 0.375rem 0.5rem;
+      font-size: 0.75rem;
+      color: white;
+    }
+
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 0.25rem;
+      padding: 0.25rem;
+    }
+
+    .monitor-grid {
+      background-image: radial-gradient(#333 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .shotbox-card {
+      transition: all .15s ease;
+    }
+
+    .shotbox-card:hover {
+      transform: translateY(-2px);
+    }
+
+    #preview-iframe {
+      border: 0;
+      background: transparent;
+    }
+
+    /* Template editor tab states */
+    .tab-html.active {
+      border-color: #f97316;
+      color: #f97316;
+    }
+
+    .tab-css.active {
+      border-color: #60a5fa;
+      color: #60a5fa;
+    }
+
+    .tab-js.active {
+      border-color: #facc15;
+      color: #facc15;
+    }
+
+    .accordion-content {
+      display: none;
+    }
+
+    .accordion-content.open {
+      display: block;
+    }
+  </style>
 </head>
-<body class="bg-darker text-slate-200 min-h-screen font-sans selection:bg-primary selection:text-white flex flex-col">
-    <!-- Header -->
-    <header class="bg-dark border-b border-slate-800 p-6 flex justify-between items-center sticky top-0 z-50 backdrop-blur-md bg-opacity-80">
-        <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+
+<body class="bg-gray-950 text-gray-200 h-screen font-sans overflow-hidden flex flex-col">
+
+  <!-- ============================================================ HEADER == -->
+  <header class="h-12 bg-gray-900 border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
+    <div class="flex items-center gap-2">
+      <div
+        class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center font-bold text-base shadow-lg shadow-blue-900/50">
+        V</div>
+      <h1 class="text-lg font-bold tracking-tight text-gray-200">CG Control <span
+          class="text-blue-400 text-xs uppercase ml-1">Pro</span></h1>
+    </div>
+    <nav class="flex items-center gap-4 text-xs">
+      <button id="nav-dashboard"
+        class="nav-tab px-3 py-1.5 rounded font-bold text-blue-400 bg-blue-600/10 border border-blue-600/20">Dashboard</button>
+      <button id="nav-templates"
+        class="nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors">Template
+        Editor</button>
+      <div class="h-4 w-px bg-gray-700"></div>
+      <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded text-green-400">
+        <div class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+        <span>ONLINE</span>
+      </div>
+      <a href="output.html" target="_blank" class="hover:text-blue-400 transition-colors flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+        WYJŚCIE
+      </a>
+      <button id="reset-db-btn" class="text-red-400 hover:text-red-300 flex items-center gap-1 text-[10px]">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+        Reload DB
+      </button>
+    </nav>
+  </header>
+
+  <!-- ============================================================ DASHBOARD PAGE == -->
+  <div id="page-dashboard" class="flex flex-1 overflow-hidden">
+
+    <!-- ====== LEFT COLUMN: MONITORS + SHOTBOX ==-->
+    <div class="flex-1 flex flex-col min-w-0">
+
+      <!-- MONITORS ROW -->
+      <div class="flex gap-2 p-2 border-b border-gray-800 bg-gray-925" style="height:55%">
+
+        <!-- PREVIEW Monitor -->
+        <div class="flex-1 flex flex-col gap-2 min-w-0">
+          <!-- 16:9 enforced container -->
+          <div class="flex-1 relative overflow-hidden" id="preview-monitor-wrap">
+            <div
+              class="absolute inset-0 bg-black border-2 border-green-600 shadow-[0_0_15px_rgba(34,197,94,0.2)] rounded-sm overflow-hidden"
+              id="preview-monitor-inner">
+              <!-- Label bar -->
+              <div class="absolute top-0 left-0 right-0 h-7 bg-gray-900/90 flex items-center justify-between px-3 z-10">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
+                <span id="preview-name" class="text-[10px] text-gray-400 truncate max-w-[160px]">---</span>
+              </div>
+              <!-- Grid bg -->
+              <div class="absolute inset-0 opacity-10 monitor-grid pointer-events-none"></div>
+              <!-- Canvas area: fills monitor, no scroll -->
+              <div id="preview-canvas-outer" class="absolute inset-0 overflow-hidden">
+                <!-- scale wrapper, sized by JS -->
+                <div id="preview-canvas-wrap" style="position:absolute;top:0;left:0;transform-origin:top left;">
+                  <div id="preview-canvas" style="width:1920px;height:1080px;position:relative;"></div>
+                </div>
+              </div>
+              <div id="preview-empty"
+                class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">
+                BRAK SYGNAŁU</div>
             </div>
-            <div>
-                <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">CG Control Pro</h1>
-                <p class="text-xs text-slate-400 font-medium">Broadcast Graphics Engine</p>
+          </div>
+          <!-- Controls below -->
+          <div class="h-10 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0">
+            <span class="text-[10px] text-gray-500 font-mono pl-1">NEXT: <span id="preview-next-label">---</span></span>
+            <div class="flex gap-1.5">
+              <button id="btn-edit-preview" disabled
+                class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">EDYTUJ</button>
+              <button id="btn-update-active" disabled
+                class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">Aktualizuj</button>
+              <button id="btn-take-preview" disabled
+                class="px-4 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-[10px] font-bold uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30">WEJDŹ
+                (TAKE)</button>
             </div>
+          </div>
         </div>
-        <div class="flex gap-4">
-            <a href="output.html" target="_blank" class="px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-all font-medium text-sm flex items-center gap-2 text-slate-200 hover:text-white hover:border-slate-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
-                Open Output
-            </a>
-            <button id="reset-db-btn" class="px-5 py-2.5 rounded-lg bg-red-900/40 hover:bg-red-900/60 border border-red-800/50 text-red-300 transition-all font-medium text-sm flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                Reload DB
+
+        <!-- PROGRAM Monitor -->
+        <div class="flex-1 flex flex-col gap-2 min-w-0">
+          <div class="flex-1 relative overflow-hidden" id="program-monitor-wrap">
+            <div
+              class="absolute inset-0 bg-black border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.2)] rounded-sm overflow-hidden">
+              <!-- Label bar -->
+              <div class="absolute top-0 left-0 right-0 h-7 bg-gray-900/90 flex items-center justify-between px-3 z-10">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
+                <span id="program-layers-label" class="text-[10px] text-red-400 font-bold animate-pulse hidden">ON AIR:
+                  <span id="program-layers-count">0</span> WARSTWY</span>
+              </div>
+              <!-- Live iframe mirroring output.html (same BroadcastChannel) -->
+              <iframe id="program-iframe" src="output.html" class="absolute inset-0 w-full h-full border-0"
+                style="pointer-events:none;"></iframe>
+              <div id="program-empty"
+                class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">
+                BRAK SYGNAŁU</div>
+            </div>
+          </div>
+          <div class="h-10 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0">
+            <span id="on-air-label" class="text-[10px] text-gray-500 font-bold pl-1">ON AIR: 0 LAYERS</span>
+            <button id="btn-clear-program"
+              class="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900/50 rounded text-[10px] font-bold uppercase transition-colors">WYCZYŚĆ</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHOTBOX GRID -->
+      <div class="flex flex-col flex-1 min-h-0">
+        <div class="h-9 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
+          <span class="text-[10px] font-bold uppercase text-gray-400">Bank Grafik</span>
+          <div class="flex gap-2">
+            <button id="btn-new-graphic"
+              class="text-[10px] bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white font-medium transition-colors flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Nowa Grafika
             </button>
+          </div>
         </div>
-    </header>
+        <div id="shotbox-grid"
+          class="flex-1 overflow-y-auto custom-scrollbar p-3 grid grid-cols-3 gap-2 auto-rows-max content-start">
+          <!-- Cards injected here -->
+        </div>
+      </div>
+    </div>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-8 max-w-7xl mx-auto w-full">
-        <div id="loading" class="flex flex-col items-center justify-center py-20 opacity-100 transition-opacity duration-500">
-            <div class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-            <p class="text-slate-400 font-medium">Loading Graphics Engine...</p>
+    <!-- ====== RIGHT COLUMN: INSPECTOR PANEL == -->
+    <aside id="inspector-panel" class="w-72 flex flex-col bg-gray-900 border-l border-gray-800 shrink-0">
+      <!-- Inspector Empty State -->
+      <div id="inspector-empty" class="flex-1 flex flex-col items-center justify-center text-gray-600 p-8 text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-4 opacity-30">
+          <path
+            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <p class="text-sm font-medium">Wybierz grafikę z Shotboxa</p>
+      </div>
+
+      <!-- Inspector Active Content -->
+      <div id="inspector-content" class="hidden flex flex-col h-full">
+        <!-- Header -->
+        <div class="p-2 bg-black/20 border-b border-gray-800 flex justify-between items-center text-xs text-gray-500">
+          <span class="font-bold uppercase text-gray-300">Inspektor</span>
+          <select id="inspector-type-select"
+            class="bg-gray-800 border border-gray-700 rounded text-[10px] px-1 py-0.5 text-blue-400 font-mono focus:outline-none">
+            <option value="LOWER_THIRD">BELKA</option>
+            <option value="TICKER">TICKER</option>
+            <option value="CLOCK">ZEGAR</option>
+            <option value="IMAGE">OBRAZEK</option>
+          </select>
         </div>
 
-        <!-- Graphics List -->
-        <div id="graphics-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6 hidden opacity-0 transition-opacity duration-700">
-            <!-- Graphics cards injected here by JS -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar" id="inspector-body">
+          <!-- Accordion sections injected here -->
         </div>
-    </main>
 
-    <script src="app.js"></script>
+        <!-- Footer -->
+        <div class="p-3 border-t border-gray-800 bg-gray-850 shrink-0">
+          <button id="btn-save-graphic"
+            class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded font-bold shadow-lg transition-all hover:scale-[1.02] text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            ZAPISZ ZMIANY
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============================================================ TEMPLATE EDITOR PAGE == -->
+  <div id="page-templates" class="hidden flex flex-1 overflow-hidden">
+    <!-- Template List Sidebar -->
+    <aside class="w-56 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0">
+      <div class="p-3 border-b border-gray-700 flex justify-between items-center">
+        <h2 class="font-bold text-sm">Szablony</h2>
+        <div class="flex gap-1">
+          <button id="btn-new-template" class="p-1 hover:bg-gray-700 rounded text-green-400" title="Nowy">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button id="btn-import-template" class="p-1 hover:bg-gray-700 rounded text-blue-400" title="Import JSON">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="template-list" class="flex-1 overflow-y-auto custom-scrollbar">
+        <!-- Template items -->
+      </div>
+    </aside>
+
+    <!-- Main Template Editor -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <div id="tpl-editor-empty" class="flex-1 flex items-center justify-center text-gray-600">
+        <p class="font-medium">Wybierz szablon do edycji</p>
+      </div>
+      <div id="tpl-editor-main" class="hidden flex-col h-full">
+        <!-- Header -->
+        <div class="h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-6 shrink-0">
+          <input id="tpl-name-input" type="text" value=""
+            class="bg-transparent text-lg font-bold focus:outline-none border-b border-transparent focus:border-blue-500 text-white">
+          <div class="flex gap-2">
+            <button id="btn-delete-template"
+              class="flex items-center gap-2 px-3 py-1.5 text-red-400 hover:bg-gray-700 rounded text-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+              Usuń
+            </button>
+            <button id="btn-save-template"
+              class="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              Zapisz
+            </button>
+          </div>
+        </div>
+        <!-- Tabs -->
+        <div class="bg-gray-800 border-b border-gray-700 px-6 flex gap-4 shrink-0">
+          <button data-tab="html"
+            class="tpl-tab tab-html py-3 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-200">HTML</button>
+          <button data-tab="css"
+            class="tpl-tab tab-css py-3 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-200">CSS</button>
+          <button data-tab="js"
+            class="tpl-tab tab-js py-3 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-200">JS
+            Logic</button>
+        </div>
+        <!-- Code Editor -->
+        <div class="flex-1 relative">
+          <textarea id="tpl-code-editor"
+            class="w-full h-full bg-[#1a1a2e] text-gray-300 font-mono text-xs p-4 resize-none outline-none custom-scrollbar"
+            spellcheck="false"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ TEMPLATE SELECTOR MODAL == -->
+  <div id="modal-template-selector" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+      <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+        <h3 class="font-bold text-lg">Wybierz Szablon</h3>
+        <button id="modal-tpl-close" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+      </div>
+      <div id="modal-tpl-list" class="flex-1 overflow-y-auto custom-scrollbar p-4 grid grid-cols-2 gap-3">
+        <!-- Template cards -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ WYSIWYG EDIT MODAL == -->
+  <div id="modal-wysiwyg" class="hidden fixed inset-0 bg-black/80 z-60 flex items-center justify-center p-4"
+    style="z-index:60">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl flex flex-col"
+      style="width:min(98vw,1500px);height:min(96vh,920px);" onclick="event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-800 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-xs font-bold">T</div>
+          <span class="font-bold text-sm">Edytor Tekstu — <span id="wysiwyg-modal-title"
+              class="text-blue-400 font-mono text-xs"></span></span>
+        </div>
+        <div class="flex gap-2">
+          <button id="wysiwyg-cancel"
+            class="px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs font-medium">Anuluj</button>
+          <button id="wysiwyg-save"
+            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold">Zatwierdź</button>
+          <button id="wysiwyg-modal-close"
+            class="text-gray-400 hover:text-white text-xl leading-none w-8 h-8 flex items-center justify-center">&#215;</button>
+        </div>
+      </div>
+
+      <!-- Modal Body: editor left, preview right -->
+      <div class="flex flex-1 min-h-0">
+
+        <!-- LEFT: Editor -->
+        <div class="flex flex-col" style="width:440px;border-right:1px solid #1f2937;">
+          <!-- Toolbar -->
+          <div id="wm-toolbar"
+            style="display:flex;flex-wrap:wrap;gap:3px;padding:8px;background:#111827;border-bottom:1px solid #1f2937;">
+            <button data-cmd="bold" title="Bold"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;font-weight:bold;cursor:pointer;font-size:13px;"><b>B</b></button>
+            <button data-cmd="italic" title="Italic"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;cursor:pointer;font-size:13px;"><i>I</i></button>
+            <button data-cmd="underline" title="Underline"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;cursor:pointer;font-size:13px;"><u>U</u></button>
+            <button data-cmd="strikeThrough" title="Strikethrough"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:13px;"><s>S</s></button>
+            <div style="width:1px;background:#374151;margin:2px;"></div>
+            <select id="wm-font" title="Font Family"
+              style="height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
+              <option>Roboto Condensed</option>
+              <option>Bahnschrift</option>
+              <option>Inter</option>
+              <option>Arial</option>
+              <option>Helvetica</option>
+              <option>Times New Roman</option>
+              <option>Georgia</option>
+              <option>monospace</option>
+            </select>
+            <select id="wm-size" title="Font Size"
+              style="height:28px;width:58px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
+              <option value="24">24px</option>
+              <option value="32">32px</option>
+              <option value="40">40px</option>
+              <option value="48" selected>48px</option>
+              <option value="56">56px</option>
+              <option value="64">64px</option>
+              <option value="72">72px</option>
+              <option value="96">96px</option>
+              <option value="120">120px</option>
+            </select>
+            <div style="width:1px;background:#374151;margin:2px;"></div>
+            <label title="Kolor tekstu"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">
+              <span style="font-size:12px;color:#e5e7eb;font-weight:bold;">A</span>
+              <input id="wm-color" type="color" value="#ffffff" style="position:absolute;width:0;height:0;opacity:0;">
+            </label>
+            <div style="width:1px;background:#374151;margin:2px;"></div>
+            <button data-cmd="justifyLeft" title="Align Left"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;">&#8676;</button>
+            <button data-cmd="justifyCenter" title="Center"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;">≡</button>
+            <button data-cmd="justifyRight" title="Align Right"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;">&#8677;</button>
+            <div style="width:1px;background:#374151;margin:2px;"></div>
+            <button data-cmd="removeFormat" title="Clear Formatting"
+              style="width:30px;height:28px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:12px;">✕</button>
+          </div>
+
+          <!-- Background color for editor (shows on transparent areas) -->
+          <div class="px-3 py-2 text-[9px] text-gray-500 uppercase font-semibold border-b border-gray-800">Kolor tła
+            edytora</div>
+          <div
+            style="padding:8px;background:#111827;border-bottom:1px solid #1f2937;display:flex;align-items:center;gap:8px;">
+            <input id="wm-bg" type="color" value="#0047ab"
+              style="height:28px;width:36px;border:1px solid #374151;border-radius:4px;cursor:pointer;background:transparent;">
+            <span style="font-size:10px;color:#6b7280;">Podświetlenie tła edytora (nie zmienia szablonu)</span>
+          </div>
+
+          <!-- Editor Area -->
+          <div class="flex-1 overflow-y-auto" style="padding:16px;background:#0f172a;">
+            <div id="wm-editor" contenteditable="true" spellcheck="false"
+              style="min-height:100px;color:#fff;font-size:48px;font-family:Roboto Condensed,sans-serif;line-height:1.2;outline:none;white-space:pre-wrap;word-break:break-word;">
+            </div>
+          </div>
+
+          <!-- HTML source view (collapsed by default) -->
+          <div class="border-t border-gray-800">
+            <button id="toggle-html-view"
+              style="width:100%;padding:6px 12px;background:#111827;color:#6b7280;font-size:10px;text-align:left;border:none;cursor:pointer;">▶
+              Pokaż źródło HTML</button>
+            <textarea id="wm-html-source"
+              style="display:none;width:100%;height:80px;background:#0d1117;color:#86efac;font-family:monospace;font-size:10px;border:none;padding:8px;resize:none;"></textarea>
+          </div>
+        </div>
+
+        <!-- RIGHT: Live Preview -->
+        <div class="flex-1 flex flex-col min-w-0 bg-gray-950">
+          <div
+            class="px-4 py-2 border-b border-gray-800 text-[10px] text-gray-500 uppercase font-semibold flex items-center justify-between">
+            <span>Podgląd na żywo</span>
+            <span class="text-[9px] text-gray-600">1920 × 1080</span>
+          </div>
+          <!-- 16:9 monitor — outer clips the 1920px canvas properly -->
+          <div class="flex-1 flex items-center justify-center bg-black" id="wm-preview-outer"
+            style="overflow:hidden;position:relative;">
+            <!-- wrap is sized to the scaled dimensions by JS -->
+            <div id="wm-preview-wrap" style="position:relative;overflow:hidden;flex-shrink:0;">
+              <!-- canvas is 1920×1080 and scaled via transform; absolute so it doesn't affect layout -->
+              <div id="wm-preview-canvas"
+                style="width:1920px;height:1080px;position:absolute;top:0;left:0;background:#000;"></div>
+            </div>
+          </div>
+          <div class="px-4 py-2 border-t border-gray-800 text-[10px] text-gray-500">
+            Zmiany występują w podglądzie • Na antenie pojawi się po kliknięciu TAKE
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="loading-overlay" class="fixed inset-0 bg-gray-950 z-50 flex items-center justify-center">
+    <div class="text-center">
+      <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div>
+      <p class="text-gray-400 text-sm">Loading CG Engine...</p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="renderer.js"></script>
+  <script src="app.js"></script>
 </body>
+
 </html>
