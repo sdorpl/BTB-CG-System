@@ -14,7 +14,7 @@ const io = new Server(server, {
   }
 });
 
-const DB_FILE = process.env.DATABASE_URL || path.join(__dirname, 'init_db.sqlite');
+const DB_FILE = process.env.DATABASE_URL || path.join(__dirname, 'database.sqlite');
 
 // Połączenie z bazą
 const dbExists = fs.existsSync(DB_FILE);

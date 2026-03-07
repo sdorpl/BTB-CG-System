@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-const dbPath = path.join(__dirname, 'init_db.sqlite');
+const dbPath = path.join(__dirname, 'database.sqlite');
 const jsonPath = path.join(__dirname, 'db.json');
 
 // Jeśli plik db.json nie istnieje, nie mamy czego migrować
@@ -16,7 +16,7 @@ const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
     console.log('Setting up database schema...');
 
-    // Tabela ustawięń
+    // Tabela ustawień
     db.run(`
         CREATE TABLE IF NOT EXISTS settings (
             id INTEGER PRIMARY KEY CHECK (id = 1),

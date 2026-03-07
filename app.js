@@ -34,6 +34,21 @@ async function init() {
             e.currentTarget.classList.toggle('text-white');
             e.currentTarget.classList.toggle('bg-blue-600');
         });
+
+        // Bind Template Import
+        const btnImport = document.getElementById('btn-import-template');
+        if (btnImport) {
+            btnImport.onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) importTemplate(file);
+                };
+                input.click();
+            };
+        }
     });
 
     socket.on('stateUpdated', (newState) => {
@@ -1557,11 +1572,87 @@ function renderTemplateList() {
     list.innerHTML = '';
     state.templates.forEach(tpl => {
         const item = document.createElement('div');
-        item.className = `p-3 border-b border-gray - 700 cursor-pointer hover:bg-gray - 750 text-sm ${currentTemplateId === tpl.id ? 'bg-blue-900/40 border-l-4 border-l-blue-500' : ''} `;
-        item.innerHTML = `<div class="font-medium truncate text-xs text-white" > ${tpl.name}</div> <div class="text-[10px] text-gray-500 font-mono">${tpl.type}</div>`;
-        item.onclick = () => openTemplateEditor(tpl.id);
+        item.className = `p-3 border-b border-gray-700 cursor-pointer hover:bg-gray-750 text-sm group ${currentTemplateId === tpl.id ? 'bg-blue-900/40 border-l-4 border-l-blue-500' : ''}`;
+        item.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate text-xs text-white">${tpl.name}</div>
+                    <div class="text-[10px] text-gray-500 font-mono">${tpl.type}</div>
+                </div>
+                <button data-export-id="${tpl.id}" title="Eksportuj do JSON" class="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-600/20 text-blue-400 rounded transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+            </div>
+        `;
+        item.onclick = (e) => {
+            if (e.target.closest('[data-export-id]')) {
+                e.stopPropagation();
+                exportTemplate(tpl.id);
+                return;
+            }
+            openTemplateEditor(tpl.id);
+        };
         list.appendChild(item);
     });
+}
+
+/**
+ * Export template to a JSON file
+ */
+function exportTemplate(id) {
+    const tpl = state.templates.find(t => t.id === id);
+    if (!tpl) return;
+    
+    const dataStr = JSON.stringify(tpl, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `template_${tpl.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }, 0);
+}
+
+/**
+ * Import template from a JSON file
+ */
+function importTemplate(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            
+            // Basic validation
+            if (!imported.name || (!imported.html_template && !imported.css_template)) {
+                alert('Nieprawidłowy format pliku szablonu.');
+                return;
+            }
+            
+            // Generate new ID and mark as copy if needed
+            const newTpl = {
+                ...imported,
+                id: crypto.randomUUID(),
+                name: imported.name + ' (Imported)'
+            };
+            
+            state.templates.push(newTpl);
+            saveState();
+            renderTemplateList();
+            openTemplateEditor(newTpl.id);
+            alert('Szablon został pomyślnie zaimportowany!');
+            
+        } catch (err) {
+            console.error('Import error:', err);
+            alert('Błąd podczas importowania pliku JSON.');
+        }
+    };
+    reader.readAsText(file);
 }
 
 function openTemplateEditor(id) {
