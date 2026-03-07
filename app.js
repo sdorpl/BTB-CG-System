@@ -1159,8 +1159,11 @@ function openWysiwygModal(graphicId) {
     // Set editor base font from graphic's typography settings so new typing uses the right font
     const defaultFont = g.style?.typography?.fontFamily || 'Bahnschrift';
     const defaultFontSize = (g.style?.typography?.fontSize || 24) + 'px';
+    const defaultLineHeight = g.style?.typography?.lineHeight || '1.4';
+    
     editor.style.fontFamily = defaultFont;
     editor.style.fontSize = defaultFontSize;
+    editor.style.lineHeight = defaultLineHeight;
 
     // Sync toolbar state
     const _syncToolbar = () => {
@@ -1168,10 +1171,14 @@ function openWysiwygModal(graphicId) {
         const weightSel = document.getElementById('wm-weight');
         const sizeSel = document.getElementById('wm-size');
         const trackSel = document.getElementById('wm-tracking');
+        const lhSel = document.getElementById('wm-line-height');
         const padInput = document.getElementById('wm-padding');
         const radInput = document.getElementById('wm-radius');
 
         if (!fontSel || !sizeSel) return;
+
+        // Reset to base editor style if no specific span is selected
+        if (lhSel) lhSel.value = editor.style.lineHeight || '1.4';
 
         const styledEl = editor.querySelector('span[style]');
         if (styledEl) {
@@ -1413,11 +1420,21 @@ function bindWysiwygModalEvents() {
 function _wmApplyLineHeight(lh) {
     const editor = document.getElementById('wm-editor');
     if (!editor) return;
-    // Apply line-height directly on the editor element -
-    // avoid execCommand formatBlock which creates unwanted <div> wrappers
+    
     editor.style.lineHeight = lh;
-    // Also apply to any existing block-level children
-    editor.querySelectorAll('div, p, span').forEach(el => {
+    
+    // Persist to graphic style immediately so it survives refresh/save
+    if (_wmGraphicId) {
+        const g = state.graphics.find(g => g.id === _wmGraphicId);
+        if (g) {
+            if (!g.style) g.style = {};
+            if (!g.style.typography) g.style.typography = {};
+            g.style.typography.lineHeight = lh;
+        }
+    }
+
+    // Also apply to any existing block-level children (if any)
+    editor.querySelectorAll('div, p').forEach(el => {
         el.style.lineHeight = lh;
     });
 }
