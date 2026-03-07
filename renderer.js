@@ -692,7 +692,7 @@
             LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
             LOGO_WIDTH: graphic.layout?.width || null,
             LOGO_HEIGHT: graphic.layout?.height || null,
-            TRANSPARENT: !!graphic.style?.background?.transparent,
+            TRANSPARENT: (graphic.style?.background?.type === 'transparent' || !!graphic.style?.background?.transparent),
         };
     }
 
