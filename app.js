@@ -12,6 +12,8 @@ let previewGraphic = null;      // copy of graphic in preview monitor
 let currentPage = 'dashboard'; // 'dashboard' | 'templates'
 let currentTemplateId = null;
 let currentTemplateTab = 'html';
+let inspectorAccordionStates = {}; // graphicId -> { accordionId -> isOpen }
+const DB_KEY = 'cg_state_backup';
 
 // ===========================================================
 // 1. BOOT
@@ -33,6 +35,21 @@ async function init() {
             e.currentTarget.classList.toggle('text-white');
             e.currentTarget.classList.toggle('bg-blue-600');
         });
+
+        // Bind Template Import
+        const btnImport = document.getElementById('btn-import-template');
+        if (btnImport) {
+            btnImport.onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) importTemplate(file);
+                };
+                input.click();
+            };
+        }
     });
 
     socket.on('stateUpdated', (newState) => {
@@ -46,6 +63,10 @@ async function init() {
 // 2. STATE
 // ===========================================================
 function saveState() {
+    if (!state || !state.templates || state.templates.length === 0) {
+        console.warn("[!] saveState blocked: State appears to be empty or uninitialized.");
+        return;
+    }
     socket.emit('updateState', state);
 }
 
@@ -568,7 +589,10 @@ function openInspector(id) {
     document.getElementById('inspector-content').classList.add('flex');
 
     const typeSelect = document.getElementById('inspector-type-select');
-    typeSelect.value = graphic.type || 'LOWER_THIRD';
+
+    if (!inspectorAccordionStates[id]) {
+        inspectorAccordionStates[id] = { content: true, appearance: false, layout: false, animation: false };
+    }
 
     renderInspectorBody(graphic);
 }
@@ -588,9 +612,9 @@ function renderInspectorBody(graphic) {
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
                         ZAWARTOŚĆ
                     </span>
-                    <span class="accordion-arrow">+</span>
+                    <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.content ? '−' : '+'}</span>
                 </button>
-                <div class="accordion-content open bg-gray-850/50 p-3 space-y-3">
+                <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.content ? 'open' : ''} bg-gray-850/50 p-3 space-y-3">
                     <div>
                         ${ctrlLabel('Nazwa')}
                         <input type="text" data-field="name" value="${escAttr(graphic.name)}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
@@ -662,30 +686,32 @@ function renderInspectorBody(graphic) {
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/><circle cx="6.5" cy="12.5" r="0.5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
                         WYGLĄD
                     </span>
-                    <span class="accordion-arrow">+</span>
+                    <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.appearance ? '−' : '+'}</span>
                 </button>
-                <div class="accordion-content bg-gray-850/50 p-3 space-y-3">
+                <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.appearance ? 'open' : ''} bg-gray-850/50 p-3 space-y-3">
                     <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Tło i Belki</div>
                     <div>
                         ${ctrlLabel('Typ Tła')}
                         <select data-field="style.background.type" class="w-full bg-gray-800 border border-gray-700 rounded p-1 text-[10px] text-blue-400 focus:outline-none focus:border-blue-500">
                             <option value="solid" ${(graphic.style?.background?.type || 'solid') === 'solid' ? 'selected' : ''}>Jednolite (Solid)</option>
                             <option value="gradient" ${graphic.style?.background?.type === 'gradient' ? 'selected' : ''}>Gradientowe</option>
+                            <option value="transparent" ${graphic.style?.background?.type === 'transparent' ? 'selected' : ''}>Transparentne (Brak tła)</option>
                         </select>
                     </div>
-                    <div>
-                        ${ctrlLabel('Kolor Tła')}
-                        ${colorPickerHtml('style.background.color', graphic.style?.background?.color || '#1e3a8a')}
-                    </div>
-                    ${graphic.style?.background?.type === 'gradient' ? `
-                    <div>
-                        ${ctrlLabel('Kolor Tła 2')}
-                        ${colorPickerHtml('style.background.color2', graphic.style?.background?.color2 || '#3b82f6')}
-                    </div>
-                    <div>
-                        ${ctrlLabel('Kąt Gradientu')}
-                        <input type="number" data-field="style.background.gradientAngle" value="${graphic.style?.background?.gradientAngle ?? 135}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                    </div>` : ''}
+                    <div ${graphic.style?.background?.type === 'transparent' ? 'style="display:none"' : ''}>
+                        <div>
+                            ${ctrlLabel('Kolor Tła')}
+                            ${colorPickerHtml('style.background.color', graphic.style?.background?.color || '#1e3a8a')}
+                        </div>
+                        ${graphic.style?.background?.type === 'gradient' ? `
+                        <div>
+                            ${ctrlLabel('Kolor Tła 2')}
+                            ${colorPickerHtml('style.background.color2', graphic.style?.background?.color2 || '#3b82f6')}
+                        </div>
+                        <div>
+                            ${ctrlLabel('Kąt Gradientu')}
+                            <input type="number" data-field="style.background.gradientAngle" value="${graphic.style?.background?.gradientAngle ?? 135}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                        </div>` : ''}
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             ${ctrlLabel('Zaokrąglenie')}
@@ -709,6 +735,7 @@ function renderInspectorBody(graphic) {
                 </div>
             </div>
 
+
             <!-- ACCORDION: POZYCJA -->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="layout">
@@ -716,9 +743,9 @@ function renderInspectorBody(graphic) {
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                         POZYCJA I WYMIARY
                     </span>
-                    <span class="accordion-arrow">+</span>
+                    <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.layout ? '−' : '+'}</span>
                 </button>
-                <div class="accordion-content bg-gray-850/50 p-3">
+                <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.layout ? 'open' : ''} bg-gray-850/50 p-3">
                     <div class="mb-3 space-y-2">
                         <div>
                             ${ctrlLabel('Pozycja oparta na stronach')}
@@ -801,9 +828,9 @@ function renderInspectorBody(graphic) {
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                         ANIMACJA
                     </span>
-                    <span class="accordion-arrow">+</span>
+                    <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.animation ? '−' : '+'}</span>
                 </button>
-                <div class="accordion-content bg-gray-850/50 p-3 space-y-4">
+                <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.animation ? 'open' : ''} bg-gray-850/50 p-3 space-y-4">
                     <!-- IN animation -->
                     <div>
                         <div class="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-2">Wejście (IN)</div>
@@ -949,11 +976,16 @@ function renderInspectorBody(graphic) {
     // ---- Accordion toggles ----
     body.querySelectorAll('.accordion-toggle').forEach(btn => {
         btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-accordion');
             const content = btn.nextElementSibling;
             const arrow = btn.querySelector('.accordion-arrow');
             const isOpen = content.classList.contains('open');
             content.classList.toggle('open', !isOpen);
             arrow.textContent = isOpen ? '+' : '−';
+            // Save state
+            if (inspectorAccordionStates[graphic.id]) {
+                inspectorAccordionStates[graphic.id][id] = !isOpen;
+            }
         });
     });
 
@@ -1035,12 +1067,10 @@ function _wmNormalizeHtml(root) {
     });
 
     // 2. Merge outer span styles into inner span when inner span only has text
-    // Walk all spans and if a span has only 1 child span, merge parent styles into child
     let changed = true;
     while (changed) {
         changed = false;
         root.querySelectorAll('span').forEach(outer => {
-            // If outer has exactly one child and that child is also a span
             if (outer.childNodes.length === 1 && outer.firstChild?.tagName === 'SPAN') {
                 const inner = outer.firstChild;
                 // Merge outer style into inner (inner wins on conflict)
@@ -1050,27 +1080,35 @@ function _wmNormalizeHtml(root) {
                         inner.style[prop] = val;
                     }
                 });
-                // Replace outer with inner
                 outer.replaceWith(inner);
                 changed = true;
             }
         });
     }
 
-    // 3. Strip empty spans
+    // 3. Compact background styles (if highlight is used, ensure display:inline-block for padding/radius)
     root.querySelectorAll('span').forEach(span => {
-        if (span.innerHTML === '') span.remove();
+        if (span.style.backgroundColor && span.style.backgroundColor !== 'transparent') {
+            if (!span.style.display || span.style.display === 'inline') {
+                span.style.display = 'inline-block';
+                span.style.padding = span.style.padding || '0 8px';
+                span.style.borderRadius = span.style.borderRadius || '4px';
+            }
+        }
     });
 
-    // 4. Convert block-level divs/p to <br> separators to preserve line breaks inline
+    // 4. Strip empty spans
+    root.querySelectorAll('span').forEach(span => {
+        if (span.innerHTML === '' || span.innerHTML === '&nbsp;') span.remove();
+    });
+
+    // 5. Convert block-level divs/p to <br> separators
     root.querySelectorAll('div,p').forEach(block => {
         if (block.parentElement === root) {
-            // Replace block with a fragment: its innerHTML + a <br>
             const frag = document.createDocumentFragment();
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = block.innerHTML;
             while (tempDiv.firstChild) frag.appendChild(tempDiv.firstChild);
-            // Add br only if there's content after this block
             if (block.nextSibling) {
                 frag.appendChild(document.createElement('br'));
             }
@@ -1141,30 +1179,49 @@ function openWysiwygModal(graphicId) {
     // Set editor base font from graphic's typography settings so new typing uses the right font
     const defaultFont = g.style?.typography?.fontFamily || 'Bahnschrift';
     const defaultFontSize = (g.style?.typography?.fontSize || 24) + 'px';
+    const defaultLineHeight = g.style?.typography?.lineHeight || '1.4';
+    
     editor.style.fontFamily = defaultFont;
     editor.style.fontSize = defaultFontSize;
+    editor.style.lineHeight = defaultLineHeight;
 
-    // Sync toolbar state: read font/size from the loaded HTML
+    // Sync toolbar state
     const _syncToolbar = () => {
         const fontSel = document.getElementById('wm-font');
+        const weightSel = document.getElementById('wm-weight');
         const sizeSel = document.getElementById('wm-size');
+        const trackSel = document.getElementById('wm-tracking');
+        const lhSel = document.getElementById('wm-line-height');
+        const padInput = document.getElementById('wm-padding');
+        const radInput = document.getElementById('wm-radius');
+
         if (!fontSel || !sizeSel) return;
-        // Find first element with an inline font-family style
-        const styledEl = editor.querySelector('[style*="font-family"]');
+
+        // Reset to base editor style if no specific span is selected
+        if (lhSel) lhSel.value = editor.style.lineHeight || '1.4';
+
+        const styledEl = editor.querySelector('span[style]');
         if (styledEl) {
-            const ff = styledEl.style.fontFamily.replace(/['",]/g, '').trim();
-            const matchOpt = [...fontSel.options].find(o => o.value.toLowerCase() === ff.toLowerCase() || o.text.toLowerCase() === ff.toLowerCase());
-            if (matchOpt) fontSel.value = matchOpt.value;
-        } else {
-            // No style in HTML, use graphic's default
-            const matchOpt = [...fontSel.options].find(o => o.value.toLowerCase() === defaultFont.toLowerCase() || o.text.toLowerCase() === defaultFont.toLowerCase());
-            if (matchOpt) fontSel.value = matchOpt.value;
-        }
-        const styledElSize = editor.querySelector('[style*="font-size"]');
-        if (styledElSize) {
-            const fs = parseInt(styledElSize.style.fontSize);
-            const matchOpt = [...sizeSel.options].find(o => parseInt(o.value) === fs);
-            if (matchOpt) sizeSel.value = matchOpt.value;
+            if (styledEl.style.fontFamily && fontSel) {
+                const ff = styledEl.style.fontFamily.replace(/['",]/g, '').trim();
+                const matchOpt = [...fontSel.options].find(o => o.value.toLowerCase() === ff.toLowerCase() || o.text.toLowerCase() === ff.toLowerCase());
+                if (matchOpt) fontSel.value = matchOpt.value;
+            }
+            if (styledEl.style.fontWeight && weightSel) {
+                weightSel.value = styledEl.style.fontWeight;
+            }
+            if (styledEl.style.fontSize && sizeSel) {
+                sizeSel.value = parseInt(styledEl.style.fontSize);
+            }
+            if (styledEl.style.letterSpacing && trackSel) {
+                trackSel.value = styledEl.style.letterSpacing;
+            }
+            if (styledEl.style.padding && padInput) {
+                padInput.value = parseInt(styledEl.style.padding) || 0;
+            }
+            if (styledEl.style.borderRadius && radInput) {
+                radInput.value = parseInt(styledEl.style.borderRadius) || 0;
+            }
         }
     };
     setTimeout(_syncToolbar, 50);
@@ -1273,9 +1330,42 @@ function bindWysiwygModalEvents() {
         _wmRefreshPreview();
     });
 
+    document.getElementById('wm-weight')?.addEventListener('change', e => {
+        editor.focus();
+        _wmApplyStyleToSelection('fontWeight', e.target.value);
+        _wmRefreshPreview();
+    });
+
     document.getElementById('wm-size')?.addEventListener('change', e => {
         editor.focus();
         _wmApplyStyleToSelection('fontSize', e.target.value + 'px');
+        _wmRefreshPreview();
+    });
+
+    document.getElementById('wm-tracking')?.addEventListener('change', e => {
+        editor.focus();
+        _wmApplyStyleToSelection('letterSpacing', e.target.value);
+        _wmRefreshPreview();
+    });
+
+    document.querySelectorAll('#wm-toolbar [data-transform]').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            editor.focus();
+            _wmApplyStyleToSelection('textTransform', btn.getAttribute('data-transform'));
+            _wmRefreshPreview();
+        });
+    });
+
+    document.getElementById('wm-padding')?.addEventListener('input', e => {
+        editor.focus();
+        _wmApplyStyleToSelection('padding', `0 ${e.target.value}px`);
+        _wmRefreshPreview();
+    });
+
+    document.getElementById('wm-radius')?.addEventListener('input', e => {
+        editor.focus();
+        _wmApplyStyleToSelection('borderRadius', `${e.target.value}px`);
         _wmRefreshPreview();
     });
 
@@ -1291,9 +1381,24 @@ function bindWysiwygModalEvents() {
         _wmRefreshPreview();
     });
 
+    document.getElementById('wm-highlight')?.addEventListener('input', e => {
+        editor.focus();
+        _wmApplyStyleToSelection('backgroundColor', e.target.value);
+        _wmApplyStyleToSelection('display', 'inline-block');
+        _wmRefreshPreview();
+    });
+
     document.getElementById('wm-bg')?.addEventListener('input', e => {
         const c = document.getElementById('wm-preview-canvas');
         if (c) c.style.background = e.target.value;
+    });
+
+    document.getElementById('wm-clear-all')?.addEventListener('click', () => {
+        if (confirm('Czy na pewno chcesz wyczyścić całe formatowanie tekstu?')) {
+            editor.focus();
+            _wmClearAllFormatting();
+            _wmRefreshPreview();
+        }
     });
 
     document.getElementById('toggle-html-view')?.addEventListener('click', () => {
@@ -1335,11 +1440,21 @@ function bindWysiwygModalEvents() {
 function _wmApplyLineHeight(lh) {
     const editor = document.getElementById('wm-editor');
     if (!editor) return;
-    // Apply line-height directly on the editor element -
-    // avoid execCommand formatBlock which creates unwanted <div> wrappers
+    
     editor.style.lineHeight = lh;
-    // Also apply to any existing block-level children
-    editor.querySelectorAll('div, p, span').forEach(el => {
+    
+    // Persist to graphic style immediately so it survives refresh/save
+    if (_wmGraphicId) {
+        const g = state.graphics.find(g => g.id === _wmGraphicId);
+        if (g) {
+            if (!g.style) g.style = {};
+            if (!g.style.typography) g.style.typography = {};
+            g.style.typography.lineHeight = lh;
+        }
+    }
+
+    // Also apply to any existing block-level children (if any)
+    editor.querySelectorAll('div, p').forEach(el => {
         el.style.lineHeight = lh;
     });
 }
@@ -1352,50 +1467,43 @@ function _wmApplyStyleToSelection(property, value) {
     const toCamel = p => p.replace(/-([a-z])/g, (_, l) => l.toUpperCase());
     const propCamel = toCamel(property);
 
-    // If nothing selected (collapsed cursor or no selection) -> apply to whole content
-    if (!selection.rangeCount || selection.getRangeAt(0).collapsed) {
-        // First, wrap any bare text nodes at the top level in a span with the style
-        [...editor.childNodes].forEach(node => {
-            if (node.nodeType === Node.TEXT_NODE && node.textContent !== '') {
-                const span = document.createElement('span');
-                span.style[propCamel] = value;
-                node.replaceWith(span);
-                span.appendChild(node);
-            }
-        });
-        // Then update all existing element children
-        editor.querySelectorAll('*').forEach(el => {
-            el.style[propCamel] = value;
-        });
-        // Also set on editor itself for visual consistency (new typing will inherit)
-        editor.style[propCamel] = value;
+    const range = selection.getRangeAt(0);
+
+    // If selection is collapsed, only apply to whole content if it's completely empty
+    if (range.collapsed) {
+        if (editor.textContent.trim() === '') {
+            editor.style[propCamel] = value;
+            return;
+        }
+        // Otherwise do nothing - user should select text
         return;
     }
 
-    const range = selection.getRangeAt(0);
-
-    // Check if the selection is fully inside an ancestor span that already has this property
+    // Check if the selection exactly matches an existing span ancestor
     let ancestor = range.commonAncestorContainer;
     if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentNode;
-    // Walk up to find a span with the same property already set
+    
     let existingSpan = null;
     let el = ancestor;
     while (el && el !== editor) {
         if (el.tagName === 'SPAN' && el.style[propCamel]) {
-            existingSpan = el;
-            break;
+            // Check if this span's content is exactly what is selected
+            const spanRange = document.createRange();
+            spanRange.selectNodeContents(el);
+            if (range.compareBoundaryPoints(Range.START_TO_START, spanRange) === 0 &&
+                range.compareBoundaryPoints(Range.END_TO_END, spanRange) === 0) {
+                existingSpan = el;
+                break;
+            }
         }
         el = el.parentNode;
     }
 
-    if (existingSpan && selection.containsNode(existingSpan, true)) {
-        // Just update the existing span's style in-place — no new nesting
+    if (existingSpan) {
         existingSpan.style[propCamel] = value;
-        // Also update all children with the same property
-        existingSpan.querySelectorAll('[style]').forEach(child => {
-            if (child.style[propCamel]) child.style[propCamel] = value;
+        existingSpan.querySelectorAll('span').forEach(child => {
+            child.style[propCamel] = value;
         });
-        selection.removeAllRanges();
         return;
     }
 
@@ -1421,6 +1529,46 @@ function _wmApplyStyleToSelection(property, value) {
     selection.removeAllRanges();
 }
 
+function _wmClearAllFormatting() {
+    const editor = document.getElementById('wm-editor');
+    if (!editor) return;
+    
+    // 1. execCommand removeFormat clears bold/italic/etc
+    document.execCommand('removeFormat', false, null);
+    
+    // 2. Custom clear: recursively strip all <span> and <font> tags while keeping text
+    const stripTags = (root) => {
+        const children = [...root.childNodes];
+        children.forEach(node => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.tagName === 'SPAN' || node.tagName === 'FONT') {
+                    // Extract text contents and replace the tag
+                    const frag = document.createDocumentFragment();
+                    while (node.firstChild) frag.appendChild(node.firstChild);
+                    node.replaceWith(frag);
+                    // Continue stripping on the new children
+                    stripTags(root); 
+                } else if (node.hasChildNodes()) {
+                    stripTags(node);
+                }
+            }
+        });
+    };
+    
+    stripTags(editor);
+    
+    // 3. Reset editor base styles to defaults
+    editor.style.fontWeight = 'normal';
+    editor.style.fontStyle = 'normal';
+    editor.style.textDecoration = 'none';
+    editor.style.backgroundColor = 'transparent';
+    editor.style.letterSpacing = 'normal';
+    editor.style.textTransform = 'none';
+    editor.style.padding = '0';
+    editor.style.borderRadius = '0';
+    editor.style.display = 'block';
+}
+
 // ===========================================================
 // 9. TEMPLATE EDITOR
 // ===========================================================
@@ -1429,11 +1577,87 @@ function renderTemplateList() {
     list.innerHTML = '';
     state.templates.forEach(tpl => {
         const item = document.createElement('div');
-        item.className = `p-3 border-b border-gray - 700 cursor-pointer hover:bg-gray - 750 text-sm ${currentTemplateId === tpl.id ? 'bg-blue-900/40 border-l-4 border-l-blue-500' : ''} `;
-        item.innerHTML = `<div class="font-medium truncate text-xs text-white" > ${tpl.name}</div> <div class="text-[10px] text-gray-500 font-mono">${tpl.type}</div>`;
-        item.onclick = () => openTemplateEditor(tpl.id);
+        item.className = `p-3 border-b border-gray-700 cursor-pointer hover:bg-gray-750 text-sm group ${currentTemplateId === tpl.id ? 'bg-blue-900/40 border-l-4 border-l-blue-500' : ''}`;
+        item.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate text-xs text-white">${tpl.name}</div>
+                    <div class="text-[10px] text-gray-500 font-mono">${tpl.type}</div>
+                </div>
+                <button data-export-id="${tpl.id}" title="Eksportuj do JSON" class="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-600/20 text-blue-400 rounded transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+            </div>
+        `;
+        item.onclick = (e) => {
+            if (e.target.closest('[data-export-id]')) {
+                e.stopPropagation();
+                exportTemplate(tpl.id);
+                return;
+            }
+            openTemplateEditor(tpl.id);
+        };
         list.appendChild(item);
     });
+}
+
+/**
+ * Export template to a JSON file
+ */
+function exportTemplate(id) {
+    const tpl = state.templates.find(t => t.id === id);
+    if (!tpl) return;
+    
+    const dataStr = JSON.stringify(tpl, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `template_${tpl.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }, 0);
+}
+
+/**
+ * Import template from a JSON file
+ */
+function importTemplate(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            
+            // Basic validation
+            if (!imported.name || (!imported.html_template && !imported.css_template)) {
+                alert('Nieprawidłowy format pliku szablonu.');
+                return;
+            }
+            
+            // Generate new ID and mark as copy if needed
+            const newTpl = {
+                ...imported,
+                id: crypto.randomUUID(),
+                name: imported.name + ' (Imported)'
+            };
+            
+            state.templates.push(newTpl);
+            saveState();
+            renderTemplateList();
+            openTemplateEditor(newTpl.id);
+            alert('Szablon został pomyślnie zaimportowany!');
+            
+        } catch (err) {
+            console.error('Import error:', err);
+            alert('Błąd podczas importowania pliku JSON.');
+        }
+    };
+    reader.readAsText(file);
 }
 
 function openTemplateEditor(id) {
@@ -1914,8 +2138,30 @@ function bindGlobalEvents() {
         const btn = document.getElementById('btn-save-graphic');
         btn.textContent = '✓ Zapisano!';
         setTimeout(() => {
-            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ZAPISZ ZMIANY`;
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ZAPISZ ZMIANY`;
         }, 2000);
+    };
+
+    // Inspector delete
+    document.getElementById('btn-delete-graphic-ins').onclick = () => {
+        if (!selectedGraphicId) return;
+        const g = state.graphics.find(gfx => gfx.id === selectedGraphicId);
+        if (!g) return;
+
+        if (confirm(`Czy na pewno chcesz usunąć grafikę "${g.name}"?`)) {
+            state.graphics = state.graphics.filter(gfx => gfx.id !== selectedGraphicId);
+            const deletedId = selectedGraphicId;
+            selectedGraphicId = null;
+            closeInspector();
+            
+            if (previewGraphic?.id === deletedId) {
+                setPreviewGraphic(null);
+            }
+
+            saveState();
+            renderShotbox();
+            updateProgramMonitor();
+        }
     };
 
     // Template Editor
@@ -1924,7 +2170,7 @@ function bindGlobalEvents() {
             id: crypto.randomUUID(),
             name: 'Nowy Szablon',
             type: 'LOWER_THIRD',
-            html_template: '<div class="lt-container">\n  <h1>{{TITLE}}</h1>\n</div>',
+            html_template: '<div class="lt-container">\n  <h1>{{{TITLE}}}</h1>\n</div>',
             css_template: '#{{ID}} h1 { color: {{PRIMARY_COLOR}}; }',
             js_template: '(() => {\n  const root = document.getElementById("{{ID}}");\n  root.__slt_show = () => { root.style.opacity = 1; };\n  root.__slt_hide = () => { root.style.opacity = 0; };\n})();',
             defaultFields: { title: 'Sample Title', primaryColor: '#ffffff' },

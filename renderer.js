@@ -638,6 +638,7 @@
             INTRO_TEXT: graphic.introText || 'PILNE',
             ITEMS: rawItems,
             ITEMS_JSON: JSON.stringify(rawItems),
+            LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
             TICKER_SPEED: graphic.speed || 100,
             PRIMARY_COLOR: bgStyle.color || '#1e3a8a',
             PRIMARY_BG: bg,
@@ -689,9 +690,10 @@
             V_WIDTH: tpl.defaultLayout?.width || 1920,
             V_HEIGHT: tpl.defaultLayout?.height || 1080,
             SIDE_IMAGE: graphic.sideImage || '',
-            LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
             LOGO_WIDTH: graphic.layout?.width || null,
             LOGO_HEIGHT: graphic.layout?.height || null,
+            TRANSPARENT: (graphic.style?.background?.type === 'transparent' || !!graphic.style?.background?.transparent),
+            LINE_HEIGHT: typo.lineHeight || '1.4',
         };
     }
 

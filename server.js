@@ -15,49 +15,55 @@ const io = new Server(server, {
 });
 
 const DB_FILE = process.env.DATABASE_URL || path.join(__dirname, 'database.sqlite');
-const JSON_FILE = path.join(__dirname, 'db.json');
 
-// Połączenie z bazą
+const dbExists = fs.existsSync(DB_FILE) && fs.statSync(DB_FILE).isFile();
+console.log(`[DB] Using database file: ${DB_FILE}`);
+console.log(`[DB] Valid file exists on start: ${dbExists} (${dbExists ? fs.statSync(DB_FILE).size : 0} bytes)`);
+
 const db = new sqlite3.Database(DB_FILE, (err) => {
     if (err) {
         console.error("Database connection error:", err.message);
     } else {
-        console.log("Connected to SQLite database.");
-        ensureDatabaseInitialized();
+        console.log(`Connected to SQLite database.`);
+        if (!dbExists) {
+            console.log("[DB] Database file missing or empty. Initializing schema...");
+            ensureDatabaseInitialized();
+        } else {
+            console.log("[DB] Database file found. Loading state...");
+            loadStateFromDB();
+        }
     }
 });
 
 // Funkcja automatycznej inicjalizacji bazy danych przy pierwszym uruchomieniu
 function ensureDatabaseInitialized() {
+    console.log("[DB] Ensuring database schema...");
     db.serialize(() => {
-        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'", (err, row) => {
-            if (err) {
-                console.error("Error checking database schema:", err.message);
-                return;
-            }
+        // Tworzenie schematu
+        db.run(`CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL)`);
+        db.run(`CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
+        db.run(`CREATE TABLE IF NOT EXISTS groups (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
+        db.run(`CREATE TABLE IF NOT EXISTS graphics (id TEXT PRIMARY KEY, templateId TEXT, name TEXT, groupId TEXT, visible INTEGER DEFAULT 0, data TEXT NOT NULL)`);
 
-            if (!row) {
-                console.log("Database tables missing. Initializing from db.json...");
-                
-                db.serialize(() => {
-                    // Tworzenie schematu
-                    db.run(`CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL)`);
-                    db.run(`CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
-                    db.run(`CREATE TABLE IF NOT EXISTS groups (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
-                    db.run(`CREATE TABLE IF NOT EXISTS graphics (id TEXT PRIMARY KEY, templateId TEXT, name TEXT, groupId TEXT, visible INTEGER DEFAULT 0, data TEXT NOT NULL)`);
+        console.log("[DB] Schema ensured.");
 
-                    // Migracja z db.json jeśli istnieje
-                    if (fs.existsSync(JSON_FILE)) {
-                        try {
-                            const rawData = fs.readFileSync(JSON_FILE, 'utf8');
-                            const state = JSON.parse(rawData);
-
+        // SEEDING: Jeśli baza jest pusta, a mamy db.json, to importujemy go
+        db.get("SELECT COUNT(*) as count FROM settings", (err, row) => {
+            if (!err && row && row.count === 0) {
+                const jsonPath = path.join(__dirname, 'db.json');
+                if (fs.existsSync(jsonPath)) {
+                    console.log("[DB] Database is empty. Seeding from db.json...");
+                    try {
+                        const rawData = fs.readFileSync(jsonPath, 'utf8');
+                        const state = JSON.parse(rawData);
+                        
+                        db.serialize(() => {
                             db.run('BEGIN TRANSACTION');
-
+                            
                             if (state.settings) {
-                                db.run('INSERT INTO settings (id, data) VALUES (1, ?)', [JSON.stringify(state.settings)]);
+                                db.run('INSERT OR REPLACE INTO settings (id, data) VALUES (1, ?)', [JSON.stringify(state.settings)]);
                             }
-
+                            
                             if (state.templates && state.templates.length > 0) {
                                 const stmt = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
                                 for (const t of state.templates) {
@@ -65,7 +71,7 @@ function ensureDatabaseInitialized() {
                                 }
                                 stmt.finalize();
                             }
-
+                            
                             if (state.groups && state.groups.length > 0) {
                                 const stmt = db.prepare('INSERT INTO groups (id, data) VALUES (?, ?)');
                                 for (const g of state.groups) {
@@ -73,7 +79,7 @@ function ensureDatabaseInitialized() {
                                 }
                                 stmt.finalize();
                             }
-
+                            
                             if (state.graphics && state.graphics.length > 0) {
                                 const stmt = db.prepare('INSERT INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
                                 for (const g of state.graphics) {
@@ -82,25 +88,21 @@ function ensureDatabaseInitialized() {
                                 }
                                 stmt.finalize();
                             }
-
-                            db.run('COMMIT', (err) => {
-                                if (!err) {
-                                    console.log('Database initialized successfully from db.json.');
-                                    loadStateFromDB(); // Teraz bezpiecznie ładujemy stan
-                                } else {
-                                    console.error("Transaction commit failed:", err.message);
-                                }
+                            
+                            db.run('COMMIT', () => {
+                                console.log("[DB] Seeding complete.");
+                                loadStateFromDB();
                             });
-                        } catch (e) {
-                            console.error("Failed to migrate data from db.json:", e.message);
-                        }
-                    } else {
-                        console.log("db.json not found, database initialized with empty tables.");
+                        });
+                    } catch (e) {
+                        console.error("[DB] Seeding failed:", e.message);
                         loadStateFromDB();
                     }
-                });
+                } else {
+                    console.log("[DB] No db.json found for seeding.");
+                    loadStateFromDB();
+                }
             } else {
-                // Baza już zainicjalizowana, ładujemy stan
                 loadStateFromDB();
             }
         });
@@ -113,6 +115,7 @@ let appState = { settings: {}, templates: [], graphics: [], groups: [] };
 // żeby przy połączeniu nowego klienta od razu wysłać 'initialState' 
 // bez konieczności czekania na asynchroniczne zapytania w on('connection')
 function loadStateFromDB(callback) {
+    console.log("[DB] Loading state from SQLite...");
     let newState = { settings: {}, templates: [], graphics: [], groups: [] };
     let queriesPending = 4;
 
@@ -120,7 +123,7 @@ function loadStateFromDB(callback) {
         queriesPending--;
         if (queriesPending === 0) {
             appState = newState;
-            console.log("State fully loaded into memory from SQLite.");
+            console.log(`[DB] State fully loaded. Graphics: ${newState.graphics.length}, Templates: ${newState.templates.length}`);
             if (callback) callback();
         }
     }
@@ -202,13 +205,15 @@ function syncStateToDB(state) {
         }
 
         // 2. Templates
-        db.run("DELETE FROM templates");
         if (state.templates && state.templates.length > 0) {
+            db.run("DELETE FROM templates");
             const stmtTpl = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
             for (const t of state.templates) {
                 stmtTpl.run(t.id, JSON.stringify(t));
             }
             stmtTpl.finalize();
+        } else {
+            console.warn("[!] syncStateToDB: Skipping templates update - state.templates is empty or missing. (Prevention of wiping DB)");
         }
 
         // 3. Groups
@@ -241,12 +246,20 @@ io.on('connection', (socket) => {
     // Listen for FULL state updates from the control panel
     // Dla optymalizacji oddzielamy zapis grafiki od zapisu całych struktur
     socket.on('updateState', (newState) => {
+        if (!newState || (!newState.templates && !newState.graphics)) {
+            console.error(`[!] Rejected updateState from ${socket.id}: State is null or empty.`);
+            return;
+        }
+
+        console.log(`[u] Received updateState from ${socket.id}. Graphics: ${newState.graphics?.length || 0}, Templates: ${newState.templates?.length || 0}`);
         appState = newState;
         // Broadcast the updated state to ALL connected clients
         io.emit('stateUpdated', appState);
         
         // Persist to disk
-        syncGraphicsToDB(newState.graphics);
+        if (newState.graphics && newState.graphics.length > 0) {
+            syncGraphicsToDB(newState.graphics);
+        }
         syncStateToDB(newState);
     });
 

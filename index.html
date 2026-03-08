@@ -306,16 +306,27 @@
         </div>
 
         <!-- Footer -->
-        <div class="p-3 border-t border-gray-800 bg-gray-850 shrink-0">
+        <div class="p-3 border-t border-gray-800 bg-gray-850 shrink-0 flex flex-col gap-2">
           <button id="btn-save-graphic"
-            class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded font-bold shadow-lg transition-all hover:scale-[1.02] text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-bold shadow-lg transition-all hover:scale-[1.02] text-xs">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
               <polyline points="7 3 7 8 15 8" />
             </svg>
             ZAPISZ ZMIANY
+          </button>
+          <button id="btn-delete-graphic-ins"
+            class="w-full flex items-center justify-center gap-2 bg-red-900/40 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded font-bold border border-red-900/50 transition-all hover:scale-[1.02] text-xs">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+            USUŃ GRAFIKĘ
           </button>
         </div>
       </div>
@@ -581,75 +592,146 @@
         <div class="flex flex-col shrink-0" style="border-bottom:1px solid #1f2937;">
           <!-- Toolbar -->
           <div id="wm-toolbar"
-            style="display:flex;flex-wrap:wrap;gap:3px;padding:6px 8px;background:#111827;border-bottom:1px solid #1f2937;align-items:center;">
-            <button data-cmd="bold" title="Bold"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;font-weight:bold;cursor:pointer;font-size:12px;"><b>B</b></button>
-            <button data-cmd="italic" title="Italic"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;cursor:pointer;font-size:12px;"><i>I</i></button>
-            <button data-cmd="underline" title="Underline"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#fff;cursor:pointer;font-size:12px;"><u>U</u></button>
-            <button data-cmd="strikeThrough" title="Strikethrough"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:12px;"><s>S</s></button>
+            style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px;background:#111827;border-bottom:1px solid #1f2937;align-items:center;">
+            <!-- Group 1: Basic Formatting -->
+            <div style="display:flex;gap:2px;background:#1f2937;padding:2px;border-radius:6px;border:1px solid #374151;">
+              <button data-cmd="bold" title="Bold"
+                style="width:28px;height:26px;background:transparent;border:none;border-radius:4px;color:#fff;font-weight:bold;cursor:pointer;font-size:12px;"><b>B</b></button>
+              <button data-cmd="italic" title="Italic"
+                style="width:28px;height:26px;background:transparent;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:12px;"><i>I</i></button>
+              <button data-cmd="underline" title="Underline"
+                style="width:28px;height:26px;background:transparent;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:12px;"><u>U</u></button>
+              <button data-cmd="strikeThrough" title="Strikethrough"
+                style="width:28px;height:26px;background:transparent;border:none;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:12px;"><s>S</s></button>
+            </div>
+
             <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
-            <select id="wm-font" title="Font Family"
-              style="height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
-              <option>Roboto Condensed</option>
-              <option>Bahnschrift</option>
-              <option>Inter</option>
-              <option>Arial</option>
-              <option>Helvetica</option>
-              <option>Times New Roman</option>
-              <option>Georgia</option>
-              <option>monospace</option>
-            </select>
-            <select id="wm-size" title="Font Size"
-              style="height:26px;width:54px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
-              <option value="24">24px</option>
-              <option value="32">32px</option>
-              <option value="40">40px</option>
-              <option value="48" selected>48px</option>
-              <option value="56">56px</option>
-              <option value="64">64px</option>
-              <option value="72">72px</option>
-              <option value="96">96px</option>
-              <option value="120">120px</option>
-            </select>
-            <select id="wm-line-height" title="Interlinia (line-height)"
-              style="height:26px;width:60px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#a78bfa;font-size:10px;padding:0 4px;cursor:pointer;">
-              <option value="1">× 1.0</option>
-              <option value="1.1">× 1.1</option>
-              <option value="1.2">× 1.2</option>
-              <option value="1.3">× 1.3</option>
-              <option value="1.4" selected>× 1.4</option>
-              <option value="1.5">× 1.5</option>
-              <option value="1.6">× 1.6</option>
-              <option value="1.8">× 1.8</option>
-              <option value="2">× 2.0</option>
-              <option value="2.5">× 2.5</option>
-            </select>
+
+            <!-- Group 2: Font & Size -->
+            <div style="display:flex;gap:4px;align-items:center;">
+              <select id="wm-font" title="Font Family"
+                style="height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;min-width:100px;">
+                <option>Roboto Condensed</option>
+                <option>Bahnschrift</option>
+                <option>Inter</option>
+                <option>Arial</option>
+                <option>Helvetica</option>
+                <option>Times New Roman</option>
+                <option>Georgia</option>
+                <option>monospace</option>
+              </select>
+              <select id="wm-weight" title="Font Weight"
+                style="height:26px;width:70px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
+                <option value="300">Light</option>
+                <option value="400" selected>Regular</option>
+                <option value="500">Medium</option>
+                <option value="600">SemiBold</option>
+                <option value="700">Bold</option>
+                <option value="800">ExtraBold</option>
+                <option value="900">Black</option>
+              </select>
+              <select id="wm-size" title="Font Size"
+                style="height:26px;width:55px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#93c5fd;font-size:10px;padding:0 4px;cursor:pointer;">
+                <option value="18">18px</option>
+                <option value="24">24px</option>
+                <option value="32">32px</option>
+                <option value="40">40px</option>
+                <option value="48" selected>48px</option>
+                <option value="56">56px</option>
+                <option value="64">64px</option>
+                <option value="72">72px</option>
+                <option value="84">84px</option>
+                <option value="96">96px</option>
+                <option value="120">120px</option>
+              </select>
+            </div>
+
             <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
-            <label title="Kolor tekstu"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">
-              <span style="font-size:11px;color:#e5e7eb;font-weight:bold;">A</span>
-              <input id="wm-color" type="color" value="#ffffff" style="position:absolute;width:0;height:0;opacity:0;">
-            </label>
+
+            <!-- Group 3: Color & Highlight -->
+            <div style="display:flex;gap:4px;align-items:center;">
+              <label title="Kolor tekstu"
+                style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">
+                <span style="font-size:11px;color:#e5e7eb;font-weight:bold;border-bottom:2px solid currentColor;">A</span>
+                <input id="wm-color" type="color" value="#ffffff" style="position:absolute;width:0;height:0;opacity:0;">
+              </label>
+              <label title="Kolor tła tekstu (Highlight)"
+                style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">
+                <span style="font-size:11px;color:#e5e7eb;background:#3b82f6;padding:0 2px;border-radius:2px;">A</span>
+                <input id="wm-highlight" type="color" value="#3b82f6" style="position:absolute;width:0;height:0;opacity:0;">
+              </label>
+            </div>
+
             <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
-            <button data-cmd="justifyLeft" title="Align Left"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:10px;">&#8676;</button>
-            <button data-cmd="justifyCenter" title="Center"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:10px;">≡</button>
-            <button data-cmd="justifyRight" title="Align Right"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:10px;">&#8677;</button>
+
+            <!-- Group 4: Advanced Typography -->
+            <div style="display:flex;gap:4px;align-items:center;">
+              <select id="wm-tracking" title="Letter Spacing"
+                style="height:26px;width:65px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#a78bfa;font-size:9px;padding:0 4px;cursor:pointer;">
+                <option value="-0.05em">Tight</option>
+                <option value="0" selected>Normal</option>
+                <option value="0.05em">Wide</option>
+                <option value="0.1em">Extra Wide</option>
+                <option value="0.2em">Expanded</option>
+              </select>
+              <div style="display:flex;gap:1px;background:#1f2937;border:1px solid #374151;border-radius:4px;padding:1px;">
+                <button data-transform="uppercase" title="UPPERCASE" style="width:24px;height:22px;background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:9px;font-weight:bold;">AA</button>
+                <button data-transform="none" title="Normal" style="width:24px;height:22px;background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:9px;">Aa</button>
+              </div>
+            </div>
+
             <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
-            <button data-cmd="removeFormat" title="Clear Formatting"
-              style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;">✕</button>
+
+            <!-- Group 5: Box Shapes (Padding/Radius) -->
+            <div style="display:flex;gap:4px;align-items:center;">
+               <div style="display:flex;align-items:center;gap:3px;background:#1a1a2e;border:1px solid #374151;border-radius:4px;padding:2px 5px;">
+                  <span style="font-size:8px;color:#6b7280;text-transform:uppercase;">Pad</span>
+                  <input id="wm-padding" type="number" value="10" min="0" max="100" title="Padding (px)"
+                    style="width:34px;height:18px;background:transparent;border:none;color:#86efac;font-size:10px;outline:none;">
+               </div>
+               <div style="display:flex;align-items:center;gap:3px;background:#1a1a2e;border:1px solid #374151;border-radius:4px;padding:2px 5px;">
+                  <span style="font-size:8px;color:#6b7280;text-transform:uppercase;">Rad</span>
+                  <input id="wm-radius" type="number" value="0" min="0" max="100" title="Border Radius (px)"
+                    style="width:34px;height:18px;background:transparent;border:none;color:#86efac;font-size:10px;outline:none;">
+               </div>
+            </div>
+
+            <div style="width:1px;background:#374151;margin:2px;height:20px;"></div>
+
+            <!-- Group 6: Alignment & Line Height -->
+            <div style="display:flex;gap:4px;align-items:center;">
+              <select id="wm-line-height" title="Interlinia (line-height)"
+                style="height:26px;width:55px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#a78bfa;font-size:10px;padding:0 4px;cursor:pointer;">
+                <option value="1">× 1.0</option>
+                <option value="1.1">× 1.1</option>
+                <option value="1.2">× 1.2</option>
+                <option value="1.3">× 1.3</option>
+                <option value="1.4" selected>× 1.4</option>
+                <option value="1.5">× 1.5</option>
+                <option value="2">× 2.0</option>
+              </select>
+              <div style="display:flex;gap:1px;background:#1f2937;border:1px solid #374151;border-radius:4px;padding:1px;">
+                <button data-cmd="justifyLeft" title="Align Left"
+                  style="width:24px;height:22px;background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:10px;">&#8676;</button>
+                <button data-cmd="justifyCenter" title="Center"
+                  style="width:24px;height:22px;background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:10px;">≡</button>
+                <button data-cmd="justifyRight" title="Align Right"
+                  style="width:24px;height:22px;background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:10px;">&#8677;</button>
+              </div>
+            </div>
+
             <div style="flex:1;"></div>
-            <!-- Background color picker (compact) -->
-            <label title="Kolor tła podglądu" style="display:flex;align-items:center;gap:4px;cursor:pointer;">
-              <input id="wm-bg" type="color" value="#0047ab"
-                style="height:22px;width:28px;border:1px solid #374151;border-radius:3px;cursor:pointer;background:transparent;">
-              <span style="font-size:9px;color:#6b7280;">Tło</span>
-            </label>
+
+            <!-- Group 7: Actions -->
+            <div style="display:flex;gap:4px;align-items:center;">
+              <button id="wm-clear-all" title="Clear All Formatting"
+                style="height:26px;padding:0 8px;background:#991b1b;border:1px solid #7f1d1d;border-radius:4px;color:#fecaca;cursor:pointer;font-size:10px;font-weight:bold;">✕ Clear</button>
+              <label title="Kolor tła podglądu" style="display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:4px;">
+                <input id="wm-bg" type="color" value="#0047ab"
+                  style="height:22px;width:26px;border:1px solid #374151;border-radius:3px;cursor:pointer;background:transparent;">
+                <span style="font-size:9px;color:#6b7280;">Tło</span>
+              </label>
+            </div>
           </div>
 
           <!-- Editor Area (compact, 18px font, no visual font-size) -->

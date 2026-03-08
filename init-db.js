@@ -16,7 +16,7 @@ const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
     console.log('Setting up database schema...');
 
-    // Tabela ustawięń
+    // Tabela ustawień
     db.run(`
         CREATE TABLE IF NOT EXISTS settings (
             id INTEGER PRIMARY KEY CHECK (id = 1),
