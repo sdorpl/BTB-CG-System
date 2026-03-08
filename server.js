@@ -16,18 +16,20 @@ const io = new Server(server, {
 
 const DB_FILE = process.env.DATABASE_URL || path.join(__dirname, 'database.sqlite');
 
-// Połączenie z bazą
-const dbExists = fs.existsSync(DB_FILE);
+const dbExists = fs.existsSync(DB_FILE) && fs.statSync(DB_FILE).isFile();
+console.log(`[DB] Using database file: ${DB_FILE}`);
+console.log(`[DB] Valid file exists on start: ${dbExists} (${dbExists ? fs.statSync(DB_FILE).size : 0} bytes)`);
+
 const db = new sqlite3.Database(DB_FILE, (err) => {
     if (err) {
         console.error("Database connection error:", err.message);
     } else {
-        console.log(`Connected to SQLite database at ${DB_FILE}`);
+        console.log(`Connected to SQLite database.`);
         if (!dbExists) {
-            console.log("Database file missing. Initializing...");
+            console.log("[DB] Database file missing or empty. Initializing schema...");
             ensureDatabaseInitialized();
         } else {
-            console.log("Database file already exists. Skipping initialization.");
+            console.log("[DB] Database file found. Loading state...");
             loadStateFromDB();
         }
     }
