@@ -694,6 +694,12 @@
             LOGO_HEIGHT: graphic.layout?.height || null,
             TRANSPARENT: (graphic.style?.background?.type === 'transparent' || !!graphic.style?.background?.transparent),
             LINE_HEIGHT: typo.lineHeight || '1.4',
+            ANIMATION_IN_JSON: JSON.stringify(animIn),
+            ANIMATION_OUT_JSON: JSON.stringify(animOut),
+            TEXT_ANIM_JSON: JSON.stringify(graphic.animation?.text || { type: 'none' }),
+            TEXT_ANIM_SYNC: !!graphic.animation?.textSync,
+            TEXT_ANIM_OUT_JSON: JSON.stringify(graphic.animation?.textOut || { type: 'none' }),
+            TEXT_ANIM_OUT_SYNC: !!graphic.animation?.textOutSync,
         };
     }
 

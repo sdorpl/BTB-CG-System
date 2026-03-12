@@ -48,7 +48,7 @@
       "version": 1,
       "html_template": "\n<div class=\"lt-container\">\n    <div class=\"plate\">\n        <h1 class=\"title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
       "css_template": "\n.lt-container {\n    padding: 0;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    line-height: {{LINE_HEIGHT}};\n}\n.plate {\n    background: {{PRIMARY_BG}};\n    padding: 20px 40px;\n    border-left: 10px solid {{SECONDARY_COLOR}};\n    color: white;\n    display: inline-block;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n.title {\n    margin: 0;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    letter-spacing: -1px;\n}\n",
-      "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const plate = root.querySelector('.plate'); root.__slt_show = () => { const delay = \"{{ANIMATION_DELAY}}\" || 0; const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0]; if(el) el.style.transitionDelay = `${delay}s`; if(plate) { plate.style.opacity = '1'; plate.style.transform = \"{{ANIMATION_IDENTITY}}\"; } }; root.__slt_hide = () => {\n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0];\n        if(el) el.style.transitionDelay = '{{ANIMATION_OUT_DELAY}}s';\n        if (typeof plate !== 'undefined' && plate) {\n            plate.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            plate.style.opacity = '0';\n            plate.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const container = root.querySelector('.plate'); root.__slt_show = () => { const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}}); const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}}); if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0); return tl; }; root.__slt_hide = () => { const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}}); const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}}); if (textTl) { const sync = {{{TEXT_ANIM_OUT_SYNC}}}; if (sync) { const combined = gsap.timeline(); combined.add(textTl); combined.add(tl, \">-0.1\"); return combined; } else { tl.add(textTl, 0); } } return tl; }; })();",
       "defaultFields": {
         "title": "VinciFlow Title",
         "primaryColor": "#2563eb",
@@ -66,7 +66,7 @@
       "version": 1,
       "html_template": "<div class=\"modern-lt-container\">\n    <div class=\"modern-plate\">\n        <h1 class=\"modern-title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
       "css_template": ".modern-lt-container {\n    padding: 0;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    line-height: {{LINE_HEIGHT}};\n}\n.modern-plate {\n    background: {{PRIMARY_BG}};\n    padding: 24px 48px;\n    border-radius: 12px;\n    color: white;\n    display: inline-block;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border: 1px solid rgba(255,255,255,0.1);\n    backdrop-filter: blur(10px);\n}\n.modern-title {\n    margin: 0;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    letter-spacing: 1px;\n    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);\n}\n.modern-plate {\n    position: relative;\n    overflow: hidden;\n}\n.modern-plate::after {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 50%;\n    height: 100%;\n    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);\n    transform: skewX(-20deg);\n    animation: shine 6s infinite;\n}\n@keyframes shine {\n    0% { left: -100%; }\n    20% { left: 200%; }\n    100% { left: 200%; }\n}",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const plate = root.querySelector('.modern-plate');\n\n    root.__slt_show = () => {\n        const delay = \"{{ANIMATION_DELAY}}\" || 0;\n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0];\n        if(el) el.style.transitionDelay = `${delay}s`;\n        plate.style.opacity = '1';\n        plate.style.transform = \"{{ANIMATION_IDENTITY}}\";\n    };\n\n    root.__slt_hide = () => {\n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0];\n        if(el) el.style.transitionDelay = '{{ANIMATION_OUT_DELAY}}s';\n        if (typeof plate !== 'undefined' && plate) {\n            plate.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            plate.style.opacity = '0';\n            plate.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const container = root.querySelector('.modern-plate'); root.__slt_show = () => { const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}}); const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}}); if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0); return tl; }; root.__slt_hide = () => { const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}}); const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}}); if (textTl) { const sync = {{{TEXT_ANIM_OUT_SYNC}}}; if (sync) { const combined = gsap.timeline(); combined.add(textTl); combined.add(tl, \">-0.1\"); return combined; } else { tl.add(textTl, 0); } } return tl; }; })();",
       "defaultFields": {
         "title": "Modern Title",
         "primaryColor": "#0f172a",
@@ -80,7 +80,7 @@
       "version": 1,
       "html_template": "<div class=\"modern-ticker\"><div class=\"ticker-label\">BREAKING NEWS</div><div class=\"ticker-content\"><div class=\"ticker-track\">{{#each ITEMS}}<div class=\"ticker-item\"><span class=\"dot\"></span>{{{this}}}</div>{{/each}}</div></div></div>",
       "css_template": ".modern-ticker { position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; display: flex; font-family: 'Inter', sans-serif; box-shadow: {{BOX_SHADOW}}; z-index: 1000; } .ticker-label { background: #dc2626; color: white; font-weight: 900; font-size: 24px; padding: 0 30px; display: flex; align-items: center; text-transform: uppercase; z-index: 2; border-right: 4px solid #991b1b; white-space: nowrap; } .ticker-content { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); flex: 1; overflow: hidden; position: relative; display: flex; align-items: center; } .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 20s linear infinite; padding-left: 100%; } .ticker-item { color: white; font-size: 24px; font-weight: 500; display: flex; align-items: center; margin-right: 80px; } .dot { display: inline-block; width: 10px; height: 10px; background: {{BORDER_COLOR}}; border-radius: 50%; margin-right: 15px; } @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
-      "js_template": "(() => { \n    const root = document.getElementById(\"{{ID}}\"); \n    const container = root.querySelector('.modern-ticker'); \n    const tickerTrack = root.querySelector('.ticker-track'); \n    \n    root.__slt_show = () => { \n        const delay = \"{{ANIMATION_DELAY}}\" || 0; \n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0]; \n        if(el) el.style.transitionDelay = `${delay}s`; \n        container.style.transform = \"{{ANIMATION_IDENTITY}}\"; \n        \n        if (tickerTrack) { \n            setTimeout(() => { \n                const trackWidth = tickerTrack.scrollWidth || 0; \n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50); \n                if (speedPxPerSec > 0 && trackWidth > 0) { \n                    const durationInSeconds = trackWidth / speedPxPerSec; \n                    tickerTrack.style.animation = 'none'; \n                    void tickerTrack.offsetWidth; \n                    tickerTrack.style.animation = `ticker-scroll ${durationInSeconds}s linear infinite`; \n                } \n            }, 100); \n        } \n    }; \n    \n    root.__slt_hide = () => {\n        const el = root.querySelector('[class*=\"container\"], [class*=\"plate\"], [class*=\"box\"], [class*=\"bar\"], [class*=\"panel\"]') || root.children[0];\n        if(el) el.style.transitionDelay = '{{ANIMATION_OUT_DELAY}}s';\n        if (typeof container !== 'undefined' && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector('.modern-ticker');\n    const tickerTrack = root.querySelector('.ticker-track');\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        if (tickerTrack) {\n            tl.add(() => {\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const duration = trackWidth / speedPxPerSec;\n                    gsap.to(tickerTrack, {\n                        x: -trackWidth,\n                        duration: duration,\n                        ease: 'none',\n                        repeat: -1\n                    });\n                }\n            });\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        gsap.killTweensOf(tickerTrack);\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        return tl;\n    };\n})();",
       "defaultFields": {
         "items": [
           "Welcome to the new Modern Ticker.",
@@ -97,7 +97,7 @@
       "version": 1,
       "html_template": "<div class=\"rep-container\">\n    <div class=\"rep-left-panel\">\n        <div class=\"rep-clock\">00:00</div>\n    </div>\n    <div class=\"rep-content-area\">\n        <div class=\"rep-top-bar\">\n            <div class=\"rep-title\">{{{TITLE}}}</div>\n            <div class=\"rep-side-graphic\"></div>\n        </div>\n        <div class=\"rep-bottom-bar\">\n            <div class=\"ticker-track\">\n                {{#if ITEMS}}\n                    {{#each ITEMS}}\n                    <div class=\"ticker-item\">{{{this}}}</div>\n                    <div class=\"ticker-sep\"></div>\n                    {{/each}}\n                {{else}}\n                    <div class=\"ticker-item\">GODZ. 18:00, ZAJEZDNIA KULTURY, KOLEJOWA 3, PLESZEW</div>\n                    <div class=\"ticker-sep\"></div>\n                    <div class=\"ticker-item\">KLUB \"GAZETY POLSKIEJ\" ŁÓDŹ ZAPRASZA</div>\n                    <div class=\"ticker-sep\"></div>\n                {{/if}}\n            </div>\n        </div>\n    </div>\n</div>",
       "css_template": "#{{ID}} .rep-container {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    display: flex;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    line-height: {{LINE_HEIGHT}};\n    box-shadow: {{BOX_SHADOW}};\n    min-height: 120px;\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-left-panel {\n    width: 150px;\n    background: {{PRIMARY_BG}};\n    color: white;\n    display: flex;\n    flex-direction: column;\n    z-index: 2;\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-logo {\n    flex: 1;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    background: {{SECONDARY_COLOR}};\n}\n#{{ID}} .rep-logo img {\n    max-width: var(--v-width, 90%);\n    box-sizing: border-box;\n    max-height: 60px;\n    object-fit: contain;\n    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));\n}\n#{{ID}} .rep-clock {\n    height: 40px;\n    background: #000c24;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 28px;\n    font-weight: 700;\n    letter-spacing: 1px;\n}\n#{{ID}} .rep-content-area {\n    flex: 1;\n    display: flex;\n    flex-direction: column;\n    overflow: hidden;\n}\n#{{ID}} .rep-top-bar {\n    flex: 1;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    align-items: center;\n    padding: 0 30px;\n    position: relative;\n    overflow: hidden;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 300px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{SECONDARY_COLOR}} 0%, transparent 100%);\n}\n#{{ID}} .rep-bottom-bar {\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    position: relative;\n    overflow: hidden;\n}\n#{{ID}} .ticker-track {\n    display: flex;\n    align-items: center;\n    white-space: nowrap;\n    animation: rep-scroll 25s linear infinite;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: 24px;\n    font-weight: 600;\n    text-transform: uppercase;\n    padding: 0 20px;\n}\n#{{ID}} .ticker-sep {\n    width: 12px;\n    height: 24px;\n    background: {{BORDER_COLOR}};\n    transform: skewX(-30deg);\n    margin: 0 10px;\n}\n@keyframes rep-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-container\");\n    const clockEl = root.querySelector(\".rep-clock\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    let timer;\n    const updateTime = () => {\n        const now = new Date();\n        const h = String(now.getHours());\n        const m = String(now.getMinutes()).padStart(2, \"0\");\n        if(clockEl) clockEl.textContent = h + \":\" + m;\n    };\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n        updateTime();\n        timer = setInterval(updateTime, 1000);\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n        if (typeof timer !== \"undefined\") clearInterval(timer);\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-container\");\n    const clockEl = root.querySelector(\".rep-clock\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    let timer;\n    const updateTime = () => {\n        const now = new Date();\n        const h = String(now.getHours());\n        const m = String(now.getMinutes()).padStart(2, \"0\");\n        if(clockEl) clockEl.textContent = h + \":\" + m;\n    };\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        updateTime();\n        timer = setInterval(updateTime, 1000);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        if (typeof timer !== \"undefined\") clearInterval(timer);\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        if (textTl) tl.add(textTl, 0);\n        return tl;\n    };\n})();",
       "defaultFields": {
         "title": "MECHANIZM WARUNKOWOŚCI W RAMACH KREDYTU SAFE",
         "primaryColor": "#c8102e"
@@ -114,7 +114,7 @@
       "version": 1,
       "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
       "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        if (textTl) tl.add(textTl, 0);\n        return tl;\n    };\n})();",
       "defaultFields": {
         "title": "MECHANIZM WARUNKOWOŚCI",
         "primaryColor": "#c8102e"
@@ -131,7 +131,7 @@
       "version": 1,
       "html_template": "<div class=\"rep-bottom-bar\">\n    <div class=\"ticker-track\">\n        {{#if ITEMS}}\n            {{#each ITEMS}}\n            <div class=\"ticker-item\">{{this}}</div>\n            <div class=\"ticker-sep\"></div>\n            {{/each}}\n        {{else}}\n            <div class=\"ticker-item\">GODZ. 18:00, ZAJEZDNIA KULTURY, KOLEJOWA 3, PLESZEW</div>\n            <div class=\"ticker-sep\"></div>\n            <div class=\"ticker-item\">KLUB \"GAZETY POLSKIEJ\" ŁÓDŹ ZAPRASZA</div>\n            <div class=\"ticker-sep\"></div>\n        {{/if}}\n    </div>\n</div>",
       "css_template": "#{{ID}} .rep-bottom-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    overflow: hidden;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .ticker-track {\n    display: flex;\n    align-items: center;\n    white-space: nowrap;\n    animation: rep-scroll 25s linear infinite;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: 24px;\n    font-weight: 600;\n    text-transform: uppercase;\n    padding: 0 20px;\n}\n#{{ID}} .ticker-sep {\n    width: 12px;\n    height: 24px;\n    background: {{BORDER_COLOR}};\n    transform: skewX(-30deg);\n    margin: 0 10px;\n}\n@keyframes rep-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-bottom-bar\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n        if (tickerTrack) {\n            setTimeout(() => {\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const durationInSeconds = trackWidth / speedPxPerSec;\n                    tickerTrack.style.animation = \"none\";\n                    void tickerTrack.offsetWidth;\n                    tickerTrack.style.animation = \"rep-scroll \" + durationInSeconds + \"s linear infinite\";\n                }\n            }, 100);\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-bottom-bar\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        if (tickerTrack) {\n            tl.add(() => {\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const duration = trackWidth / speedPxPerSec;\n                    gsap.to(tickerTrack, {\n                        x: -trackWidth,\n                        duration: duration,\n                        ease: 'none',\n                        repeat: -1\n                    });\n                }\n            });\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        gsap.killTweensOf(tickerTrack);\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
       "defaultFields": {},
       "defaultLayout": {
         "x": 96,
@@ -145,7 +145,7 @@
       "version": 1,
       "html_template": "<div class=\"rep-left-panel\">\n    <div class=\"rep-clock\">00:00</div>\n</div>",
       "css_template": "#{{ID}} .rep-left-panel {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 150px;\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    flex-direction: column;\n    overflow: hidden;\n    transform-origin: left center;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-clock {\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 28px;\n    font-weight: 700;\n    letter-spacing: 1px;\n}",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-left-panel\");\n    const clockEl = root.querySelector(\".rep-clock\");\n    let timer;\n    const updateTime = () => {\n        const now = new Date();\n        const h = String(now.getHours());\n        const m = String(now.getMinutes()).padStart(2, \"0\");\n        if(clockEl) clockEl.textContent = h + \":\" + m;\n    };\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n        updateTime();\n        timer = setInterval(updateTime, 1000);\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n        if (typeof timer !== \"undefined\") clearInterval(timer);\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-left-panel\");\n    const clockEl = root.querySelector(\".rep-clock\");\n    let timer;\n    const updateTime = () => {\n        const now = new Date();\n        const h = String(now.getHours());\n        const m = String(now.getMinutes()).padStart(2, \"0\");\n        if(clockEl) clockEl.textContent = h + \":\" + m;\n    };\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        updateTime();\n        timer = setInterval(updateTime, 1000);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        if (typeof timer !== \"undefined\") clearInterval(timer);\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
       "defaultFields": {},
       "defaultLayout": {
         "x": 96,
@@ -159,7 +159,7 @@
       "version": 1,
       "html_template": "<div class=\"rep-logo-box\">\n    <img class=\"rep-logo-img\" src=\"{{LOGO_URL}}\" alt=\"Logo\" />\n</div>",
       "css_template": "#{{ID}} .rep-logo-box {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: {{#if LOGO_WIDTH}}{{LOGO_WIDTH}}px{{else}}150px{{/if}};\n    height: {{#if LOGO_HEIGHT}}{{LOGO_HEIGHT}}px{{else}}80px{{/if}};\n    background: {{#if TRANSPARENT}}transparent{{else}}{{PRIMARY_BG}}{{/if}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    box-sizing: border-box;\n    box-shadow: {{#if TRANSPARENT}}none{{else}}{{BOX_SHADOW}}{{/if}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: {{#if TRANSPARENT}}none{{else}}2px solid rgba(255,255,255,0.1){{/if}};\n}\n#{{ID}} .rep-logo-img {\n    max-width: 90%;\n    max-height: 90%;\n    object-fit: contain;\n    filter: {{#if TRANSPARENT}}none{{else}}drop-shadow(0 2px 4px rgba(0,0,0,0.5)){{/if}};\n}",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-logo-box\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-logo-box\");\n    root.__slt_show = () => {\n        return GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n    };\n    root.__slt_hide = () => {\n        return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n    };\n})();",
       "defaultFields": {
         "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/TV_Republika_logo_2024.svg/200px-TV_Republika_logo_2024.svg.png"
       },
@@ -175,7 +175,7 @@
       "version": 1,
       "html_template": "<div class=\"na-zywo-wrapper\">\n    <div class=\"na-zywo-container\">\n        <span class=\"na-zywo-dot\"></span>\n        <span class=\"na-zywo-text\">{{{TITLE}}}</span>\n    </div>\n</div>",
       "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n#{{ID}} .na-zywo-dot {\n    width: 14px;\n    height: 14px;\n    background-color: #ffffff;\n    border-radius: 50%;\n    margin-right: 12px;\n    animation: pulse-dot 1s infinite alternate;\n    box-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n@keyframes pulse-dot {\n    0% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const wrapper = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        if(wrapper) {\n            wrapper.style.transitionDelay = delay + \"s\";\n            void wrapper.offsetWidth;\n            wrapper.style.opacity = \"1\";\n            wrapper.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        if (wrapper) {\n            wrapper.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            wrapper.style.opacity = \"0\";\n            wrapper.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
       "defaultFields": {
         "title": "NA ŻYWO",
         "primaryColor": "#b91c1c"
@@ -193,8 +193,8 @@
       "type": "LOWER_THIRD",
       "version": 1,
       "html_template": "<div class=\"na-zywo-wrapper\">\n    <div class=\"na-zywo-container\">\n        \n        <span class=\"na-zywo-text\">{{{TITLE}}}</span>\n    </div>\n</div>",
-      "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const wrapper = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        if(wrapper) {\n            wrapper.style.transitionDelay = delay + \"s\";\n            void wrapper.offsetWidth;\n            wrapper.style.opacity = \"1\";\n            wrapper.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        if (wrapper) {\n            wrapper.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            wrapper.style.opacity = \"0\";\n            wrapper.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
       "defaultFields": {
         "title": "WARSZAWA",
         "primaryColor": "#ffffff",
@@ -213,7 +213,7 @@
       "type": "LOWER_THIRD",
       "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
       "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
       "defaultFields": {
         "title": "Sample Title",
         "primaryColor": "#ffffff"
@@ -227,7 +227,7 @@
       "version": 1,
       "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-main-content\">\n        <div class=\"rep-title\">{{{TITLE}}}</div>\n    </div>\n    {{#if SIDE_IMAGE}}\n        <div class=\"rep-right-image\">\n            <img src=\"{{SIDE_IMAGE}}\" alt=\"Graphic\" />\n        </div>\n    {{/if}}\n</div>",
       "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-main-content {\n    flex: 1;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-right-image {\n    margin-left: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    height: 100%;\n}\n#{{ID}} .rep-right-image img {\n    max-height: 80px;\n    max-width: 150px;\n    object-fit: contain;\n}",
-      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const delay = parseFloat(\"{{ANIMATION_DELAY}}\") || 0;\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = delay + \"s\";\n        if(container) {\n            void container.offsetWidth;\n            container.style.opacity = \"1\";\n            container.style.transform = \"{{ANIMATION_IDENTITY}}\";\n        }\n    };\n    root.__slt_hide = () => {\n        const el = root.querySelector(\"[class*=\\\"container\\\"], [class*=\\\"plate\\\"], [class*=\\\"box\\\"], [class*=\\\"bar\\\"], [class*=\\\"panel\\\"]\") || root.children[0];\n        if(el) el.style.transitionDelay = \"{{ANIMATION_OUT_DELAY}}s\";\n        if (typeof container !== \"undefined\" && container) {\n            container.style.transition = \"all {{ANIMATION_OUT_DURATION}}s {{ANIMATION_OUT_EASE}} {{ANIMATION_OUT_DELAY}}s\";\n            container.style.opacity = \"0\";\n            container.style.transform = \"{{ANIMATION_OUT_TRANSFORM}}\";\n        }\n    };\n})();",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
       "defaultFields": {
         "title": "Tytuł z grafiką",
         "primaryColor": "#ffffff",
@@ -235,6 +235,18 @@
         "titleColor": "#ffffff",
         "sideImage": ""
       }
+    }
+  ],
+  "groups": [
+    {
+      "id": "8a6900f5-c9fb-410a-9cb8-f7e90ac308f2",
+      "name": "cg1",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc",
+      "name": "CG2",
+      "color": "#ef4444"
     }
   ],
   "graphics": [
@@ -346,6 +358,9 @@
           "duration": 0.5,
           "delay": 0,
           "ease": ""
+        },
+        "text": {
+          "type": "reveal"
         }
       },
       "style": {
@@ -469,12 +484,12 @@
         "layer": 4
       },
       "speed": 160,
-      "groupId": null
+      "groupId": "8a6900f5-c9fb-410a-9cb8-f7e90ac308f2"
     },
     {
       "id": "64c00f5c-41dd-4c61-8c44-898ae8fa5aa8",
       "type": "TICKER",
-      "visible": false,
+      "visible": true,
       "name": "Ticker zwykły",
       "title": "Test\nMulti",
       "subtitle": "Podtytuł",
@@ -493,6 +508,9 @@
           "duration": 0.5,
           "delay": 0,
           "ease": "ease-out"
+        },
+        "text": {
+          "type": "reveal"
         }
       },
       "style": {
@@ -542,6 +560,71 @@
       "type": "CLOCK",
       "visible": true,
       "name": "zegarek",
+      "title": "Test\nMulti",
+      "subtitle": "Oprawca Kononowicza",
+      "introText": "PILNE",
+      "variant": "custom",
+      "templateId": "republika-clock",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "out": {
+          "type": "zoom",
+          "direction": "top",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "text": {
+          "type": "slideReveal",
+          "delay": 0
+        }
+      },
+      "style": {
+        "background": {
+          "color": "#901414",
+          "opacity": 1,
+          "borderColor": "#12175e",
+          "borderWidth": 0,
+          "borderRadius": 10,
+          "type": "gradient",
+          "color2": "#942424",
+          "gradientAngle": 160
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold",
+          "textTransform": "none"
+        },
+        "subtitleTypography": {
+          "color": "#00FFFF",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "layout": {
+        "x": 20,
+        "y": 980,
+        "scale": 1,
+        "side": "bottom-left",
+        "marginY": 50,
+        "marginX": 50
+      },
+      "groupId": "8a6900f5-c9fb-410a-9cb8-f7e90ac308f2"
+    },
+    {
+      "id": "c2d17e72-3ab4-4dec-bae3-871d15a523ed",
+      "type": "CLOCK",
+      "visible": true,
+      "name": "zegarek (kopia)",
       "title": "Test\nMulti",
       "subtitle": "Oprawca Kononowicza",
       "introText": "PILNE",
@@ -3109,18 +3192,369 @@
         "width": 300,
         "height": 300
       }
-    }
-  ],
-  "groups": [
-    {
-      "id": "8a6900f5-c9fb-410a-9cb8-f7e90ac308f2",
-      "name": "cg1",
-      "color": "#3b82f6"
     },
     {
-      "id": "04566c50-94c7-4b9a-bb8e-f244f53d6ddc",
-      "name": "CG2",
-      "color": "#ef4444"
+      "id": "65c37300-b1c2-4528-84bc-28bb8c053f2d",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Lw  (04:35:16)",
+      "title": "VinciFlow Title",
+      "titleHtml": "VinciFlow Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "system-standard",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "text": {
+          "type": "none",
+          "duration": 1,
+          "delay": 0.3
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#2563eb",
+          "color2": "#facc15",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "376e7cb5-aa2b-41e6-9c22-8f7009db2fb3",
+      "type": "TICKER",
+      "visible": false,
+      "name": "Modern Ticker (04:36:50)",
+      "title": "Title",
+      "titleHtml": "Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Welcome to the new Modern Ticker.",
+        "This is a breaking news update.",
+        "Live from the studio.",
+        "Additional information scrolling here."
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "modern-ticker",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "text": {
+          "type": "none",
+          "duration": 1,
+          "delay": 0.3
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#0047AB",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "6c4be327-1d2b-403d-98a4-fb106e8af05c",
+      "type": "TICKER",
+      "visible": false,
+      "name": "Modern Ticker (04:36:50) (kopia)",
+      "title": "Title",
+      "titleHtml": "Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Welcome to the new Modern Ticker.",
+        "This is a breaking news update.",
+        "Live from the studio.",
+        "Additional information scrolling here."
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "modern-ticker",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "text": {
+          "type": "none",
+          "duration": 1,
+          "delay": 0.3
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#0047AB",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "cafbd954-96d1-4a2c-8810-949d6fe2f6c7",
+      "type": "TICKER",
+      "visible": false,
+      "name": "Modern Ticker (04:36:50) (kopia)",
+      "title": "Title",
+      "titleHtml": "Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Welcome to the new Modern Ticker.",
+        "This is a breaking news update.",
+        "Live from the studio.",
+        "Additional information scrolling here."
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "modern-ticker",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "text": {
+          "type": "none",
+          "duration": 1,
+          "delay": 0.3
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#0047AB",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "fd5574f5-39d8-4cc8-8679-d8b377315642",
+      "type": "TICKER",
+      "visible": false,
+      "name": "Modern Ticker (04:36:50) (kopia)",
+      "title": "Title",
+      "titleHtml": "Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Welcome to the new Modern Ticker.",
+        "This is a breaking news update.",
+        "Live from the studio.",
+        "Additional information scrolling here."
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "modern-ticker",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "text": {
+          "type": "none",
+          "duration": 1,
+          "delay": 0.3
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#0047AB",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
     }
   ]
 }
