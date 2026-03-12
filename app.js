@@ -13,6 +13,7 @@ let currentPage = 'dashboard'; // 'dashboard' | 'templates'
 let currentTemplateId = null;
 let currentTemplateTab = 'html';
 let inspectorAccordionStates = {}; // graphicId -> { accordionId -> isOpen }
+let currentInspectorTab = 'main'; // Tracks active tab in inspector
 const DB_KEY = 'cg_state_backup';
 
 // ===========================================================
@@ -595,6 +596,19 @@ function openInspector(id) {
     }
 
     renderInspectorBody(graphic);
+
+    // Sync tab button styles
+    const tabMain = document.getElementById('ins-tab-main');
+    const tabAnim = document.getElementById('ins-tab-anim');
+    if (tabMain && tabAnim) {
+        if (currentInspectorTab === 'main') {
+            tabMain.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
+            tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
+        } else {
+            tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
+            tabMain.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
+        }
+    }
 }
 
 function renderInspectorBody(graphic) {
@@ -604,7 +618,7 @@ function renderInspectorBody(graphic) {
 
     body.innerHTML = `
         <!-- TAB MAIN -->
-        <div id="ins-tab-content-main" class="flex-1 flex flex-col shrink-0">
+        <div id="ins-tab-content-main" class="${currentInspectorTab === 'main' ? '' : 'hidden '}flex-1 flex flex-col shrink-0">
             <!-- ACCORDION: ZAWARTOŚĆ -->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="content">
@@ -628,7 +642,6 @@ function renderInspectorBody(graphic) {
                                 <button id="btn-open-wysiwyg" title="Edytuj tekst" style="position:absolute;top:6px;right:6px;width:26px;height:26px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:4px;color:#60a5fa;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;">&#9999;</button>
                             </div>
                         </div>
-
 
                         ${['republika-composite', 'republika-lower-third', 'belka-exp-graphic', '528dc35a-546a-4e7f-8da7-a0c365f81680'].includes(graphic.templateId) ? `
                         <div class="border-t border-gray-800 pt-3 mt-1">
@@ -726,6 +739,7 @@ function renderInspectorBody(graphic) {
                         ${ctrlLabel('Kolor Akcentu / Obramowania')}
                         ${colorPickerHtml('style.background.borderColor', graphic.style?.background?.borderColor || '#3b82f6')}
                     </div>
+                    </div>
 
                     <div class="border-t border-gray-800 pt-3 mt-2">
                         <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Typografia</div>
@@ -820,7 +834,7 @@ function renderInspectorBody(graphic) {
         </div>
 
         <!-- TAB ANIMATION -->
-        <div id="ins-tab-content-anim" class="hidden flex-1 flex flex-col shrink-0">
+        <div id="ins-tab-content-anim" class="${currentInspectorTab === 'anim' ? '' : 'hidden '}flex-1 flex flex-col shrink-0">
             <!--ACCORDION: ANIMACJA-->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="animation">
@@ -860,6 +874,49 @@ function renderInspectorBody(graphic) {
                             </div>
                             ${ctrlLabel('Krzywa (Easing)')}
                             ${easingSelect('animation.out.ease', graphic.animation?.out?.ease || 'ease-in', true)}
+                        </div>
+                    </div>
+
+                    <!-- TEXT IN animation -->
+                    <div class="border-t border-gray-800 pt-4">
+                        <div class="text-[9px] font-bold text-green-400 uppercase tracking-wider mb-2">Tekst Wejście (TEXT IN)</div>
+                        <div class="space-y-2">
+                            ${ctrlLabel('Typ')}
+                            <select data-field="animation.text.type" class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
+                                <option value="none" ${(!graphic.animation?.text?.type || graphic.animation.text.type === 'none') ? 'selected' : ''}>✕ Brak (Pojawia się z belką)</option>
+                                <option value="reveal" ${graphic.animation?.text?.type === 'reveal' ? 'selected' : ''}>Odsłonięcie (Reveal)</option>
+                                <option value="typewriter" ${graphic.animation?.text?.type === 'typewriter' ? 'selected' : ''}>Pisanie (Typewriter)</option>
+                                <option value="blur" ${graphic.animation?.text?.type === 'blur' ? 'selected' : ''}>Rozmycie (Blur In)</option>
+                                <option value="slideReveal" ${graphic.animation?.text?.type === 'slideReveal' ? 'selected' : ''}>Wjazd od dołu (Slide Reveal)</option>
+                            </select>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>${ctrlLabel('Czas (s)')}<input type="number" data-field="animation.text.duration" value="${graphic.animation?.text?.duration ?? 1.0}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                                <div>${ctrlLabel('Opóźnienie względem belki (s)')}<input type="number" data-field="animation.text.delay" value="${graphic.animation?.text?.delay ?? 0.2}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TEXT OUT animation -->
+                    <div class="border-t border-gray-800 pt-4">
+                        <div class="text-[9px] font-bold text-red-400 uppercase tracking-wider mb-2">Tekst Wyjście (TEXT OUT)</div>
+                        <div class="space-y-2">
+                            ${ctrlLabel('Typ')}
+                            <select data-field="animation.textOut.type" class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
+                                <option value="none" ${(!graphic.animation?.textOut?.type || graphic.animation.textOut.type === 'none') ? 'selected' : ''}>✕ Brak (Razem z belką / Sztywne ucięcie)</option>
+                                <option value="fade" ${graphic.animation?.textOut?.type === 'fade' ? 'selected' : ''}>Zanikanie (Fade)</option>
+                                <option value="blurOut" ${graphic.animation?.textOut?.type === 'blurOut' ? 'selected' : ''}>Rozmycie (Blur Out)</option>
+                                <option value="hide" ${graphic.animation?.textOut?.type === 'hide' ? 'selected' : ''}>Zasłonięcie (Hide)</option>
+                            </select>
+                            
+                            <div class="flex items-center gap-2 mt-2 mb-2">
+                                <input type="checkbox" id="sync-text-out" data-field="animation.textOut.syncWithBase" ${graphic.animation?.textOut?.syncWithBase ? 'checked' : ''} class="w-3 h-3 bg-gray-800 border-gray-600 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 cursor-pointer">
+                                <label for="sync-text-out" class="text-[9px] text-gray-300 font-bold uppercase cursor-pointer">Synchronizuj z wyjściem belki (Auto-kalkulacja)</label>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2" style="${graphic.animation?.textOut?.syncWithBase ? 'opacity:0.3; pointer-events:none;' : ''}">
+                                <div>${ctrlLabel('Czas (s)')}<input type="number" data-field="animation.textOut.duration" value="${graphic.animation?.textOut?.duration ?? 0.5}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                                <div>${ctrlLabel('Wyprzedzenie wyjścia belki (s)')}<input type="number" data-field="animation.textOut.delay" value="${graphic.animation?.textOut?.delay ?? 0}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -1896,12 +1953,18 @@ function bindGlobalEvents() {
     const tabAnim = document.getElementById('ins-tab-anim');
     if (tabMain && tabAnim) {
         tabMain.onclick = () => {
+            currentInspectorTab = 'main';
             document.getElementById('ins-tab-content-main')?.classList.remove('hidden');
             document.getElementById('ins-tab-content-anim')?.classList.add('hidden');
             tabMain.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
             tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
         };
         tabAnim.onclick = () => {
+            currentInspectorTab = 'anim';
+            if (selectedGraphicId && inspectorAccordionStates[selectedGraphicId]) {
+                inspectorAccordionStates[selectedGraphicId].animation = true;
+                openInspector(selectedGraphicId);
+            }
             document.getElementById('ins-tab-content-main')?.classList.add('hidden');
             document.getElementById('ins-tab-content-anim')?.classList.remove('hidden');
             tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";

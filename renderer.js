@@ -699,7 +699,7 @@
             TEXT_ANIM_JSON: JSON.stringify(graphic.animation?.text || { type: 'none' }),
             TEXT_ANIM_SYNC: !!graphic.animation?.textSync,
             TEXT_ANIM_OUT_JSON: JSON.stringify(graphic.animation?.textOut || { type: 'none' }),
-            TEXT_ANIM_OUT_SYNC: !!graphic.animation?.textOutSync,
+            TEXT_ANIM_OUT_SYNC: !!graphic.animation?.textOut?.syncWithBase,
         };
     }
 
