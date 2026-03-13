@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
@@ -34,6 +35,19 @@ const db = new sqlite3.Database(DB_FILE, (err) => {
         }
     }
 });
+
+// Konfiguracja uploadu plików (multer)
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+    filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, unique + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // max 10MB
 
 // Funkcja automatycznej inicjalizacji bazy danych przy pierwszym uruchomieniu
 function ensureDatabaseInitialized() {
@@ -111,68 +125,47 @@ function ensureDatabaseInitialized() {
 
 let appState = { settings: {}, templates: [], graphics: [], groups: [] };
 
-// Funkcja ładująca stan z bazy SQLite do RAM,
-// żeby przy połączeniu nowego klienta od razu wysłać 'initialState' 
-// bez konieczności czekania na asynchroniczne zapytania w on('connection')
+// Funkcja ładująca stan z bazy SQLite do RAM (Promise.all pattern)
 function loadStateFromDB(callback) {
     console.log("[DB] Loading state from SQLite...");
-    let newState = { settings: {}, templates: [], graphics: [], groups: [] };
-    let queriesPending = 4;
 
-    function checkDone() {
-        queriesPending--;
-        if (queriesPending === 0) {
-            appState = newState;
-            console.log(`[DB] State fully loaded. Graphics: ${newState.graphics.length}, Templates: ${newState.templates.length}`);
-            if (callback) callback();
-        }
-    }
+    const q = (fn) => new Promise((resolve) => fn(resolve));
 
-    // Settings
-    db.get("SELECT data FROM settings WHERE id = 1", (err, row) => {
-        if (!err && row) {
-            try { newState.settings = JSON.parse(row.data); } catch(e){}
-        }
-        checkDone();
-    });
+    const pSettings = q(resolve => db.get("SELECT data FROM settings WHERE id = 1", (err, row) => {
+        let settings = {};
+        if (!err && row) { try { settings = JSON.parse(row.data); } catch(e){} }
+        resolve(settings);
+    }));
 
-    // Templates
-    db.all("SELECT data FROM templates", (err, rows) => {
-        if (!err && rows) {
-            newState.templates = rows.map(r => {
-                try { return JSON.parse(r.data); } catch(e) { return null; }
-            }).filter(Boolean);
-        }
-        checkDone();
-    });
+    const pTemplates = q(resolve => db.all("SELECT data FROM templates", (err, rows) => {
+        const templates = (!err && rows)
+            ? rows.map(r => { try { return JSON.parse(r.data); } catch(e) { return null; } }).filter(Boolean)
+            : [];
+        resolve(templates);
+    }));
 
-    // Groups
-    db.all("SELECT data FROM groups", (err, rows) => {
-        if (!err && rows) {
-            newState.groups = rows.map(r => {
-                try { return JSON.parse(r.data); } catch(e) { return null; }
-            }).filter(Boolean);
-        }
-        checkDone();
-    });
+    const pGroups = q(resolve => db.all("SELECT data FROM groups", (err, rows) => {
+        const groups = (!err && rows)
+            ? rows.map(r => { try { return JSON.parse(r.data); } catch(e) { return null; } }).filter(Boolean)
+            : [];
+        resolve(groups);
+    }));
 
-    // Graphics
-    db.all("SELECT id, templateId, name, groupId, visible, data FROM graphics", (err, rows) => {
-        if (!err && rows) {
-            newState.graphics = rows.map(r => {
+    const pGraphics = q(resolve => db.all("SELECT id, templateId, name, groupId, visible, data FROM graphics", (err, rows) => {
+        const graphics = (!err && rows)
+            ? rows.map(r => {
                 let parsed = {};
                 try { parsed = JSON.parse(r.data); } catch(e){}
-                return {
-                    ...parsed,
-                    id: r.id,
-                    templateId: r.templateId,
-                    name: r.name,
-                    groupId: r.groupId,
-                    visible: r.visible === 1
-                };
-            });
-        }
-        checkDone();
+                return { ...parsed, id: r.id, templateId: r.templateId, name: r.name, groupId: r.groupId, visible: r.visible === 1 };
+            })
+            : [];
+        resolve(graphics);
+    }));
+
+    Promise.all([pSettings, pTemplates, pGroups, pGraphics]).then(([settings, templates, groups, graphics]) => {
+        appState = { settings, templates, groups, graphics };
+        console.log(`[DB] State fully loaded. Graphics: ${graphics.length}, Templates: ${templates.length}`);
+        if (callback) callback();
     });
 }
 
@@ -236,6 +229,16 @@ function syncStateToDB(state) {
 
 // Serve static files from the current directory
 app.use(express.static(__dirname));
+// Serwowanie katalogu z uploadami
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Endpoint do uploadu pliku (zastępuje osadzanie Base64 w grafice)
+app.post('/api/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const url = `/uploads/${req.file.filename}`;
+    console.log(`[UPLOAD] Saved: ${req.file.filename} (${req.file.size} bytes)`);
+    res.json({ url });
+});
 
 io.on('connection', (socket) => {
     console.log(`[+] Client connected: ${socket.id}`);
@@ -256,10 +259,8 @@ io.on('connection', (socket) => {
         // Broadcast the updated state to ALL connected clients
         io.emit('stateUpdated', appState);
         
-        // Persist to disk
-        if (newState.graphics && newState.graphics.length > 0) {
-            syncGraphicsToDB(newState.graphics);
-        }
+        // Persist to disk — zawsze synchronizuj grafiki (nawet gdy pusta tablica)
+        syncGraphicsToDB(newState.graphics || []);
         syncStateToDB(newState);
     });
 
