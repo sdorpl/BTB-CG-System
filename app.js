@@ -29,6 +29,23 @@ async function init() {
         bindWysiwygModalEvents();
         document.getElementById('loading-overlay').classList.add('hidden');
 
+        // --- NEW GLOBAL ACTIONS ---
+        document.getElementById('btn-kill-all')?.addEventListener('click', () => {
+            state.graphics.forEach(g => g.visible = false);
+            saveState();
+            renderShotbox();
+            updateProgramMonitor();
+        });
+
+        document.getElementById('btn-bg-black')?.addEventListener('click', () => {
+            socket.emit('set_background', 'black');
+        });
+
+        document.getElementById('btn-bg-trans')?.addEventListener('click', () => {
+            socket.emit('set_background', 'transparent');
+        });
+        // -------------------------
+
         document.getElementById('btn-toggle-safe-area')?.addEventListener('click', (e) => {
             document.querySelectorAll('.ebu-safe-area').forEach(el => {
                 el.classList.toggle('hidden');
@@ -350,20 +367,20 @@ function renderShotbox() {
 
         // --- Card ---
         const card = document.createElement('div');
-        card.className = `shotbox-card cursor-pointer rounded-lg border p-3 relative group flex flex-col gap-2
-            ${isActive ? 'border-red-500 bg-red-900/10 shadow-[0_0_10px_rgba(239,68,68,0.15)]' :
-                isPreview ? 'border-green-500 bg-green-900/10 shadow-[0_0_10px_rgba(34,197,94,0.15)]' :
-                    'border-gray-800 bg-gray-900 hover:border-gray-600'}`;
+        card.className = `shotbox-card cursor-pointer rounded border p-2 relative group flex flex-col gap-2 transition-all duration-200
+            ${isActive ? 'border-red-600 bg-red-900/20 shadow-[0_0_15px_rgba(229,57,53,0.3)] ring-1 ring-red-500' :
+                isPreview ? 'border-yellow-500 bg-yellow-900/10 shadow-[0_0_10px_rgba(251,192,45,0.2)]' :
+                    'border-gray-800 bg-[#111] hover:border-gray-600'}`;
 
-        // Colored left border for grouped items
+        // Colored top border for groups like in OCG
         if (grp) {
-            card.style.borderLeftWidth = '4px';
-            card.style.borderLeftColor = grp.color;
+            card.style.borderTopWidth = '3px';
+            card.style.borderTopColor = grp.color;
         }
 
         // Action buttons
         const actionBtns = `
-            <div class="absolute top-1.5 right-1.5 flex gap-0.5 transition-all">
+            <div class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button data-copy-id="${graphic.id}" title="Kopiuj" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-blue-900/60 text-gray-500 hover:text-blue-400 text-[10px] leading-none">📋</button>
                 <button data-delete-id="${graphic.id}" title="Usuń" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs leading-none">&times;</button>
             </div>`;
@@ -375,26 +392,37 @@ function renderShotbox() {
 
         card.innerHTML = `
             ${actionBtns}
-            ${isActive ? `<div class="absolute top-1.5 left-1.5 flex items-center gap-1"><div class="w-2 h-2 bg-red-500 rounded-full animate-pulse-slow"></div><span class="text-[9px] font-bold text-red-500">ON AIR</span></div>` : ''}
-            <div class="mt-3">
-                <p class="text-xs font-bold text-white truncate leading-tight">${graphic.name}</p>
-                <p class="text-[9px] text-gray-500 font-mono truncate">${tpl ? tpl.type : '?'}${grp ? ` · ${grp.name}` : ''}</p>
+            <div class="flex justify-between items-start mb-1">
+                <div class="flex flex-col min-w-0">
+                    <span class="text-[10px] font-black text-white truncate uppercase tracking-tight">${graphic.name}</span>
+                    <span class="text-[8px] text-gray-500 font-mono truncate uppercase">${tpl ? tpl.type : 'NONE'} ${grp ? `// ${grp.name}` : ''}</span>
+                </div>
+                ${isActive ? `<div class="flex items-center gap-1 bg-red-600 px-1 rounded shadow-[0_0_8px_rgba(229,57,53,0.5)]"><span class="text-[8px] font-black text-white italic">LIVE</span></div>` : ''}
             </div>
+
             <div class="flex gap-1 mt-auto">
-                <button data-preview-id="${graphic.id}" class="flex-1 text-[9px] py-1 rounded font-bold uppercase transition-all
-                    ${isPreview ? 'bg-green-600/30 text-green-400 border border-green-600/30' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}">
-                    PREVIEW
+                <button data-take-id="${graphic.id}" class="flex-[2] text-[10px] py-1.5 rounded font-black uppercase transition-all shadow-md
+                    ${isActive ? 'bg-red-600 text-white border-t border-red-400 animate-pulse' : 'bg-[#2a2a2a] text-gray-400 hover:bg-red-700 hover:text-white border-t border-gray-700'}">
+                    TAKE
                 </button>
-                <button data-take-id="${graphic.id}" class="flex-1 text-[9px] py-1 rounded font-bold uppercase transition-all
-                    ${isActive ? 'bg-red-600/30 text-red-400 border border-red-600/30' : 'bg-gray-800 text-gray-400 hover:bg-blue-700/30 hover:text-white'}">
-                    ${isActive ? 'OFF AIR' : 'ON AIR'}
+                <button data-preview-id="${graphic.id}" class="flex-1 text-[10px] py-1.5 rounded font-black uppercase transition-all border-t
+                    ${isPreview ? 'bg-blue-600 text-white border-blue-400' : 'bg-[#1a1a1a] text-gray-500 hover:bg-blue-800 hover:text-white border-gray-800'}">
+                    PREV
                 </button>
+                ${isActive ? `
+                <button data-off-id="${graphic.id}" class="flex-1 text-[10px] py-1.5 rounded font-black uppercase bg-black text-red-500 border border-red-900/50 hover:bg-red-900 hover:text-white transition-all">
+                    OFF
+                </button>` : ''}
             </div>
-            <select data-group-assign="${graphic.id}" class="w-full bg-gray-800 border border-gray-700 rounded text-[9px] text-gray-400 py-0.5 px-1 focus:outline-none focus:border-blue-500 mt-0.5" title="Grupa">
-                <option value="">— brak grupy —</option>
-                ${groupOptions}
-                <option value="__new__">＋ Nowa grupa…</option>
-            </select>
+
+            <div class="flex gap-1 mt-1">
+                 <button onclick="openWysiwygModal('${graphic.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edit Content</button>
+                 <select data-group-assign="${graphic.id}" class="flex-[1.5] bg-black border border-gray-800 rounded text-[8px] text-gray-500 py-1 px-1 focus:outline-none focus:border-blue-500" title="Grupa">
+                    <option value="">— NO GROUP —</option>
+                    ${groupOptions}
+                    <option value="__new__">＋ NEW GROUP…</option>
+                </select>
+            </div>
         `;
 
         grid.appendChild(card);
@@ -582,9 +610,11 @@ function updateProgramMonitor() {
 // 8. INSPECTOR PANEL
 // ===========================================================
 function closeInspector() {
+    document.getElementById('inspector-panel').classList.add('hidden');
     document.getElementById('inspector-empty').classList.remove('hidden');
     document.getElementById('inspector-content').classList.add('hidden');
     document.getElementById('inspector-content').classList.remove('flex');
+    selectedGraphicId = null;
 }
 
 function openInspector(id) {
@@ -597,6 +627,7 @@ function openInspector(id) {
     refreshPreviewMonitor();
     refreshPreviewControls();
 
+    document.getElementById('inspector-panel').classList.remove('hidden');
     document.getElementById('inspector-empty').classList.add('hidden');
     document.getElementById('inspector-content').classList.remove('hidden');
     document.getElementById('inspector-content').classList.add('flex');
@@ -1251,12 +1282,13 @@ function openWysiwygModal(graphicId) {
 
     // Set editor base font from graphic's typography settings so new typing uses the right font
     const defaultFont = g.style?.typography?.fontFamily || 'Bahnschrift';
-    const defaultFontSize = (g.style?.typography?.fontSize || 24) + 'px';
-    const defaultLineHeight = g.style?.typography?.lineHeight || '1.4';
+    const defaultFontSize = (g.style?.typography?.fontSize || 48) + 'px';
+    const defaultLineHeight = g.style?.typography?.lineHeight || '1.1';
     
     editor.style.fontFamily = defaultFont;
     editor.style.fontSize = defaultFontSize;
     editor.style.lineHeight = defaultLineHeight;
+    editor.style.textTransform = g.style?.typography?.textTransform || 'none';
 
     // Sync toolbar state
     const _syncToolbar = () => {
@@ -1271,7 +1303,10 @@ function openWysiwygModal(graphicId) {
         if (!fontSel || !sizeSel) return;
 
         // Reset to base editor style if no specific span is selected
-        if (lhSel) lhSel.value = editor.style.lineHeight || '1.4';
+        fontSel.value = defaultFont;
+        sizeSel.value = parseInt(defaultFontSize) || 48;
+        if (weightSel) weightSel.value = g.style?.typography?.fontWeight || '400';
+        if (lhSel) lhSel.value = defaultLineHeight;
 
         const styledEl = editor.querySelector('span[style]');
         if (styledEl) {
@@ -2330,6 +2365,12 @@ function bindGlobalEvents() {
         const tpl = state.templates.find(t => t.id === currentTemplateId);
         if (tpl) tpl.name = e.target.value;
     };
+
+    // Inspector close button
+    const closeInsBtn = document.getElementById('btn-close-inspector');
+    if (closeInsBtn) {
+        closeInsBtn.onclick = closeInspector;
+    }
 }
 
 // ===========================================================

@@ -233,15 +233,31 @@
 </div>
 
 <script>
-    const FIREBASE_URL = "https://ocg-236e0-default-rtdb.europe-west1.firebasedatabase.app/";
+    const LOCAL_SERVER = "http://localhost:3001";
 
-    let db;
-    if (FIREBASE_URL.includes("twoj-adres-bazy")) {
-        console.warn("Działam lokalnie.");
-        document.getElementById('cloud-status').textContent = "OFFLINE";
-    } else {
-        firebase.initializeApp({ databaseURL: FIREBASE_URL });
-        db = firebase.database().ref('cg_templates');
+    async function initDatabase() {
+        try {
+            const res = await fetch(`${LOCAL_SERVER}/load`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data) && data.length > 0) {
+                    templates = data;
+                } else {
+                    templates = [...defaultTemplates];
+                    saveToCloud();
+                }
+                const statusEl = document.getElementById('cloud-status');
+                statusEl.textContent = "LOCAL";
+                statusEl.classList.add('online');
+                renderGallery();
+            }
+        } catch (e) {
+            console.warn("Local server not reachable, using defaults.");
+            templates = [...defaultTemplates];
+            const statusEl = document.getElementById('cloud-status');
+            statusEl.textContent = "OFFLINE";
+            renderGallery();
+        }
     }
     
     const channel = new BroadcastChannel('tv_engine');
@@ -405,45 +421,7 @@
         }
     ];
 
-    if (db) {
-        db.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                templates = (Array.isArray(data) ? data : Object.values(data)).filter(t => t !== null && typeof t === 'object');
-                let updated = false;
-                
-                defaultTemplates.forEach(defTpl => {
-                    let existing = templates.find(t => t.id === defTpl.id);
-                    if (existing) {
-                        if (existing.css !== defTpl.css || existing.html !== defTpl.html || existing.js !== defTpl.js) {
-                            existing.css = defTpl.css;
-                            existing.html = defTpl.html;
-                            existing.js = defTpl.js;
-                            updated = true;
-                        }
-                    } else {
-                        templates.push(defTpl);
-                        updated = true;
-                    }
-                });
-                
-                if (updated) saveToCloud();
-            } else {
-                templates = [...defaultTemplates];
-                saveToCloud();
-            }
-            
-            const statusEl = document.getElementById('cloud-status');
-            statusEl.textContent = "ONLINE"; statusEl.classList.add('online');
-
-            if (document.getElementById('text-editor-modal').style.display !== 'flex' && document.activeElement.tagName !== 'INPUT') {
-                renderGallery();
-            }
-        });
-    } else {
-        templates = [...defaultTemplates];
-        renderGallery();
-    }
+    initDatabase();
 
     function forceRestoreDefaults() {
         if(confirm('UWAGA: Zastąpi to WSZYSTKIE Twoje grafiki pakietem domyślnym. Kontynuować?')) {
@@ -453,11 +431,15 @@
         }
     }
 
-    function saveToCloud() {
-        if (db) {
-            db.set(templates).catch(err => {
-                alert("Błąd zapisu Firebase.");
+    async function saveToCloud() {
+        try {
+            await fetch(`${LOCAL_SERVER}/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(templates)
             });
+        } catch (e) {
+            console.error("Failed to save to local server:", e);
         }
     }
 

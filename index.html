@@ -119,42 +119,45 @@
 <body class="bg-gray-950 text-gray-200 h-screen font-sans overflow-hidden flex flex-col">
 
   <!-- ============================================================ HEADER == -->
-  <header class="h-12 bg-gray-900 border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
+  <header class="h-12 bg-black border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
     <div class="flex items-center gap-2">
       <div
-        class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center font-bold text-base shadow-lg shadow-blue-900/50">
+        class="w-7 h-7 bg-red-600 rounded flex items-center justify-center font-bold text-base shadow-lg shadow-red-900/50">
         V</div>
-      <h1 class="text-lg font-bold tracking-tight text-gray-200">CG Control <span
-          class="text-blue-400 text-xs uppercase ml-1">Pro</span></h1>
+      <h1 class="text-lg font-bold tracking-tight text-white uppercase italic">CG MASTER <span
+          class="text-red-500 text-xs font-black not-italic ml-1">ALPHA</span></h1>
     </div>
-    <nav class="flex items-center gap-4 text-xs">
+    <nav class="flex items-center gap-2 text-xs">
+      <div id="cloud-status" class="px-2 py-1 rounded bg-red-900/20 text-red-500 border border-red-900/50 text-[10px] font-bold uppercase tracking-widest">ŁĄCZENIE...</div>
+      
+      <div class="h-4 w-px bg-gray-700 mx-2"></div>
+      
       <button id="nav-dashboard"
-        class="nav-tab px-3 py-1.5 rounded font-bold text-blue-400 bg-blue-600/10 border border-blue-600/20">Dashboard</button>
+        class="nav-tab px-4 py-1.5 rounded font-black uppercase tracking-wider text-blue-400 bg-blue-600/10 border border-blue-600/20 text-[10px]">Dashboard</button>
       <button id="nav-templates"
-        class="nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors">Template
-        Editor</button>
+        class="nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]">Template Editor</button>
       <button id="nav-settings"
-        class="nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors">Ustawienia</button>
-      <div class="h-4 w-px bg-gray-700"></div>
-      <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded text-green-400">
-        <div class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-        <span>ONLINE</span>
+        class="nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]">Settings</button>
+      
+      <div class="h-4 w-px bg-gray-700 mx-2"></div>
+
+      <div class="flex items-center gap-1">
+        <button id="btn-bg-black" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-[9px] font-bold uppercase rounded">Tło Czarne</button>
+        <button id="btn-bg-trans" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-[9px] font-bold uppercase rounded">Tło OBS</button>
       </div>
-      <a href="output.html" target="_blank" class="hover:text-blue-400 transition-colors flex items-center gap-1">
+
+      <div class="h-4 w-px bg-gray-700 mx-1"></div>
+
+      <button id="btn-kill-all" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white border border-red-400 rounded text-[10px] font-black uppercase shadow-lg shadow-red-900/40 transition-all active:scale-95">Kill All</button>
+
+      <div class="h-4 w-px bg-gray-700 mx-1"></div>
+
+      <button id="reset-db-btn" class="text-gray-500 hover:text-red-400 p-1 transition-colors" title="Reset Database">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-        </svg>
-        WYJŚCIE
-      </a>
-      <button id="reset-db-btn" class="text-red-400 hover:text-red-300 flex items-center gap-1 text-[10px]">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <path d="M3 3v5h5" />
         </svg>
-        Reload DB
       </button>
     </nav>
   </header>
@@ -171,15 +174,15 @@
         <!-- PREVIEW Monitor -->
         <div class="flex-1 flex flex-col min-w-0" id="preview-monitor-wrap" style="display: flex; flex-direction: column;">
           <!-- Label bar ABOVE -->
-          <div class="h-7 bg-gray-900 border-t border-x border-green-600/50 rounded-t flex items-center justify-between px-3 shrink-0" style="height: 28px;">
+          <div class="h-7 bg-[#222] border-x border-gray-800 border-t-4 border-t-[#fbc02d] flex items-center justify-between px-3 shrink-0" style="height: 28px;">
             <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
-                <button id="btn-toggle-safe-area" class="text-[9px] uppercase font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded px-1.5 py-0.5 transition-colors border border-gray-700">EBU Safe Area</button>
+                <span class="text-[10px] font-black tracking-widest text-[#fbc02d] uppercase">PREVIEW (PODGLĄD)</span>
+                <button id="btn-toggle-safe-area" class="text-[8px] uppercase font-bold text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 rounded px-1.5 py-0.5 transition-colors border border-gray-800">SAFE AREA</button>
             </div>
-            <span id="preview-name" class="text-[10px] text-gray-400 truncate max-w-[160px]">---</span>
+            <span id="preview-name" class="text-[9px] text-gray-500 font-mono tracking-tighter truncate max-w-[160px]">---</span>
           </div>
           <!-- Monitor Viewport -->
-          <div class="flex-1 relative bg-black border-2 border-green-600 shadow-[0_0_15px_rgba(34,197,94,0.1)] rounded-b overflow-hidden" id="preview-monitor-inner" style="flex: 1; position: relative; width: 100%;">
+          <div class="flex-1 relative bg-black border-x border-b border-gray-800 overflow-hidden" id="preview-monitor-inner" style="flex: 1; position: relative; width: 100%;">
             <!-- Grid bg -->
             <div class="absolute inset-0 opacity-10 monitor-grid pointer-events-none"></div>
             <!-- Canvas area -->
@@ -194,15 +197,18 @@
                 </div>
               </div>
             </div>
-            <div id="preview-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">BRAK SYGNAŁU</div>
+            <div id="preview-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">NO SIGNAL</div>
           </div>
           <!-- Controls below -->
-          <div class="h-10 mt-2 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 40px;">
-            <span class="text-[10px] text-gray-500 font-mono pl-1">NEXT: <span id="preview-next-label">---</span></span>
-            <div class="flex gap-1.5">
-              <button id="btn-edit-preview" disabled class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">EDYTUJ</button>
-              <button id="btn-update-active" disabled class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">Aktualizuj</button>
-              <button id="btn-take-preview" disabled class="px-4 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-[10px] font-bold uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30">WEJDŹ (TAKE)</button>
+          <div class="h-10 mt-1 bg-black/40 border-x border-b border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 36px;">
+            <div class="flex flex-col">
+              <span class="text-[8px] text-gray-600 font-bold uppercase leading-none">Next Item</span>
+              <span id="preview-next-label" class="text-[10px] text-gray-400 font-mono truncate max-w-[150px]">---</span>
+            </div>
+            <div class="flex gap-1">
+              <button id="btn-edit-preview" disabled class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded text-[9px] font-bold uppercase transition-colors disabled:opacity-30">Edit</button>
+              <button id="btn-update-active" disabled class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded text-[9px] font-bold uppercase transition-colors disabled:opacity-30">Sync</button>
+              <button id="btn-take-preview" disabled class="px-3 py-1 bg-green-700 hover:bg-green-600 text-white border border-green-500 rounded text-[9px] font-black uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30">Take</button>
             </div>
           </div>
         </div>
@@ -210,15 +216,17 @@
         <!-- PROGRAM Monitor -->
         <div class="flex-1 flex flex-col min-w-0" id="program-monitor-wrap" style="display: flex; flex-direction: column;">
           <!-- Label bar ABOVE -->
-          <div class="h-7 bg-gray-900 border-t border-x border-red-600/50 rounded-t flex items-center justify-between px-3 shrink-0" style="height: 28px;">
+          <div class="h-7 bg-[#222] border-x border-gray-800 border-t-4 border-t-[#e53935] flex items-center justify-between px-3 shrink-0" style="height: 28px;">
             <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
+                <span class="text-[10px] font-black tracking-widest text-[#e53935] uppercase">PROGRAM (WIZJA)</span>
+                <span id="program-layers-label" class="flex items-center gap-1 text-[9px] text-white bg-red-600 px-1.5 rounded animate-pulse hidden">
+                  LIVE: <span id="program-layers-count">0</span>
+                </span>
             </div>
-            <span id="program-layers-label" class="text-[10px] text-red-400 font-bold animate-pulse hidden">ON AIR:
-              <span id="program-layers-count">0</span> WARSTWY</span>
+            <div class="w-2.5 h-2.5 bg-red-600 rounded-full shadow-[0_0_8px_#e53935] animate-pulse"></div>
           </div>
           <!-- Monitor Viewport -->
-          <div class="flex-1 relative bg-black border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.1)] rounded-b overflow-hidden" style="flex: 1; position: relative; width: 100%;">
+          <div class="flex-1 relative bg-black border-x border-b border-gray-800 overflow-hidden" style="flex: 1; position: relative; width: 100%;">
             <iframe id="program-iframe" src="output.html" class="absolute inset-0 w-full h-full border-0" style="pointer-events:none;"></iframe>
             <div class="ebu-safe-area hidden absolute inset-0 pointer-events-none z-50">
                <div style="position:absolute; left: 3.5%; right: 3.5%; top: 3.5%; bottom: 3.5%; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px;"></div>
@@ -226,12 +234,12 @@
                <div style="position:absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dotted rgba(255,255,255,0.3);"></div>
                <div style="position:absolute; top: 50%; left: 0; right: 0; border-top: 1px dotted rgba(255,255,255,0.3);"></div>
             </div>
-            <div id="program-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">BRAK SYGNAŁU</div>
+            <div id="program-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">NO SIGNAL</div>
           </div>
           <!-- Controls below -->
-          <div class="h-10 mt-2 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 40px;">
-            <span id="on-air-label" class="text-[10px] text-gray-500 font-bold pl-1">ON AIR: 0 LAYERS</span>
-            <button id="btn-clear-program" class="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900/50 rounded text-[10px] font-bold uppercase transition-colors">WYCZYŚĆ</button>
+          <div class="h-10 mt-1 bg-black/40 border-x border-b border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 36px;">
+            <span id="on-air-label" class="text-[9px] text-gray-500 font-black uppercase tracking-widest pl-1">On Air: 0 Layers</span>
+            <button id="btn-clear-program" class="px-3 py-1 bg-red-900/40 hover:bg-red-800 text-red-500 border border-red-900/50 rounded text-[9px] font-black uppercase transition-colors">Clear All</button>
           </div>
         </div>
       </div>
@@ -269,7 +277,7 @@
     </div>
 
     <!-- ====== RIGHT COLUMN: INSPECTOR PANEL == -->
-    <aside id="inspector-panel" class="w-72 flex flex-col bg-gray-900 border-l border-gray-800 shrink-0">
+    <aside id="inspector-panel" class="hidden w-72 flex flex-col bg-gray-900 border-l border-gray-800 shrink-0">
       <!-- Inspector Empty State -->
       <div id="inspector-empty" class="flex-1 flex flex-col items-center justify-center text-gray-600 p-8 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
@@ -285,7 +293,12 @@
       <div id="inspector-content" class="hidden flex flex-col h-full">
         <!-- Header -->
         <div class="p-2 bg-black/20 border-b border-gray-800 flex justify-between items-center text-xs text-gray-500 shrink-0">
-          <span class="font-bold uppercase text-gray-300">Inspektor</span>
+          <div class="flex items-center gap-2">
+            <button id="btn-close-inspector" class="text-gray-500 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <span class="font-bold uppercase text-gray-300">Inspektor</span>
+          </div>
           <select id="inspector-type-select"
             class="bg-gray-800 border border-gray-700 rounded text-[10px] px-1 py-0.5 text-blue-400 font-mono focus:outline-none">
             <option value="LOWER_THIRD">BELKA</option>
