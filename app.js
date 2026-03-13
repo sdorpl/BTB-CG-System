@@ -71,6 +71,18 @@ function saveState() {
     socket.emit('updateState', state);
 }
 
+// --- Helper do wysyłania plików na serwer ---
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const resp = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+    });
+    if (!resp.ok) throw new Error('Upload failed');
+    return await resp.json(); // { url: "/uploads/..." }
+}
+
 // ===========================================================
 // 3. NAVIGATION
 // ===========================================================
@@ -959,19 +971,21 @@ function renderInspectorBody(graphic) {
     // Image upload
     const imageUpload = body.querySelector('#image-upload');
     if (imageUpload) {
-        imageUpload.addEventListener('change', (e) => {
+        imageUpload.addEventListener('change', async (e) => {
             const file = e.target.files?.[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
+                try {
+                    const res = await uploadFile(file);
                     const g = state.graphics.find(g => g.id === graphic.id);
                     if (g) {
-                        g.url = ev.target.result;
+                        g.url = res.url;
                         saveState();
                         openInspector(graphic.id);
                     }
-                };
-                reader.readAsDataURL(file);
+                } catch (err) {
+                    console.error("[!] Upload error:", err);
+                    alert("Wystąpił błąd podczas wgrywania pliku.");
+                }
             }
         });
     }
@@ -979,19 +993,21 @@ function renderInspectorBody(graphic) {
     // Side image upload (republika-composite)
     const sideImageUpload = body.querySelector('#side-image-upload');
     if (sideImageUpload) {
-        sideImageUpload.addEventListener('change', (e) => {
+        sideImageUpload.addEventListener('change', async (e) => {
             const file = e.target.files?.[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
+                try {
+                    const res = await uploadFile(file);
                     const g = state.graphics.find(g => g.id === graphic.id);
                     if (g) {
-                        g.sideImage = ev.target.result;
+                        g.sideImage = res.url;
                         saveState();
                         openInspector(graphic.id);
                     }
-                };
-                reader.readAsDataURL(file);
+                } catch (err) {
+                    console.error("[!] Side image upload error:", err);
+                    alert("Wystąpił błąd podczas wgrywania grafiki bocznej.");
+                }
             }
         });
     }
