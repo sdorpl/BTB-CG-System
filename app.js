@@ -242,13 +242,13 @@ function setupMonitorScaling() {
         const ow = outer.clientWidth;
         const oh = outer.clientHeight;
         if (!ow || !oh) return;
-        
+
         const scale = Math.min(ow / 1920, oh / 1080);
         const scaledW = 1920 * scale;
         const scaledH = 1080 * scale;
         const offX = (ow - scaledW) / 2;
         const offY = (oh - scaledH) / 2;
-        
+
         canvasWrap.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;
     };
 
@@ -667,9 +667,7 @@ function renderInspectorBody(graphic) {
 
 
     body.innerHTML = `
-        <!-- TAB MAIN -->
         <div id="ins-tab-content-main" class="${currentInspectorTab === 'main' ? '' : 'hidden '}flex-1 flex flex-col shrink-0">
-            <!-- ACCORDION: ZAWARTOŚĆ -->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="content">
                     <span class="flex items-center gap-2">
@@ -752,7 +750,6 @@ function renderInspectorBody(graphic) {
                 </div>
             </div>
 
-            <!-- ACCORDION: WYGLĄD -->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="appearance">
                     <span class="flex items-center gap-2">
@@ -803,14 +800,40 @@ function renderInspectorBody(graphic) {
 
                     <div class="border-t border-gray-800 pt-3 mt-2">
                         <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Typografia</div>
-                        ${ctrlLabel('Kolor Czcionki')}
-                        ${colorPickerHtml('style.typography.color', graphic.style?.typography?.color || '#ffffff')}
+                        <div class="mb-2">
+                            ${ctrlLabel('Kolor Czcionki')}
+                            ${colorPickerHtml('style.typography.color', graphic.style?.typography?.color || '#ffffff')}
+                        </div>
+                        ${graphic.type === 'TICKER' ? `
+                        <div class="mb-2">
+                            ${ctrlLabel('Krój czcionki (Font Family)')}
+                            <input type="text" data-field="style.typography.fontFamily" value="${escAttr(graphic.style?.typography?.fontFamily || '')}" placeholder="np. Arial, Inter, sans-serif" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                ${ctrlLabel('Rozmiar (px)')}
+                                <input type="number" data-field="style.typography.fontSize" value="${graphic.style?.typography?.fontSize || 30}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                            </div>
+                            <div>
+                                ${ctrlLabel('Grubość')}
+                                <select data-field="style.typography.fontWeight" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                    <option value="normal" ${(graphic.style?.typography?.fontWeight || 'normal') === 'normal' ? 'selected' : ''}>Normalna (400)</option>
+                                    <option value="bold" ${graphic.style?.typography?.fontWeight === 'bold' ? 'selected' : ''}>Pogrubiona (700)</option>
+                                    <option value="100" ${graphic.style?.typography?.fontWeight === '100' ? 'selected' : ''}>Thin (100)</option>
+                                    <option value="300" ${graphic.style?.typography?.fontWeight === '300' ? 'selected' : ''}>Light (300)</option>
+                                    <option value="500" ${graphic.style?.typography?.fontWeight === '500' ? 'selected' : ''}>Medium (500)</option>
+                                    <option value="600" ${graphic.style?.typography?.fontWeight === '600' ? 'selected' : ''}>Semi-Bold (600)</option>
+                                    <option value="800" ${graphic.style?.typography?.fontWeight === '800' ? 'selected' : ''}>Extra-Bold (800)</option>
+                                    <option value="900" ${graphic.style?.typography?.fontWeight === '900' ? 'selected' : ''}>Black (900)</option>
+                                </select>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
 
 
-            <!-- ACCORDION: POZYCJA -->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="layout">
                     <span class="flex items-center gap-2">
@@ -858,7 +881,6 @@ function renderInspectorBody(graphic) {
                     <div class="border-t border-gray-800 pt-3 mt-3">
                         <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Powiązania (Dokowanie)</div>
                         <div class="space-y-4">
-                            <!-- Y DOCKING -->
                             <div>
                                 ${ctrlLabel('Przyklej po osi Y (Góra/Dół zależy od celu)')}
                                 <div class="text-[10px] text-gray-500 mb-1">Przytrzymaj Ctrl, aby wybrać wiele elementów</div>
@@ -872,7 +894,6 @@ function renderInspectorBody(graphic) {
                                 </div>
                             </div>
                             
-                            <!-- X DOCKING -->
                             <div class="border-t border-gray-800 pt-2">
                                 ${ctrlLabel('Przyklej po osi X (Lewo/Prawo zależy od celu)')}
                                 <div class="text-[10px] text-gray-500 mb-1">Przytrzymaj Ctrl, aby wybrać wiele elementów</div>
@@ -893,9 +914,7 @@ function renderInspectorBody(graphic) {
             </div>
         </div>
 
-        <!-- TAB ANIMATION -->
         <div id="ins-tab-content-anim" class="${currentInspectorTab === 'anim' ? '' : 'hidden '}flex-1 flex flex-col shrink-0">
-            <!--ACCORDION: ANIMACJA-->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="animation">
                     <span class="flex items-center gap-2">
@@ -905,7 +924,6 @@ function renderInspectorBody(graphic) {
                     <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.animation ? '−' : '+'}</span>
                 </button>
                 <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.animation ? 'open' : ''} bg-gray-850/50 p-3 space-y-4">
-                    <!-- IN animation -->
                     <div>
                         <div class="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-2">Wejście (IN)</div>
                         <div class="space-y-2">
@@ -921,7 +939,6 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
-                    <!-- OUT animation -->
                     <div class="border-t border-gray-800 pt-4">
                         <div class="text-[9px] font-bold text-orange-400 uppercase tracking-wider mb-2">Wyjście (OUT)</div>
                         <div class="space-y-2">
@@ -937,7 +954,6 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
-                    <!-- TEXT IN animation -->
                     <div class="border-t border-gray-800 pt-4">
                         <div class="text-[9px] font-bold text-green-400 uppercase tracking-wider mb-2">Tekst Wejście (TEXT IN)</div>
                         <div class="space-y-2">
@@ -956,7 +972,6 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
-                    <!-- TEXT OUT animation -->
                     <div class="border-t border-gray-800 pt-4">
                         <div class="text-[9px] font-bold text-red-400 uppercase tracking-wider mb-2">Tekst Wyjście (TEXT OUT)</div>
                         <div class="space-y-2">
@@ -980,7 +995,6 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
-                    <!-- Preview Anim button -->
                     <div class="border-t border-gray-800 pt-3">
                         <button id="btn-preview-anim" class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-[10px] font-bold transition-colors">
                             ▶ Podgląd animacji wejścia
@@ -1301,7 +1315,7 @@ function openWysiwygModal(graphicId) {
     const defaultFont = g.style?.typography?.fontFamily || 'Bahnschrift';
     const defaultFontSize = (g.style?.typography?.fontSize || 48) + 'px';
     const defaultLineHeight = g.style?.typography?.lineHeight || '1.1';
-    
+
     editor.style.fontFamily = defaultFont;
     editor.style.fontSize = defaultFontSize;
     editor.style.lineHeight = defaultLineHeight;
@@ -1565,9 +1579,9 @@ function bindWysiwygModalEvents() {
 function _wmApplyLineHeight(lh) {
     const editor = document.getElementById('wm-editor');
     if (!editor) return;
-    
+
     editor.style.lineHeight = lh;
-    
+
     // Persist to graphic style immediately so it survives refresh/save
     if (_wmGraphicId) {
         const g = state.graphics.find(g => g.id === _wmGraphicId);
@@ -1607,7 +1621,7 @@ function _wmApplyStyleToSelection(property, value) {
     // Check if the selection exactly matches an existing span ancestor
     let ancestor = range.commonAncestorContainer;
     if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentNode;
-    
+
     let existingSpan = null;
     let el = ancestor;
     while (el && el !== editor) {
@@ -1657,10 +1671,10 @@ function _wmApplyStyleToSelection(property, value) {
 function _wmClearAllFormatting() {
     const editor = document.getElementById('wm-editor');
     if (!editor) return;
-    
+
     // 1. execCommand removeFormat clears bold/italic/etc
     document.execCommand('removeFormat', false, null);
-    
+
     // 2. Custom clear: recursively strip all <span> and <font> tags while keeping text
     const stripTags = (root) => {
         const children = [...root.childNodes];
@@ -1672,16 +1686,16 @@ function _wmClearAllFormatting() {
                     while (node.firstChild) frag.appendChild(node.firstChild);
                     node.replaceWith(frag);
                     // Continue stripping on the new children
-                    stripTags(root); 
+                    stripTags(root);
                 } else if (node.hasChildNodes()) {
                     stripTags(node);
                 }
             }
         });
     };
-    
+
     stripTags(editor);
-    
+
     // 3. Reset editor base styles to defaults
     editor.style.fontWeight = 'normal';
     editor.style.fontStyle = 'normal';
@@ -1732,17 +1746,17 @@ function renderTemplateList() {
 function exportTemplate(id) {
     const tpl = state.templates.find(t => t.id === id);
     if (!tpl) return;
-    
+
     const dataStr = JSON.stringify(tpl, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `template_${tpl.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
     document.body.appendChild(a);
     a.click();
-    
+
     setTimeout(() => {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
@@ -1757,26 +1771,26 @@ function importTemplate(file) {
     reader.onload = (e) => {
         try {
             const imported = JSON.parse(e.target.result);
-            
+
             // Basic validation
             if (!imported.name || (!imported.html_template && !imported.css_template)) {
                 alert('Nieprawidłowy format pliku szablonu.');
                 return;
             }
-            
+
             // Generate new ID and mark as copy if needed
             const newTpl = {
                 ...imported,
                 id: crypto.randomUUID(),
                 name: imported.name + ' (Imported)'
             };
-            
+
             state.templates.push(newTpl);
             saveState();
             renderTemplateList();
             openTemplateEditor(newTpl.id);
             alert('Szablon został pomyślnie zaimportowany!');
-            
+
         } catch (err) {
             console.error('Import error:', err);
             alert('Błąd podczas importowania pliku JSON.');
@@ -2284,7 +2298,7 @@ function bindGlobalEvents() {
             const deletedId = selectedGraphicId;
             selectedGraphicId = null;
             closeInspector();
-            
+
             if (previewGraphic?.id === deletedId) {
                 setPreviewGraphic(null);
             }
