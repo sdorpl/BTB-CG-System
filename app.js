@@ -619,8 +619,15 @@ function closeInspector() {
 
 function openInspector(id) {
     selectedGraphicId = id;
-    const graphic = state.graphics.find(g => g.id === id);
-    if (!graphic) return;
+    const graphicRaw = state.graphics.find(g => g.id === id);
+    if (!graphicRaw) return;
+
+    // Fallback: if graphic doesn't have an explicit type, get it from the template
+    const graphic = JSON.parse(JSON.stringify(graphicRaw));
+    if (!graphic.type) {
+        const tpl = state.templates.find(t => t.id === graphic.templateId);
+        if (tpl) graphic.type = tpl.type;
+    }
 
     // AUTO-PREVIEW: always show/refresh the selected graphic in PREVIEW monitor during editing
     previewGraphic = JSON.parse(JSON.stringify(graphic));
@@ -732,6 +739,16 @@ function renderInspectorBody(graphic) {
                         </div>
                         ${graphic.url ? `<img src="${graphic.url}" class="w-full rounded border border-gray-700 object-contain" style="max-height:100px">` : ''}
                     ` : ''}
+
+                    ${graphic.type === 'TICKER' && graphic.templateId === 'tpl-urgent-ocg-wiper' ? `
+                         <div class="border-t border-gray-800 pt-3 mt-1">
+                            <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Wymiary (Wiper)</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>${ctrlLabel('Szerokość')}<input type="text" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto (100%)" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                                <div>${ctrlLabel('Wysokość')}<input type="text" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="60" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
 
@@ -832,8 +849,8 @@ function renderInspectorBody(graphic) {
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2 mt-2">
-                        <div>${ctrlLabel('Szerokość')}<input type="number" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                        <div>${ctrlLabel('Wysokość')}<input type="number" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Szerokość')}<input type="text" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Wysokość')}<input type="text" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
                         <div>${ctrlLabel('Warstwa (Z-Index)')}<input type="number" data-field="layout.layer" value="${graphic.layout?.layer ?? 1}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
                         <div>${ctrlLabel('Skala')}<input type="number" data-field="layout.scale" value="${graphic.layout?.scale ?? 1}" step="0.1" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
                     </div>

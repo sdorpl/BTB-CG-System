@@ -3579,6 +3579,7 @@
     {
       "id": "urgent-ocg-instance-01",
       "templateId": "tpl-urgent-ocg-wiper",
+      "type": "TICKER",
       "name": "PILNE (OCG)",
       "groupId": "tickers",
       "visible": false,

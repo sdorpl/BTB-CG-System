@@ -19,6 +19,12 @@
         return `scale(${autoScale}) translate(${finalX}px, ${finalY}px) scale(${scale}) rotate(${rotation}deg)`;
     }
 
+    function formatDimension(val, fallback = 'auto') {
+        if (!val) return fallback;
+        if (typeof val === 'string' && /[a-z%]/i.test(val)) return val;
+        return `${val}px`;
+    }
+
     // Safely assign GSAP global (may not be available in all contexts)
     try { if (typeof gsap !== 'undefined') window.gsap = gsap; } catch (e) { }
 
@@ -138,8 +144,8 @@
         layoutStyleWrapper.style.pointerEvents = 'none';
 
         // Set custom CSS variables exactly like VinciFlowGraphic.tsx Lines 331-338
-        layoutStyleWrapper.style.setProperty('--v-width', data.layout?.width ? `${data.layout.width}px` : '90%');
-        layoutStyleWrapper.style.setProperty('--v-height', data.layout?.height ? `${data.layout.height}px` : 'auto');
+        layoutStyleWrapper.style.setProperty('--v-width', formatDimension(data.layout?.width, '90%'));
+        layoutStyleWrapper.style.setProperty('--v-height', formatDimension(data.layout?.height, 'auto'));
         layoutStyleWrapper.style.zIndex = data.layout?.layer || 1;
 
         // Inner container that holds the Graphic
@@ -163,7 +169,7 @@
 
             // Advanced Scoping:
             // By prefixing common generic classes with the parent instance ID, we sandbox the CSS.
-            cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+            cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
 
             // Gradient override: if the graphic uses a gradient background, force it onto
             // all elements that only have background-color set (which doesn't support gradients).
@@ -407,7 +413,7 @@
                 let cssStr = prepareStr(tpl.css_template);
 
                 cssStr = cssStr.replace(new RegExp(`#${instanceId}\\s+`, 'g'), '');
-                cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+                cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
                 cssStr = cssStr.replace(/#\{\{ID\}\}|#GRAPHIC_ID/g, `#${instanceId}`);
 
                 const layoutStyleWrapper = document.createElement('div');
@@ -421,8 +427,8 @@
                 layoutStyleWrapper.style.height = '1080px';
                 layoutStyleWrapper.style.pointerEvents = 'none';
 
-                layoutStyleWrapper.style.setProperty('--v-width', graphic.layout?.width ? `${graphic.layout.width}px` : '90%');
-                layoutStyleWrapper.style.setProperty('--v-height', graphic.layout?.height ? `${graphic.layout.height}px` : 'auto');
+                layoutStyleWrapper.style.setProperty('--v-width', formatDimension(graphic.layout?.width, '90%'));
+                layoutStyleWrapper.style.setProperty('--v-height', formatDimension(graphic.layout?.height, 'auto'));
                 layoutStyleWrapper.style.zIndex = graphic.layout?.layer || 1;
 
                 const innerContainer = document.createElement('div');
