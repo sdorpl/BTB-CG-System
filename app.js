@@ -2695,7 +2695,7 @@ function bindGlobalEvents() {
                     // Minimalna weryfikacja poprawności struktury
                     if (parsed && typeof parsed === 'object' && Array.isArray(parsed.templates) && Array.isArray(parsed.graphics)) {
                         state = parsed;
-                        socket.emit('updateFullState', state); // Wymuszenie aktualizacji po stronie serwera
+                        socket.emit('updateState', state); // Wymuszenie aktualizacji po stronie serwera
                         init(); // Przerenderowanie całego UI
                         alert('Baza Danych została poprawnie zaimportowana!');
                     } else {
