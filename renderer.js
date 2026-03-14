@@ -69,6 +69,7 @@
                     titleHtml: graphic.titleHtml, titleLines: graphic.titleLines,
                     layout: graphic.layout, animation: graphic.animation,
                     style: graphic.style, sideImage: graphic.sideImage,
+                    speed: graphic.speed, items: graphic.items, wiper: graphic.wiper,
                     activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(graphic.id)) ? settings.globalFontFamily : null
 
                 });
@@ -234,6 +235,7 @@
                 titleHtml: data.titleHtml, titleLines: data.titleLines,
                 layout: data.layout, animation: data.animation,
                 style: data.style, sideImage: data.sideImage,
+                speed: data.speed, items: data.items, wiper: data.wiper,
                 activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(data.id)) ? settings.globalFontFamily : null
             }),
             isHiding: false

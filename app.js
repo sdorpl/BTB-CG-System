@@ -756,8 +756,27 @@ function renderInspectorBody(graphic) {
 
                     ${graphic.type === 'TICKER' ? `
                         <div>
-                            ${ctrlLabel('Wiadomości (jedna na linię)')}
-                            <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono">${(graphic.items || []).join('\n')}</textarea>
+                            <div class="flex items-center justify-between mb-2">
+                                ${ctrlLabel('Wiadomości (Elementy paska)')}
+                            </div>
+                            <div class="space-y-1 bg-gray-900 border border-gray-800 rounded p-1 mb-2 max-h-64 overflow-y-auto" id="ticker-messages-list-${graphic.id}">
+                                ${(graphic.items || []).length === 0 ? '<div class="text-center text-gray-500 text-[10px] py-2">Brak wiadomości</div>' : ''}
+                                ${(graphic.items || []).map((msg, idx) => `
+                                    <div class="flex items-center gap-1 group">
+                                        <input type="text" value="${escAttr(msg)}" onchange="window.updateTickerMessage('${graphic.id}', ${idx}, this.value)" class="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8">
+                                        <button onclick="window.removeTickerMessage('${graphic.id}', ${idx})" class="w-8 h-8 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs shrink-0">&times;</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="flex gap-1 mb-3">
+                                <input type="text" id="new-ticker-msg-${graphic.id}" placeholder="Nowa wiadomość..." class="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8" onkeydown="if(event.key === 'Enter') window.addTickerMessage('${graphic.id}')">
+                                <button onclick="window.addTickerMessage('${graphic.id}')" class="px-3 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold h-8 flex items-center justify-center transition-colors">DODAJ</button>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-gray-800">
+                                ${ctrlLabel('Alternatywny edytor wielolinijkowy')}
+                                <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono leading-tight" onchange="openInspector('${graphic.id}')">${(graphic.items || []).join('\n')}</textarea>
+                            </div>
+                            <hr class="border-gray-800 my-3">
                         </div>
                         <div>
                             ${ctrlLabel('Prędkość paska (px/s)')}
@@ -1353,9 +1372,9 @@ function saveWysiwyg(editorEl, graphicId) {
     if (g.type === 'TICKER') {
         const rawItems = html.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
         g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
-        if (currentGraphicId === g.id) {
-            const ta = document.querySelector('textarea[data-field="items"]');
-            if (ta) ta.value = g.items.join('\n');
+        if (selectedGraphicId === g.id) {
+            // Refresh inspector to show updated items in the new UI list
+            openInspector(g.id);
         }
     } else {
         g.titleHtml = html;
@@ -1370,6 +1389,49 @@ function saveWysiwyg(editorEl, graphicId) {
         refreshPreviewMonitor();
     }
 }
+
+// Helpers for Ticker Messages Manager UI
+window.updateTickerMessage = function(graphicId, index, value) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic || !graphic.items) return;
+    graphic.items[index] = value;
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+};
+
+window.removeTickerMessage = function(graphicId, index) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic || !graphic.items) return;
+    graphic.items.splice(index, 1);
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+    if (selectedGraphicId === graphicId) openInspector(graphicId);
+};
+
+window.addTickerMessage = function(graphicId) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic) return;
+    const input = document.getElementById(`new-ticker-msg-${graphicId}`);
+    if (!input || !input.value.trim()) return;
+    if (!graphic.items) graphic.items = [];
+    graphic.items.push(input.value.trim());
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+    if (selectedGraphicId === graphicId) openInspector(graphicId);
+    setTimeout(() => {
+        const resetInput = document.getElementById(`new-ticker-msg-${graphicId}`);
+        if(resetInput) resetInput.focus();
+    }, 50);
+};
 
 
 // ===========================================================
