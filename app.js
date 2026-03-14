@@ -706,6 +706,7 @@ function openInspector(id) {
 
 function renderInspectorBody(graphic) {
     const body = document.getElementById('inspector-body');
+    const tpl = state.templates.find(t => t.id === graphic.templateId);
 
 
 
@@ -800,7 +801,7 @@ function renderInspectorBody(graphic) {
                         ${graphic.url ? `<img src="${graphic.url}" class="w-full rounded border border-gray-700 object-contain" style="max-height:100px">` : ''}
                     ` : ''}
 
-                    ${graphic.type === 'TICKER' && graphic.templateId === 'tpl-urgent-ocg-wiper' ? `
+                    ${graphic.type === 'TICKER' && tpl?.features?.wiper ? `
                          <div class="border-t border-gray-800 pt-3 mt-1">
                             <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Wiper (Pasek Pilny)</div>
                             <div class="mb-2">
@@ -2075,6 +2076,7 @@ function createGraphicFromTemplate(tpl) {
                 fontWeight: tpl.defaultFields?.subtitleWeight || 'normal'
             }
         },
+        wiper: tpl.defaultFields?.wiper ? JSON.parse(JSON.stringify(tpl.defaultFields.wiper)) : undefined,
         groupId: null,
         layout: { x: 100, y: 800, width: undefined, height: undefined, scale: 1, layer: 1, ...(tpl.defaultLayout || {}) }
     };
@@ -2462,6 +2464,7 @@ function bindGlobalEvents() {
         if (g.style) newTpl.defaultStyle = JSON.parse(JSON.stringify(g.style));
         if (g.animation) newTpl.defaultAnimation = JSON.parse(JSON.stringify(g.animation));
         if (g.layout) newTpl.defaultLayout = JSON.parse(JSON.stringify(g.layout));
+        if (g.wiper) newTpl.defaultFields.wiper = JSON.parse(JSON.stringify(g.wiper));
 
         state.templates.push(newTpl);
         saveState();
@@ -2498,6 +2501,7 @@ function bindGlobalEvents() {
         if (g.style) exportTpl.defaultStyle = JSON.parse(JSON.stringify(g.style));
         if (g.animation) exportTpl.defaultAnimation = JSON.parse(JSON.stringify(g.animation));
         if (g.layout) exportTpl.defaultLayout = JSON.parse(JSON.stringify(g.layout));
+        if (g.wiper) exportTpl.defaultFields.wiper = JSON.parse(JSON.stringify(g.wiper));
         
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportTpl, null, 2));
         const el = document.createElement('a');
