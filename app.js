@@ -416,7 +416,7 @@ function renderShotbox() {
             </div>
 
             <div class="flex gap-1 mt-1">
-                 <button onclick="openWysiwygModal('${graphic.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edit Content</button>
+                 <button onclick="openWysiwygModal('${graphic.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edytuj Treść</button>
                  <select data-group-assign="${graphic.id}" class="flex-[1.5] bg-black border border-gray-800 rounded text-[8px] text-gray-500 py-1 px-1 focus:outline-none focus:border-blue-500" title="Grupa">
                     <option value="">— NO GROUP —</option>
                     ${groupOptions}
@@ -424,6 +424,13 @@ function renderShotbox() {
                 </select>
             </div>
         `;
+
+        // Click on card to preview
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('button') || e.target.closest('select')) return;
+            const gfx = state.graphics.find(g => g.id === graphic.id);
+            if (gfx) setPreviewGraphic(JSON.parse(JSON.stringify(gfx)));
+        });
 
         grid.appendChild(card);
     });
@@ -517,6 +524,42 @@ function renderShotbox() {
         });
     });
 
+    // Sortable JS Init dla siatki banku grafik "Drag & Drop"
+    if (window.Sortable) {
+        if (window._shotboxSortable) {
+            window._shotboxSortable.destroy();
+        }
+        window._shotboxSortable = Sortable.create(grid, {
+            animation: 150,
+            ghostClass: 'opacity-50',
+            onEnd: function (evt) {
+                // Odczytanie nowego układu HTML i reorganizacja tablicy state.graphics
+                // W Sortable grid jest pełen elementów shotbox-card i opcjonalnie header-ów
+                const cardNodes = Array.from(grid.querySelectorAll('.shotbox-card'));
+                
+                // Ułożenie docelowe pobierane jest na podstawie HTML Data ID buttonów wewnątrz
+                const newOrderIds = cardNodes.map(card => {
+                    const delBtn = card.querySelector('[data-delete-id]');
+                    return delBtn ? delBtn.getAttribute('data-delete-id') : null;
+                }).filter(id => id !== null);
+
+                // Rekordy nie biorące udziału w widoku, ale będące w bazie dodajemy na koniec
+                const missedGraphics = state.graphics.filter(g => !newOrderIds.includes(g.id));
+                
+                // Budowa nowej ułożonej kolekcji
+                const orderedGraphics = [];
+                newOrderIds.forEach(id => {
+                    const item = state.graphics.find(g => g.id === id);
+                    if (item) orderedGraphics.push(item);
+                });
+
+                state.graphics = [...orderedGraphics, ...missedGraphics];
+                saveState(); // Zapisanie stanu ze zmienioną tablicą
+                renderShotbox(); // Odbudowanie drzewa DOM po evencie aby przywrócić Grupy jeśli pękły
+            }
+        });
+    }
+
     updateProgramMonitor();
 }
 
@@ -596,12 +639,12 @@ function updateProgramMonitor() {
 
     if (n === 0) {
         layersLabel?.classList.add('hidden');
-        onAirLabel.textContent = 'ON AIR: 0 LAYERS';
+        onAirLabel.textContent = 'NA ŻYWO: 0 WARSTW';
         programEmpty?.classList.remove('hidden');
     } else {
         layersLabel?.classList.remove('hidden');
         if (layersCount) layersCount.textContent = n;
-        onAirLabel.textContent = `ON AIR: ${n} ACTIVE`;
+        onAirLabel.textContent = `NA ŻYWO: ${n} AKTYWNE`;
         programEmpty?.classList.add('hidden');
     }
 }
@@ -740,7 +783,39 @@ function renderInspectorBody(graphic) {
 
                     ${graphic.type === 'TICKER' && graphic.templateId === 'tpl-urgent-ocg-wiper' ? `
                          <div class="border-t border-gray-800 pt-3 mt-1">
-                            <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Wymiary (Wiper)</div>
+                            <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Wiper (Pasek Pilny)</div>
+                            <div class="mb-2">
+                                ${ctrlLabel('Tekst Wipera')}
+                                <input type="text" data-field="wiper.text" value="${escAttr(graphic.wiper?.text || '')}" placeholder="PILNE" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                    ${ctrlLabel('Kolor Tła Wipera')}
+                                    ${colorPickerHtml('wiper.bgColor', graphic.wiper?.bgColor || '')}
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Kolor Tekstu Wipera')}
+                                    ${colorPickerHtml('wiper.textColor', graphic.wiper?.textColor || '')}
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                    ${ctrlLabel('Krój Czcionki Wipera')}
+                                    <select data-field="wiper.fontFamily" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                        <option value="">Domyślna układu</option>
+                                        <option value="Arial" ${graphic.wiper?.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                                        <option value="Roboto" ${graphic.wiper?.fontFamily === 'Roboto' ? 'selected' : ''}>Roboto</option>
+                                        <option value="Oswald" ${graphic.wiper?.fontFamily === 'Oswald' ? 'selected' : ''}>Oswald</option>
+                                        <option value="Inter" ${graphic.wiper?.fontFamily === 'Inter' ? 'selected' : ''}>Inter</option>
+                                        <option value="Bahnschrift" ${graphic.wiper?.fontFamily === 'Bahnschrift' ? 'selected' : ''}>Bahnschrift</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Rozmiar (px)')}
+                                    <input type="number" data-field="wiper.fontSize" value="${graphic.wiper?.fontSize || ''}" placeholder="35" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                            </div>
+                            <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mt-3 mb-2">Wymiary Całości (Pasek+Wiper)</div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>${ctrlLabel('Szerokość')}<input type="text" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto (100%)" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
                                 <div>${ctrlLabel('Wysokość')}<input type="text" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="60" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
@@ -807,9 +882,18 @@ function renderInspectorBody(graphic) {
                         ${graphic.type === 'TICKER' ? `
                         <div class="mb-2">
                             ${ctrlLabel('Krój czcionki (Font Family)')}
-                            <input type="text" data-field="style.typography.fontFamily" value="${escAttr(graphic.style?.typography?.fontFamily || '')}" placeholder="np. Arial, Inter, sans-serif" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                            <select data-field="style.typography.fontFamily" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                <option value="Roboto Condensed" ${(graphic.style?.typography?.fontFamily || '') === 'Roboto Condensed' ? 'selected' : ''}>Roboto Condensed</option>
+                                <option value="Bahnschrift" ${(graphic.style?.typography?.fontFamily || '') === 'Bahnschrift' ? 'selected' : ''}>Bahnschrift</option>
+                                <option value="Inter" ${(graphic.style?.typography?.fontFamily || '') === 'Inter' ? 'selected' : ''}>Inter</option>
+                                <option value="Arial" ${(graphic.style?.typography?.fontFamily || '') === 'Arial' ? 'selected' : ''}>Arial</option>
+                                <option value="Helvetica" ${(graphic.style?.typography?.fontFamily || '') === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                <option value="Times New Roman" ${(graphic.style?.typography?.fontFamily || '') === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
+                                <option value="Georgia" ${(graphic.style?.typography?.fontFamily || '') === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                                <option value="monospace" ${(graphic.style?.typography?.fontFamily || '') === 'monospace' ? 'selected' : ''}>Monospace</option>
+                            </select>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
                             <div>
                                 ${ctrlLabel('Rozmiar (px)')}
                                 <input type="number" data-field="style.typography.fontSize" value="${graphic.style?.typography?.fontSize || 30}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
@@ -827,6 +911,10 @@ function renderInspectorBody(graphic) {
                                     <option value="900" ${graphic.style?.typography?.fontWeight === '900' ? 'selected' : ''}>Black (900)</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="mb-2">
+                            ${ctrlLabel('Przesunięcie Y (px)')}
+                            <input type="number" data-field="style.typography.paddingY" value="${graphic.style?.typography?.paddingY || 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                         </div>
                         ` : ''}
                     </div>
@@ -1892,15 +1980,16 @@ function createGraphicFromTemplate(tpl) {
         subtitle: tpl.defaultFields?.subtitle || 'Subtitle',
         introText: tpl.defaultFields?.introText || 'PILNE',
         items: tpl.defaultFields?.items || ['Wiadomość 1', 'Wiadomość 2'],
-        speed: 100,
-        url: '',
+        speed: tpl.defaultFields?.speed !== undefined ? tpl.defaultFields.speed : 100,
+        url: tpl.defaultFields?.url || '',
+        sideImage: tpl.defaultFields?.sideImage || '',
         variant: 'custom',
         templateId: tpl.id,
-        animation: {
+        animation: tpl.defaultAnimation ? JSON.parse(JSON.stringify(tpl.defaultAnimation)) : {
             in: { type: 'slide', direction: 'left', duration: 0.5, delay: 0, ease: 'ease-out' },
             out: { type: 'fade', direction: 'left', duration: 0.5, delay: 0, ease: 'ease-in' }
         },
-        style: {
+        style: tpl.defaultStyle ? JSON.parse(JSON.stringify(tpl.defaultStyle)) : {
             background: {
                 type: 'solid',
                 color: tpl.defaultFields?.primaryColor || '#0047AB',
@@ -1915,13 +2004,13 @@ function createGraphicFromTemplate(tpl) {
                 color: tpl.defaultFields?.titleColor || '#ffffff',
                 fontFamily: defaultFontFamily,
                 fontSize: tpl.defaultFields?.titleSize || 30,
-                fontWeight: 'bold'
+                fontWeight: tpl.defaultFields?.titleWeight || 'bold'
             },
             subtitleTypography: {
                 color: tpl.defaultFields?.subtitleColor || '#eeeeee',
                 fontFamily: 'Arial',
                 fontSize: tpl.defaultFields?.subtitleSize || 20,
-                fontWeight: 'normal'
+                fontWeight: tpl.defaultFields?.subtitleWeight || 'normal'
             }
         },
         groupId: null,
@@ -2287,6 +2376,76 @@ function bindGlobalEvents() {
         }, 2000);
     };
 
+    // Inspector save as template
+    document.getElementById('btn-ins-save-template').onclick = () => {
+        if (!selectedGraphicId) return;
+        const g = state.graphics.find(gfx => gfx.id === selectedGraphicId);
+        if (!g) return;
+        const tpl = state.templates.find(t => t.id === g.templateId);
+        if (!tpl) {
+            alert('Nie znaleziono źródłowego szablonu.');
+            return;
+        }
+        const newTpl = JSON.parse(JSON.stringify(tpl));
+        newTpl.id = crypto.randomUUID();
+        newTpl.name = g.name + ' (Szablon)';
+        
+        newTpl.defaultFields = newTpl.defaultFields || {};
+        Object.assign(newTpl.defaultFields, JSON.parse(JSON.stringify(g)));
+        delete newTpl.defaultFields.id;
+        delete newTpl.defaultFields.templateId;
+        delete newTpl.defaultFields.visible;
+        delete newTpl.defaultFields.groupId;
+        
+        if (g.style) newTpl.defaultStyle = JSON.parse(JSON.stringify(g.style));
+        if (g.animation) newTpl.defaultAnimation = JSON.parse(JSON.stringify(g.animation));
+        if (g.layout) newTpl.defaultLayout = JSON.parse(JSON.stringify(g.layout));
+
+        state.templates.push(newTpl);
+        saveState();
+        renderTemplateList();
+        
+        const btn = document.getElementById('btn-ins-save-template');
+        btn.innerHTML = '<span>✓ ZAPISANO</span>';
+        setTimeout(() => {
+            btn.innerHTML = '<span>ZAPISZ JAKO</span><span>SZABLON</span>';
+        }, 2000);
+    };
+
+    // Inspector export JSON
+    document.getElementById('btn-ins-export-json').onclick = () => {
+        if (!selectedGraphicId) return;
+        const g = state.graphics.find(gfx => gfx.id === selectedGraphicId);
+        if (!g) return;
+        const tpl = state.templates.find(t => t.id === g.templateId);
+        if (!tpl) {
+            alert('Nie znaleziono źródłowego szablonu.');
+            return;
+        }
+        const exportTpl = JSON.parse(JSON.stringify(tpl));
+        exportTpl.id = crypto.randomUUID();
+        exportTpl.name = g.name + ' (Eksport)';
+        
+        exportTpl.defaultFields = exportTpl.defaultFields || {};
+        Object.assign(exportTpl.defaultFields, JSON.parse(JSON.stringify(g)));
+        delete exportTpl.defaultFields.id;
+        delete exportTpl.defaultFields.templateId;
+        delete exportTpl.defaultFields.visible;
+        delete exportTpl.defaultFields.groupId;
+
+        if (g.style) exportTpl.defaultStyle = JSON.parse(JSON.stringify(g.style));
+        if (g.animation) exportTpl.defaultAnimation = JSON.parse(JSON.stringify(g.animation));
+        if (g.layout) exportTpl.defaultLayout = JSON.parse(JSON.stringify(g.layout));
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportTpl, null, 2));
+        const el = document.createElement('a');
+        el.setAttribute("href", dataStr);
+        el.setAttribute("download", `szablon_${g.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`);
+        document.body.appendChild(el);
+        el.click();
+        el.remove();
+    };
+
     // Inspector delete
     document.getElementById('btn-delete-graphic-ins').onclick = () => {
         if (!selectedGraphicId) return;
@@ -2327,24 +2486,54 @@ function bindGlobalEvents() {
         openTemplateEditor(newTpl.id);
     };
 
-    document.getElementById('btn-import-template').onclick = () => {
-        const json = prompt('Wklej JSON szablonu:');
-        if (!json) return;
-        try {
-            const parsed = JSON.parse(json);
-            const tpls = Array.isArray(parsed) ? parsed : [parsed];
-            tpls.forEach(t => {
-                if (!t.id) t.id = crypto.randomUUID();
-                const existing = state.templates.findIndex(x => x.id === t.id);
-                if (existing >= 0) state.templates[existing] = t;
-                else state.templates.push(t);
-            });
-            saveState();
-            renderTemplateList();
-            alert('Import zakończony pomyślnie!');
-        } catch (e) {
-            alert('Błąd parsowania JSON: ' + e.message);
+    const btnImportTemplate = document.getElementById('btn-import-template');
+    const tplFileInput = document.getElementById('tpl-file-input');
+
+    btnImportTemplate.onclick = () => {
+        tplFileInput.click();
+    };
+
+    tplFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const parsed = JSON.parse(evt.target.result);
+                const tpls = Array.isArray(parsed) ? parsed : [parsed];
+                tpls.forEach(t => {
+                    if (!t.id) t.id = crypto.randomUUID();
+                    const existing = state.templates.findIndex(x => x.id === t.id);
+                    if (existing >= 0) state.templates[existing] = t;
+                    else state.templates.push(t);
+                });
+                saveState();
+                renderTemplateList();
+                alert('Szablony zaimportowane pomyślnie!');
+            } catch (err) {
+                alert('Błąd parsowania JSON szablonu: ' + err.message);
+            }
+            tplFileInput.value = ''; // Reset
+        };
+        reader.readAsText(file);
+    });
+
+    document.getElementById('btn-export-template').onclick = () => {
+        if (!currentTemplateId) {
+             alert('Wybierz najpierw szablon z listy!');
+             return;
         }
+        const tpl = state.templates.find(t => t.id === currentTemplateId);
+        if (!tpl) return;
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tpl, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `szablon_${tpl.name.replace(/\s+/g, '_').toLowerCase()}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     };
 
     document.getElementById('btn-save-template').onclick = saveCurrentTemplate;
@@ -2401,6 +2590,58 @@ function bindGlobalEvents() {
     const closeInsBtn = document.getElementById('btn-close-inspector');
     if (closeInsBtn) {
         closeInsBtn.onclick = closeInspector;
+    }
+    
+    // ==========================================
+    // Database Management
+    // ==========================================
+    const btnExportDb = document.getElementById('btn-export-db');
+    const btnImportDbTrigger = document.getElementById('btn-import-db-trigger');
+    const dbFileInput = document.getElementById('db-file-input');
+    
+    if (btnExportDb && btnImportDbTrigger && dbFileInput) {
+        btnExportDb.onclick = () => {
+            if (!confirm('Czy na pewno chcesz pobrać aktualny stan bazy danych (Szablony, Elementy Graficzne i Ustawienia)?')) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `db_backup_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        };
+
+        btnImportDbTrigger.onclick = () => dbFileInput.click();
+
+        dbFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!confirm('UWAGA! Import bazy spowoduje nadpisanie WSZYSTKICH aktualnych grafik i szablonów. Czy na pewno chcesz kontynuować?')) {
+                dbFileInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    // Minimalna weryfikacja poprawności struktury
+                    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.templates) && Array.isArray(parsed.graphics)) {
+                        state = parsed;
+                        socket.emit('updateFullState', state); // Wymuszenie aktualizacji po stronie serwera
+                        init(); // Przerenderowanie całego UI
+                        alert('Baza Danych została poprawnie zaimportowana!');
+                    } else {
+                        throw new Error('Nieprawidłowy plik Bazy Danych');
+                    }
+                } catch (err) {
+                    alert('Błąd importowania bazy: ' + err.message);
+                }
+                dbFileInput.value = ''; // Reset
+            };
+            reader.readAsText(file);
+        });
     }
 }
 
