@@ -685,7 +685,7 @@ function openInspector(id) {
     const typeSelect = document.getElementById('inspector-type-select');
 
     if (!inspectorAccordionStates[id]) {
-        inspectorAccordionStates[id] = { content: true, appearance: false, layout: false, animation: false };
+        inspectorAccordionStates[id] = { content: true, tickerSettings: true, appearance: false, layout: false, animation: false };
     }
 
     renderInspectorBody(graphic);
@@ -756,6 +756,11 @@ function renderInspectorBody(graphic) {
                     ` : ''}
 
                     ${graphic.type === 'TICKER' ? `
+                        <div class="mb-4">
+                            ${ctrlLabel('Tekst etykiety (Etykieta boczna)')}
+                            <input type="text" data-field="introText" value="${escAttr(graphic.introText || '')}" placeholder="np. PILNE lub TYLKO U NAS" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                        </div>
+
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 ${ctrlLabel('Wiadomości (Elementy paska)')}
@@ -777,11 +782,6 @@ function renderInspectorBody(graphic) {
                                 ${ctrlLabel('Alternatywny edytor wielolinijkowy')}
                                 <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono leading-tight" onchange="openInspector('${graphic.id}')">${(graphic.items || []).join('\n')}</textarea>
                             </div>
-                            <hr class="border-gray-800 my-3">
-                        </div>
-                        <div>
-                            ${ctrlLabel('Prędkość paska (px/s)')}
-                            <input type="number" data-field="speed" value="${graphic.speed || 100}" min="10" step="10" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                         </div>
                     ` : ''}
 
@@ -800,50 +800,114 @@ function renderInspectorBody(graphic) {
                         </div>
                         ${graphic.url ? `<img src="${graphic.url}" class="w-full rounded border border-gray-700 object-contain" style="max-height:100px">` : ''}
                     ` : ''}
+                </div>
+            </div>
 
-                    ${graphic.type === 'TICKER' && tpl?.features?.wiper ? `
+            ${graphic.type === 'TICKER' ? `
+            <div class="accordion border-b border-gray-800">
+                <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="tickerSettings">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 18 6-6 6 6"/><path d="m5 6 6 6 6-6"/></svg>
+                        TICKER USTAWIENIA
+                    </span>
+                    <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.tickerSettings ? '−' : '+'}</span>
+                </button>
+                <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.tickerSettings ? 'open' : ''} bg-gray-850/50 p-3 space-y-3">
+                    <div>
+                        ${ctrlLabel(tpl?.features?.vertical ? 'Czas wyświetlania jednej wiadomości (s)' : 'Prędkość paska (px/s)')}
+                        <input type="number" data-field="speed" value="${graphic.speed || (tpl?.features?.vertical ? 5 : 100)}" min="${tpl?.features?.vertical ? 1 : 10}" step="${tpl?.features?.vertical ? 0.5 : 10}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                    </div>
+
+                    ${tpl?.features?.separator ? `
+                        <div>
+                            ${ctrlLabel('Styl separatora')}
+                            <select data-field="separatorStyle" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                <option value="skewed" ${(graphic.separatorStyle || 'skewed') === 'skewed' ? 'selected' : ''}>Skośna kreska (Republika)</option>
+                                <option value="dot" ${graphic.separatorStyle === 'dot' ? 'selected' : ''}>Kropka</option>
+                                <option value="square" ${graphic.separatorStyle === 'square' ? 'selected' : ''}>Kwadrat</option>
+                                <option value="pipe" ${graphic.separatorStyle === 'pipe' ? 'selected' : ''}>Pionowa kreska</option>
+                                <option value="none" ${graphic.separatorStyle === 'none' ? 'selected' : ''}>Brak</option>
+                            </select>
+                        </div>
+                    ` : ''}
+
+                    ${tpl?.features?.wiper ? `
                          <div class="border-t border-gray-800 pt-3 mt-1">
                             <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Wiper (Pasek Pilny)</div>
-                            <div class="mb-2">
-                                ${ctrlLabel('Tekst Wipera')}
-                                <input type="text" data-field="wiper.text" value="${escAttr(graphic.wiper?.text || '')}" placeholder="PILNE" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                            
+                            <div class="mb-3">
+                                ${ctrlLabel('Tło Etykiety Wipera')}
+                                <div class="grid grid-cols-2 gap-2 mb-2">
+                                    <div>
+                                        <div class="text-[9px] text-gray-500 mb-1">Kolor 1 / Podstawa</div>
+                                        ${colorPickerHtml('wiper.bgColor', graphic.wiper?.bgColor || '')}
+                                    </div>
+                                    <div>
+                                        <div class="text-[9px] text-gray-500 mb-1">Kolor 2 (Gradient)</div>
+                                        ${colorPickerHtml('wiper.color2', graphic.wiper?.color2 || '')}
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <div class="text-[9px] text-gray-500 mb-1">Kąt gradientu</div>
+                                        <input type="number" data-field="wiper.gradientAngle" value="${graphic.wiper?.gradientAngle || 90}" class="w-full bg-gray-800 border border-gray-700 rounded p-1 text-[10px] text-white">
+                                    </div>
+                                    <div class="flex items-end">
+                                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" data-field="wiper.useGradient" ${graphic.wiper?.useGradient ? 'checked' : ''} class="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-0 focus:ring-offset-0">
+                                            <span class="text-[10px] text-gray-400">Włącz gradient</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
+
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <div>
-                                    ${ctrlLabel('Kolor Tła Wipera')}
-                                    ${colorPickerHtml('wiper.bgColor', graphic.wiper?.bgColor || '')}
-                                </div>
-                                <div>
-                                    ${ctrlLabel('Kolor Tekstu Wipera')}
+                                    ${ctrlLabel('Kolor Tekstu')}
                                     ${colorPickerHtml('wiper.textColor', graphic.wiper?.textColor || '')}
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <div>
-                                    ${ctrlLabel('Krój Czcionki Wipera')}
-                                    <select data-field="wiper.fontFamily" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
-                                        <option value="">Domyślna układu</option>
-                                        <option value="Arial" ${graphic.wiper?.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
-                                        <option value="Roboto" ${graphic.wiper?.fontFamily === 'Roboto' ? 'selected' : ''}>Roboto</option>
-                                        <option value="Oswald" ${graphic.wiper?.fontFamily === 'Oswald' ? 'selected' : ''}>Oswald</option>
-                                        <option value="Inter" ${graphic.wiper?.fontFamily === 'Inter' ? 'selected' : ''}>Inter</option>
-                                        <option value="Bahnschrift" ${graphic.wiper?.fontFamily === 'Bahnschrift' ? 'selected' : ''}>Bahnschrift</option>
-                                    </select>
                                 </div>
                                 <div>
                                     ${ctrlLabel('Rozmiar (px)')}
                                     <input type="number" data-field="wiper.fontSize" value="${graphic.wiper?.fontSize || ''}" placeholder="35" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                                 </div>
                             </div>
-                            <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mt-3 mb-2">Wymiary Całości (Pasek+Wiper)</div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>${ctrlLabel('Szerokość')}<input type="text" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto (100%)" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                                <div>${ctrlLabel('Wysokość')}<input type="text" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="60" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                    ${ctrlLabel('Grubość')}
+                                    <select data-field="wiper.fontWeight" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                        <option value="normal" ${(graphic.wiper?.fontWeight || '900') === 'normal' ? 'selected' : ''}>Normalna (400)</option>
+                                        <option value="bold" ${graphic.wiper?.fontWeight === 'bold' ? 'selected' : ''}>Pogrubiona (700)</option>
+                                        <option value="800" ${graphic.wiper?.fontWeight === '800' ? 'selected' : ''}>Extra-Bold (800)</option>
+                                        <option value="900" ${(graphic.wiper?.fontWeight || '900') === '900' ? 'selected' : ''}>Black (900)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Odstępy (px)')}
+                                    <input type="number" data-field="wiper.letterSpacing" value="${graphic.wiper?.letterSpacing ?? 1}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
                             </div>
+
+                            <div class="mb-2">
+                                ${ctrlLabel('Krój Czcionki Wipera')}
+                                <select data-field="wiper.fontFamily" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                    <option value="">Domyślna układu</option>
+                                    <option value="Arial" ${graphic.wiper?.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                                    <option value="Roboto Condensed" ${graphic.wiper?.fontFamily === 'Roboto Condensed' ? 'selected' : ''}>Roboto Condensed</option>
+                                    <option value="Bahnschrift" ${graphic.wiper?.fontFamily === 'Bahnschrift' ? 'selected' : ''}>Bahnschrift</option>
+                                    <option value="Inter" ${graphic.wiper?.fontFamily === 'Inter' ? 'selected' : ''}>Inter</option>
+                                    <option value="Helvetica" ${graphic.wiper?.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                    <option value="Impact" ${graphic.wiper?.fontFamily === 'Impact' ? 'selected' : ''}>Impact</option>
+                                    <option value="monospace" ${graphic.wiper?.fontFamily === 'monospace' ? 'selected' : ''}>Monospace</option>
+                                </select>
+                            </div>
+
                         </div>
                     ` : ''}
                 </div>
             </div>
+            ` : ''}
+
 
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="appearance">
@@ -890,6 +954,10 @@ function renderInspectorBody(graphic) {
                     <div>
                         ${ctrlLabel('Kolor Akcentu / Obramowania')}
                         ${colorPickerHtml('style.background.borderColor', graphic.style?.background?.borderColor || '#3b82f6')}
+                    </div>
+                    <div>
+                        ${ctrlLabel(`Ogólna Przezroczystość: ${Math.round((graphic.style?.opacity ?? 1) * 100)}%`)}
+                        <input type="range" data-field="style.opacity" value="${graphic.style?.opacity ?? 1}" min="0" max="1" step="0.05" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
                     </div>
                     </div>
 
@@ -1103,11 +1171,51 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
+
+                    ${tpl?.features?.wiper ? `
+                    <div class="border-t border-gray-800 pt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-[9px] font-bold text-blue-400 uppercase tracking-wider">Efekt Błysku (Gleam)</div>
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" data-field="wiper.gleamEnabled" ${graphic.wiper?.gleamEnabled !== false ? 'checked' : ''} class="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-0 focus:ring-offset-0">
+                                <span class="text-[9px] text-gray-500">Włącz</span>
+                            </label>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    ${ctrlLabel('Kolor Błysku')}
+                                    ${colorPickerHtml('wiper.gleamColor', graphic.wiper?.gleamColor || '#ffffff')}
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Czas trwania (s)')}
+                                    <input type="number" data-field="wiper.gleamDuration" value="${graphic.wiper?.gleamDuration || 2}" step="0.1" min="0.5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    ${ctrlLabel('Wysokość (px)')}
+                                    <input type="number" data-field="wiper.gleamHeight" value="${graphic.wiper?.gleamHeight || 100}" min="1" max="500" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Częstotliwość (s)')}
+                                    <input type="number" data-field="wiper.gleamFrequency" value="${graphic.wiper?.gleamFrequency || 3}" step="0.1" min="0" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white" title="Przerwa między błyskami">
+                                </div>
+                            </div>
+                            <div>
+                                ${ctrlLabel(`Przezroczystość Błysku: ${Math.round((graphic.wiper?.gleamOpacity ?? 0.4) * 100)}%`)}
+                                <input type="range" data-field="wiper.gleamOpacity" value="${graphic.wiper?.gleamOpacity ?? 0.4}" min="0" max="1" step="0.05" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
                     <div class="border-t border-gray-800 pt-3">
                         <button id="btn-preview-anim" class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-[10px] font-bold transition-colors">
                             ▶ Podgląd animacji wejścia
                         </button>
                     </div>
+                    <div class="h-16"></div> <!-- Spacer for color picker accessibility -->
                 </div>
             </div>
         </div>
@@ -2041,7 +2149,7 @@ function createGraphicFromTemplate(tpl) {
         title: tpl.defaultFields?.title || 'Title',
         titleHtml: tpl.defaultFields?.title || 'Title',
         subtitle: tpl.defaultFields?.subtitle || 'Subtitle',
-        introText: tpl.defaultFields?.introText || 'PILNE',
+        introText: tpl.defaultFields?.introText || '',
         items: tpl.defaultFields?.items || ['Wiadomość 1', 'Wiadomość 2'],
         speed: tpl.defaultFields?.speed !== undefined ? tpl.defaultFields.speed : 100,
         url: tpl.defaultFields?.url || '',
