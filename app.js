@@ -29,6 +29,23 @@ async function init() {
         bindWysiwygModalEvents();
         document.getElementById('loading-overlay').classList.add('hidden');
 
+        // --- NEW GLOBAL ACTIONS ---
+        document.getElementById('btn-kill-all')?.addEventListener('click', () => {
+            state.graphics.forEach(g => g.visible = false);
+            saveState();
+            renderShotbox();
+            updateProgramMonitor();
+        });
+
+        document.getElementById('btn-bg-black')?.addEventListener('click', () => {
+            socket.emit('set_background', 'black');
+        });
+
+        document.getElementById('btn-bg-trans')?.addEventListener('click', () => {
+            socket.emit('set_background', 'transparent');
+        });
+        // -------------------------
+
         document.getElementById('btn-toggle-safe-area')?.addEventListener('click', (e) => {
             document.querySelectorAll('.ebu-safe-area').forEach(el => {
                 el.classList.toggle('hidden');
@@ -69,6 +86,18 @@ function saveState() {
         return;
     }
     socket.emit('updateState', state);
+}
+
+// --- Helper do wysyłania plików na serwer ---
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const resp = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+    });
+    if (!resp.ok) throw new Error('Upload failed');
+    return await resp.json(); // { url: "/uploads/..." }
 }
 
 // ===========================================================
@@ -213,13 +242,13 @@ function setupMonitorScaling() {
         const ow = outer.clientWidth;
         const oh = outer.clientHeight;
         if (!ow || !oh) return;
-        
+
         const scale = Math.min(ow / 1920, oh / 1080);
         const scaledW = 1920 * scale;
         const scaledH = 1080 * scale;
         const offX = (ow - scaledW) / 2;
         const offY = (oh - scaledH) / 2;
-        
+
         canvasWrap.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;
     };
 
@@ -338,20 +367,20 @@ function renderShotbox() {
 
         // --- Card ---
         const card = document.createElement('div');
-        card.className = `shotbox-card cursor-pointer rounded-lg border p-3 relative group flex flex-col gap-2
-            ${isActive ? 'border-red-500 bg-red-900/10 shadow-[0_0_10px_rgba(239,68,68,0.15)]' :
-                isPreview ? 'border-green-500 bg-green-900/10 shadow-[0_0_10px_rgba(34,197,94,0.15)]' :
-                    'border-gray-800 bg-gray-900 hover:border-gray-600'}`;
+        card.className = `shotbox-card cursor-pointer rounded border p-2 relative group flex flex-col gap-2 transition-all duration-200
+            ${isActive ? 'border-red-600 bg-red-900/20 shadow-[0_0_15px_rgba(229,57,53,0.3)] ring-1 ring-red-500' :
+                isPreview ? 'border-yellow-500 bg-yellow-900/10 shadow-[0_0_10px_rgba(251,192,45,0.2)]' :
+                    'border-gray-800 bg-[#111] hover:border-gray-600'}`;
 
-        // Colored left border for grouped items
+        // Colored top border for groups like in OCG
         if (grp) {
-            card.style.borderLeftWidth = '4px';
-            card.style.borderLeftColor = grp.color;
+            card.style.borderTopWidth = '3px';
+            card.style.borderTopColor = grp.color;
         }
 
         // Action buttons
         const actionBtns = `
-            <div class="absolute top-1.5 right-1.5 flex gap-0.5 transition-all">
+            <div class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button data-copy-id="${graphic.id}" title="Kopiuj" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-blue-900/60 text-gray-500 hover:text-blue-400 text-[10px] leading-none">📋</button>
                 <button data-delete-id="${graphic.id}" title="Usuń" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs leading-none">&times;</button>
             </div>`;
@@ -363,27 +392,45 @@ function renderShotbox() {
 
         card.innerHTML = `
             ${actionBtns}
-            ${isActive ? `<div class="absolute top-1.5 left-1.5 flex items-center gap-1"><div class="w-2 h-2 bg-red-500 rounded-full animate-pulse-slow"></div><span class="text-[9px] font-bold text-red-500">ON AIR</span></div>` : ''}
-            <div class="mt-3">
-                <p class="text-xs font-bold text-white truncate leading-tight">${graphic.name}</p>
-                <p class="text-[9px] text-gray-500 font-mono truncate">${tpl ? tpl.type : '?'}${grp ? ` · ${grp.name}` : ''}</p>
+            <div class="flex justify-between items-start mb-1">
+                <div class="flex flex-col min-w-0">
+                    <span class="text-[10px] font-black text-white truncate uppercase tracking-tight">${graphic.name}</span>
+                    <span class="text-[8px] text-gray-500 font-mono truncate uppercase">${tpl ? tpl.type : 'NONE'} ${grp ? `// ${grp.name}` : ''}</span>
+                </div>
+                ${isActive ? `<div class="flex items-center gap-1 bg-red-600 px-1 rounded shadow-[0_0_8px_rgba(229,57,53,0.5)]"><span class="text-[8px] font-black text-white italic">LIVE</span></div>` : ''}
             </div>
+
             <div class="flex gap-1 mt-auto">
-                <button data-preview-id="${graphic.id}" class="flex-1 text-[9px] py-1 rounded font-bold uppercase transition-all
-                    ${isPreview ? 'bg-green-600/30 text-green-400 border border-green-600/30' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}">
-                    PREVIEW
+                <button data-take-id="${graphic.id}" class="flex-[2] text-[10px] py-1.5 rounded font-black uppercase transition-all shadow-md
+                    ${isActive ? 'bg-red-600 text-white border-t border-red-400 animate-pulse' : 'bg-[#2a2a2a] text-gray-400 hover:bg-red-700 hover:text-white border-t border-gray-700'}">
+                    TAKE
                 </button>
-                <button data-take-id="${graphic.id}" class="flex-1 text-[9px] py-1 rounded font-bold uppercase transition-all
-                    ${isActive ? 'bg-red-600/30 text-red-400 border border-red-600/30' : 'bg-gray-800 text-gray-400 hover:bg-blue-700/30 hover:text-white'}">
-                    ${isActive ? 'OFF AIR' : 'ON AIR'}
+                <button data-preview-id="${graphic.id}" class="flex-1 text-[10px] py-1.5 rounded font-black uppercase transition-all border-t
+                    ${isPreview ? 'bg-blue-600 text-white border-blue-400' : 'bg-[#1a1a1a] text-gray-500 hover:bg-blue-800 hover:text-white border-gray-800'}">
+                    PREV
                 </button>
+                ${isActive ? `
+                <button data-off-id="${graphic.id}" class="flex-1 text-[10px] py-1.5 rounded font-black uppercase bg-black text-red-500 border border-red-900/50 hover:bg-red-900 hover:text-white transition-all">
+                    OFF
+                </button>` : ''}
             </div>
-            <select data-group-assign="${graphic.id}" class="w-full bg-gray-800 border border-gray-700 rounded text-[9px] text-gray-400 py-0.5 px-1 focus:outline-none focus:border-blue-500 mt-0.5" title="Grupa">
-                <option value="">— brak grupy —</option>
-                ${groupOptions}
-                <option value="__new__">＋ Nowa grupa…</option>
-            </select>
+
+            <div class="flex gap-1 mt-1">
+                 <button onclick="openWysiwygModal('${graphic.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edytuj Treść</button>
+                 <select data-group-assign="${graphic.id}" class="flex-[1.5] bg-black border border-gray-800 rounded text-[8px] text-gray-500 py-1 px-1 focus:outline-none focus:border-blue-500" title="Grupa">
+                    <option value="">— NO GROUP —</option>
+                    ${groupOptions}
+                    <option value="__new__">＋ NEW GROUP…</option>
+                </select>
+            </div>
         `;
+
+        // Click on card to preview
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('button') || e.target.closest('select')) return;
+            const gfx = state.graphics.find(g => g.id === graphic.id);
+            if (gfx) setPreviewGraphic(JSON.parse(JSON.stringify(gfx)));
+        });
 
         grid.appendChild(card);
     });
@@ -477,6 +524,42 @@ function renderShotbox() {
         });
     });
 
+    // Sortable JS Init dla siatki banku grafik "Drag & Drop"
+    if (window.Sortable) {
+        if (window._shotboxSortable) {
+            window._shotboxSortable.destroy();
+        }
+        window._shotboxSortable = Sortable.create(grid, {
+            animation: 150,
+            ghostClass: 'opacity-50',
+            onEnd: function (evt) {
+                // Odczytanie nowego układu HTML i reorganizacja tablicy state.graphics
+                // W Sortable grid jest pełen elementów shotbox-card i opcjonalnie header-ów
+                const cardNodes = Array.from(grid.querySelectorAll('.shotbox-card'));
+                
+                // Ułożenie docelowe pobierane jest na podstawie HTML Data ID buttonów wewnątrz
+                const newOrderIds = cardNodes.map(card => {
+                    const delBtn = card.querySelector('[data-delete-id]');
+                    return delBtn ? delBtn.getAttribute('data-delete-id') : null;
+                }).filter(id => id !== null);
+
+                // Rekordy nie biorące udziału w widoku, ale będące w bazie dodajemy na koniec
+                const missedGraphics = state.graphics.filter(g => !newOrderIds.includes(g.id));
+                
+                // Budowa nowej ułożonej kolekcji
+                const orderedGraphics = [];
+                newOrderIds.forEach(id => {
+                    const item = state.graphics.find(g => g.id === id);
+                    if (item) orderedGraphics.push(item);
+                });
+
+                state.graphics = [...orderedGraphics, ...missedGraphics];
+                saveState(); // Zapisanie stanu ze zmienioną tablicą
+                renderShotbox(); // Odbudowanie drzewa DOM po evencie aby przywrócić Grupy jeśli pękły
+            }
+        });
+    }
+
     updateProgramMonitor();
 }
 
@@ -556,12 +639,12 @@ function updateProgramMonitor() {
 
     if (n === 0) {
         layersLabel?.classList.add('hidden');
-        onAirLabel.textContent = 'ON AIR: 0 LAYERS';
+        onAirLabel.textContent = 'NA ŻYWO: 0 WARSTW';
         programEmpty?.classList.remove('hidden');
     } else {
         layersLabel?.classList.remove('hidden');
         if (layersCount) layersCount.textContent = n;
-        onAirLabel.textContent = `ON AIR: ${n} ACTIVE`;
+        onAirLabel.textContent = `NA ŻYWO: ${n} AKTYWNE`;
         programEmpty?.classList.add('hidden');
     }
 }
@@ -570,21 +653,31 @@ function updateProgramMonitor() {
 // 8. INSPECTOR PANEL
 // ===========================================================
 function closeInspector() {
+    document.getElementById('inspector-panel').classList.add('hidden');
     document.getElementById('inspector-empty').classList.remove('hidden');
     document.getElementById('inspector-content').classList.add('hidden');
     document.getElementById('inspector-content').classList.remove('flex');
+    selectedGraphicId = null;
 }
 
 function openInspector(id) {
     selectedGraphicId = id;
-    const graphic = state.graphics.find(g => g.id === id);
-    if (!graphic) return;
+    const graphicRaw = state.graphics.find(g => g.id === id);
+    if (!graphicRaw) return;
+
+    // Fallback: if graphic doesn't have an explicit type, get it from the template
+    const graphic = JSON.parse(JSON.stringify(graphicRaw));
+    if (!graphic.type) {
+        const tpl = state.templates.find(t => t.id === graphic.templateId);
+        if (tpl) graphic.type = tpl.type;
+    }
 
     // AUTO-PREVIEW: always show/refresh the selected graphic in PREVIEW monitor during editing
     previewGraphic = JSON.parse(JSON.stringify(graphic));
     refreshPreviewMonitor();
     refreshPreviewControls();
 
+    document.getElementById('inspector-panel').classList.remove('hidden');
     document.getElementById('inspector-empty').classList.add('hidden');
     document.getElementById('inspector-content').classList.remove('hidden');
     document.getElementById('inspector-content').classList.add('flex');
@@ -592,7 +685,7 @@ function openInspector(id) {
     const typeSelect = document.getElementById('inspector-type-select');
 
     if (!inspectorAccordionStates[id]) {
-        inspectorAccordionStates[id] = { content: true, appearance: false, layout: false, animation: false };
+        inspectorAccordionStates[id] = { content: true, tickerSettings: true, appearance: false, layout: false, animation: false };
     }
 
     renderInspectorBody(graphic);
@@ -613,13 +706,12 @@ function openInspector(id) {
 
 function renderInspectorBody(graphic) {
     const body = document.getElementById('inspector-body');
+    const tpl = state.templates.find(t => t.id === graphic.templateId);
 
 
 
     body.innerHTML = `
-        <!-- TAB MAIN -->
         <div id="ins-tab-content-main" class="${currentInspectorTab === 'main' ? '' : 'hidden '}flex-1 flex flex-col shrink-0">
-            <!-- ACCORDION: ZAWARTOŚĆ -->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="content">
                     <span class="flex items-center gap-2">
@@ -664,13 +756,32 @@ function renderInspectorBody(graphic) {
                     ` : ''}
 
                     ${graphic.type === 'TICKER' ? `
-                        <div>
-                            ${ctrlLabel('Wiadomości (jedna na linię)')}
-                            <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono">${(graphic.items || []).join('\n')}</textarea>
+                        <div class="mb-4">
+                            ${ctrlLabel('Tekst etykiety (Etykieta boczna)')}
+                            <input type="text" data-field="introText" value="${escAttr(graphic.introText || '')}" placeholder="np. PILNE lub TYLKO U NAS" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                         </div>
+
                         <div>
-                            ${ctrlLabel('Prędkość paska (px/s)')}
-                            <input type="number" data-field="speed" value="${graphic.speed || 100}" min="10" step="10" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                            <div class="flex items-center justify-between mb-2">
+                                ${ctrlLabel('Wiadomości (Elementy paska)')}
+                            </div>
+                            <div class="space-y-1 bg-gray-900 border border-gray-800 rounded p-1 mb-2 max-h-64 overflow-y-auto" id="ticker-messages-list-${graphic.id}">
+                                ${(graphic.items || []).length === 0 ? '<div class="text-center text-gray-500 text-[10px] py-2">Brak wiadomości</div>' : ''}
+                                ${(graphic.items || []).map((msg, idx) => `
+                                    <div class="flex items-center gap-1 group">
+                                        <input type="text" value="${escAttr(msg)}" onchange="window.updateTickerMessage('${graphic.id}', ${idx}, this.value)" class="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8">
+                                        <button onclick="window.removeTickerMessage('${graphic.id}', ${idx})" class="w-8 h-8 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs shrink-0">&times;</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="flex gap-1 mb-3">
+                                <input type="text" id="new-ticker-msg-${graphic.id}" placeholder="Nowa wiadomość..." class="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8" onkeydown="if(event.key === 'Enter') window.addTickerMessage('${graphic.id}')">
+                                <button onclick="window.addTickerMessage('${graphic.id}')" class="px-3 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold h-8 flex items-center justify-center transition-colors">DODAJ</button>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-gray-800">
+                                ${ctrlLabel('Alternatywny edytor wielolinijkowy')}
+                                <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono leading-tight" onchange="openInspector('${graphic.id}')">${(graphic.items || []).join('\n')}</textarea>
+                            </div>
                         </div>
                     ` : ''}
 
@@ -692,7 +803,112 @@ function renderInspectorBody(graphic) {
                 </div>
             </div>
 
-            <!-- ACCORDION: WYGLĄD -->
+            ${graphic.type === 'TICKER' ? `
+            <div class="accordion border-b border-gray-800">
+                <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="tickerSettings">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 18 6-6 6 6"/><path d="m5 6 6 6 6-6"/></svg>
+                        TICKER USTAWIENIA
+                    </span>
+                    <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.tickerSettings ? '−' : '+'}</span>
+                </button>
+                <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.tickerSettings ? 'open' : ''} bg-gray-850/50 p-3 space-y-3">
+                    <div>
+                        ${ctrlLabel(tpl?.features?.vertical ? 'Czas wyświetlania jednej wiadomości (s)' : 'Prędkość paska (px/s)')}
+                        <input type="number" data-field="speed" value="${graphic.speed || (tpl?.features?.vertical ? 5 : 100)}" min="${tpl?.features?.vertical ? 1 : 10}" step="${tpl?.features?.vertical ? 0.5 : 10}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                    </div>
+
+                    ${tpl?.features?.separator ? `
+                        <div>
+                            ${ctrlLabel('Styl separatora')}
+                            <select data-field="separatorStyle" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                <option value="skewed" ${(graphic.separatorStyle || 'skewed') === 'skewed' ? 'selected' : ''}>Skośna kreska (Republika)</option>
+                                <option value="dot" ${graphic.separatorStyle === 'dot' ? 'selected' : ''}>Kropka</option>
+                                <option value="square" ${graphic.separatorStyle === 'square' ? 'selected' : ''}>Kwadrat</option>
+                                <option value="pipe" ${graphic.separatorStyle === 'pipe' ? 'selected' : ''}>Pionowa kreska</option>
+                                <option value="none" ${graphic.separatorStyle === 'none' ? 'selected' : ''}>Brak</option>
+                            </select>
+                        </div>
+                    ` : ''}
+
+                    ${tpl?.features?.wiper ? `
+                         <div class="border-t border-gray-800 pt-3 mt-1">
+                            <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Wiper (Pasek Pilny)</div>
+                            
+                            <div class="mb-3">
+                                ${ctrlLabel('Tło Etykiety Wipera')}
+                                <div class="grid grid-cols-2 gap-2 mb-2">
+                                    <div>
+                                        <div class="text-[9px] text-gray-500 mb-1">Kolor 1 / Podstawa</div>
+                                        ${colorPickerHtml('wiper.bgColor', graphic.wiper?.bgColor || '')}
+                                    </div>
+                                    <div>
+                                        <div class="text-[9px] text-gray-500 mb-1">Kolor 2 (Gradient)</div>
+                                        ${colorPickerHtml('wiper.color2', graphic.wiper?.color2 || '')}
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <div class="text-[9px] text-gray-500 mb-1">Kąt gradientu</div>
+                                        <input type="number" data-field="wiper.gradientAngle" value="${graphic.wiper?.gradientAngle || 90}" class="w-full bg-gray-800 border border-gray-700 rounded p-1 text-[10px] text-white">
+                                    </div>
+                                    <div class="flex items-end">
+                                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" data-field="wiper.useGradient" ${graphic.wiper?.useGradient ? 'checked' : ''} class="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-0 focus:ring-offset-0">
+                                            <span class="text-[10px] text-gray-400">Włącz gradient</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                    ${ctrlLabel('Kolor Tekstu')}
+                                    ${colorPickerHtml('wiper.textColor', graphic.wiper?.textColor || '')}
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Rozmiar (px)')}
+                                    <input type="number" data-field="wiper.fontSize" value="${graphic.wiper?.fontSize || ''}" placeholder="35" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                    ${ctrlLabel('Grubość')}
+                                    <select data-field="wiper.fontWeight" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                        <option value="normal" ${(graphic.wiper?.fontWeight || '900') === 'normal' ? 'selected' : ''}>Normalna (400)</option>
+                                        <option value="bold" ${graphic.wiper?.fontWeight === 'bold' ? 'selected' : ''}>Pogrubiona (700)</option>
+                                        <option value="800" ${graphic.wiper?.fontWeight === '800' ? 'selected' : ''}>Extra-Bold (800)</option>
+                                        <option value="900" ${(graphic.wiper?.fontWeight || '900') === '900' ? 'selected' : ''}>Black (900)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Odstępy (px)')}
+                                    <input type="number" data-field="wiper.letterSpacing" value="${graphic.wiper?.letterSpacing ?? 1}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                ${ctrlLabel('Krój Czcionki Wipera')}
+                                <select data-field="wiper.fontFamily" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                    <option value="">Domyślna układu</option>
+                                    <option value="Arial" ${graphic.wiper?.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                                    <option value="Roboto Condensed" ${graphic.wiper?.fontFamily === 'Roboto Condensed' ? 'selected' : ''}>Roboto Condensed</option>
+                                    <option value="Bahnschrift" ${graphic.wiper?.fontFamily === 'Bahnschrift' ? 'selected' : ''}>Bahnschrift</option>
+                                    <option value="Inter" ${graphic.wiper?.fontFamily === 'Inter' ? 'selected' : ''}>Inter</option>
+                                    <option value="Helvetica" ${graphic.wiper?.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                    <option value="Impact" ${graphic.wiper?.fontFamily === 'Impact' ? 'selected' : ''}>Impact</option>
+                                    <option value="monospace" ${graphic.wiper?.fontFamily === 'monospace' ? 'selected' : ''}>Monospace</option>
+                                </select>
+                            </div>
+
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            ` : ''}
+
+
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="appearance">
                     <span class="flex items-center gap-2">
@@ -739,18 +955,61 @@ function renderInspectorBody(graphic) {
                         ${ctrlLabel('Kolor Akcentu / Obramowania')}
                         ${colorPickerHtml('style.background.borderColor', graphic.style?.background?.borderColor || '#3b82f6')}
                     </div>
+                    <div>
+                        ${ctrlLabel(`Ogólna Przezroczystość: ${Math.round((graphic.style?.opacity ?? 1) * 100)}%`)}
+                        <input type="range" data-field="style.opacity" value="${graphic.style?.opacity ?? 1}" min="0" max="1" step="0.05" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                    </div>
                     </div>
 
                     <div class="border-t border-gray-800 pt-3 mt-2">
                         <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Typografia</div>
-                        ${ctrlLabel('Kolor Czcionki')}
-                        ${colorPickerHtml('style.typography.color', graphic.style?.typography?.color || '#ffffff')}
+                        <div class="mb-2">
+                            ${ctrlLabel('Kolor Czcionki')}
+                            ${colorPickerHtml('style.typography.color', graphic.style?.typography?.color || '#ffffff')}
+                        </div>
+                        ${graphic.type === 'TICKER' ? `
+                        <div class="mb-2">
+                            ${ctrlLabel('Krój czcionki (Font Family)')}
+                            <select data-field="style.typography.fontFamily" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                <option value="Roboto Condensed" ${(graphic.style?.typography?.fontFamily || '') === 'Roboto Condensed' ? 'selected' : ''}>Roboto Condensed</option>
+                                <option value="Bahnschrift" ${(graphic.style?.typography?.fontFamily || '') === 'Bahnschrift' ? 'selected' : ''}>Bahnschrift</option>
+                                <option value="Inter" ${(graphic.style?.typography?.fontFamily || '') === 'Inter' ? 'selected' : ''}>Inter</option>
+                                <option value="Arial" ${(graphic.style?.typography?.fontFamily || '') === 'Arial' ? 'selected' : ''}>Arial</option>
+                                <option value="Helvetica" ${(graphic.style?.typography?.fontFamily || '') === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                <option value="Times New Roman" ${(graphic.style?.typography?.fontFamily || '') === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
+                                <option value="Georgia" ${(graphic.style?.typography?.fontFamily || '') === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                                <option value="monospace" ${(graphic.style?.typography?.fontFamily || '') === 'monospace' ? 'selected' : ''}>Monospace</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                ${ctrlLabel('Rozmiar (px)')}
+                                <input type="number" data-field="style.typography.fontSize" value="${graphic.style?.typography?.fontSize || 30}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                            </div>
+                            <div>
+                                ${ctrlLabel('Grubość')}
+                                <select data-field="style.typography.fontWeight" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                                    <option value="normal" ${(graphic.style?.typography?.fontWeight || 'normal') === 'normal' ? 'selected' : ''}>Normalna (400)</option>
+                                    <option value="bold" ${graphic.style?.typography?.fontWeight === 'bold' ? 'selected' : ''}>Pogrubiona (700)</option>
+                                    <option value="100" ${graphic.style?.typography?.fontWeight === '100' ? 'selected' : ''}>Thin (100)</option>
+                                    <option value="300" ${graphic.style?.typography?.fontWeight === '300' ? 'selected' : ''}>Light (300)</option>
+                                    <option value="500" ${graphic.style?.typography?.fontWeight === '500' ? 'selected' : ''}>Medium (500)</option>
+                                    <option value="600" ${graphic.style?.typography?.fontWeight === '600' ? 'selected' : ''}>Semi-Bold (600)</option>
+                                    <option value="800" ${graphic.style?.typography?.fontWeight === '800' ? 'selected' : ''}>Extra-Bold (800)</option>
+                                    <option value="900" ${graphic.style?.typography?.fontWeight === '900' ? 'selected' : ''}>Black (900)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            ${ctrlLabel('Przesunięcie Y (px)')}
+                            <input type="number" data-field="style.typography.paddingY" value="${graphic.style?.typography?.paddingY || 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
 
 
-            <!-- ACCORDION: POZYCJA -->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="layout">
                     <span class="flex items-center gap-2">
@@ -789,8 +1048,8 @@ function renderInspectorBody(graphic) {
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2 mt-2">
-                        <div>${ctrlLabel('Szerokość')}<input type="number" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                        <div>${ctrlLabel('Wysokość')}<input type="number" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Szerokość')}<input type="text" data-field="layout.width" value="${graphic.layout?.width || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                        <div>${ctrlLabel('Wysokość')}<input type="text" data-field="layout.height" value="${graphic.layout?.height || ''}" placeholder="Auto" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
                         <div>${ctrlLabel('Warstwa (Z-Index)')}<input type="number" data-field="layout.layer" value="${graphic.layout?.layer ?? 1}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
                         <div>${ctrlLabel('Skala')}<input type="number" data-field="layout.scale" value="${graphic.layout?.scale ?? 1}" step="0.1" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
                     </div>
@@ -798,7 +1057,6 @@ function renderInspectorBody(graphic) {
                     <div class="border-t border-gray-800 pt-3 mt-3">
                         <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Powiązania (Dokowanie)</div>
                         <div class="space-y-4">
-                            <!-- Y DOCKING -->
                             <div>
                                 ${ctrlLabel('Przyklej po osi Y (Góra/Dół zależy od celu)')}
                                 <div class="text-[10px] text-gray-500 mb-1">Przytrzymaj Ctrl, aby wybrać wiele elementów</div>
@@ -812,7 +1070,6 @@ function renderInspectorBody(graphic) {
                                 </div>
                             </div>
                             
-                            <!-- X DOCKING -->
                             <div class="border-t border-gray-800 pt-2">
                                 ${ctrlLabel('Przyklej po osi X (Lewo/Prawo zależy od celu)')}
                                 <div class="text-[10px] text-gray-500 mb-1">Przytrzymaj Ctrl, aby wybrać wiele elementów</div>
@@ -833,9 +1090,7 @@ function renderInspectorBody(graphic) {
             </div>
         </div>
 
-        <!-- TAB ANIMATION -->
         <div id="ins-tab-content-anim" class="${currentInspectorTab === 'anim' ? '' : 'hidden '}flex-1 flex flex-col shrink-0">
-            <!--ACCORDION: ANIMACJA-->
             <div class="accordion border-b border-gray-800">
                 <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-gray-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="animation">
                     <span class="flex items-center gap-2">
@@ -845,7 +1100,6 @@ function renderInspectorBody(graphic) {
                     <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.animation ? '−' : '+'}</span>
                 </button>
                 <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.animation ? 'open' : ''} bg-gray-850/50 p-3 space-y-4">
-                    <!-- IN animation -->
                     <div>
                         <div class="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-2">Wejście (IN)</div>
                         <div class="space-y-2">
@@ -861,7 +1115,6 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
-                    <!-- OUT animation -->
                     <div class="border-t border-gray-800 pt-4">
                         <div class="text-[9px] font-bold text-orange-400 uppercase tracking-wider mb-2">Wyjście (OUT)</div>
                         <div class="space-y-2">
@@ -877,7 +1130,6 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
-                    <!-- TEXT IN animation -->
                     <div class="border-t border-gray-800 pt-4">
                         <div class="text-[9px] font-bold text-green-400 uppercase tracking-wider mb-2">Tekst Wejście (TEXT IN)</div>
                         <div class="space-y-2">
@@ -896,7 +1148,6 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
-                    <!-- TEXT OUT animation -->
                     <div class="border-t border-gray-800 pt-4">
                         <div class="text-[9px] font-bold text-red-400 uppercase tracking-wider mb-2">Tekst Wyjście (TEXT OUT)</div>
                         <div class="space-y-2">
@@ -920,12 +1171,51 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
 
-                    <!-- Preview Anim button -->
+
+                    ${tpl?.features?.wiper ? `
+                    <div class="border-t border-gray-800 pt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-[9px] font-bold text-blue-400 uppercase tracking-wider">Efekt Błysku (Gleam)</div>
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" data-field="wiper.gleamEnabled" ${graphic.wiper?.gleamEnabled !== false ? 'checked' : ''} class="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-0 focus:ring-offset-0">
+                                <span class="text-[9px] text-gray-500">Włącz</span>
+                            </label>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    ${ctrlLabel('Kolor Błysku')}
+                                    ${colorPickerHtml('wiper.gleamColor', graphic.wiper?.gleamColor || '#ffffff')}
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Czas trwania (s)')}
+                                    <input type="number" data-field="wiper.gleamDuration" value="${graphic.wiper?.gleamDuration || 2}" step="0.1" min="0.5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    ${ctrlLabel('Wysokość (px)')}
+                                    <input type="number" data-field="wiper.gleamHeight" value="${graphic.wiper?.gleamHeight || 100}" min="1" max="500" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Częstotliwość (s)')}
+                                    <input type="number" data-field="wiper.gleamFrequency" value="${graphic.wiper?.gleamFrequency || 3}" step="0.1" min="0" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white" title="Przerwa między błyskami">
+                                </div>
+                            </div>
+                            <div>
+                                ${ctrlLabel(`Przezroczystość Błysku: ${Math.round((graphic.wiper?.gleamOpacity ?? 0.4) * 100)}%`)}
+                                <input type="range" data-field="wiper.gleamOpacity" value="${graphic.wiper?.gleamOpacity ?? 0.4}" min="0" max="1" step="0.05" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
                     <div class="border-t border-gray-800 pt-3">
                         <button id="btn-preview-anim" class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-[10px] font-bold transition-colors">
                             ▶ Podgląd animacji wejścia
                         </button>
                     </div>
+                    <div class="h-16"></div> <!-- Spacer for color picker accessibility -->
                 </div>
             </div>
         </div>
@@ -959,19 +1249,21 @@ function renderInspectorBody(graphic) {
     // Image upload
     const imageUpload = body.querySelector('#image-upload');
     if (imageUpload) {
-        imageUpload.addEventListener('change', (e) => {
+        imageUpload.addEventListener('change', async (e) => {
             const file = e.target.files?.[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
+                try {
+                    const res = await uploadFile(file);
                     const g = state.graphics.find(g => g.id === graphic.id);
                     if (g) {
-                        g.url = ev.target.result;
+                        g.url = res.url;
                         saveState();
                         openInspector(graphic.id);
                     }
-                };
-                reader.readAsDataURL(file);
+                } catch (err) {
+                    console.error("[!] Upload error:", err);
+                    alert("Wystąpił błąd podczas wgrywania pliku.");
+                }
             }
         });
     }
@@ -979,19 +1271,21 @@ function renderInspectorBody(graphic) {
     // Side image upload (republika-composite)
     const sideImageUpload = body.querySelector('#side-image-upload');
     if (sideImageUpload) {
-        sideImageUpload.addEventListener('change', (e) => {
+        sideImageUpload.addEventListener('change', async (e) => {
             const file = e.target.files?.[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
+                try {
+                    const res = await uploadFile(file);
                     const g = state.graphics.find(g => g.id === graphic.id);
                     if (g) {
-                        g.sideImage = ev.target.result;
+                        g.sideImage = res.url;
                         saveState();
                         openInspector(graphic.id);
                     }
-                };
-                reader.readAsDataURL(file);
+                } catch (err) {
+                    console.error("[!] Side image upload error:", err);
+                    alert("Wystąpił błąd podczas wgrywania grafiki bocznej.");
+                }
             }
         });
     }
@@ -1187,9 +1481,9 @@ function saveWysiwyg(editorEl, graphicId) {
     if (g.type === 'TICKER') {
         const rawItems = html.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
         g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
-        if (currentGraphicId === g.id) {
-            const ta = document.querySelector('textarea[data-field="items"]');
-            if (ta) ta.value = g.items.join('\n');
+        if (selectedGraphicId === g.id) {
+            // Refresh inspector to show updated items in the new UI list
+            openInspector(g.id);
         }
     } else {
         g.titleHtml = html;
@@ -1204,6 +1498,49 @@ function saveWysiwyg(editorEl, graphicId) {
         refreshPreviewMonitor();
     }
 }
+
+// Helpers for Ticker Messages Manager UI
+window.updateTickerMessage = function(graphicId, index, value) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic || !graphic.items) return;
+    graphic.items[index] = value;
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+};
+
+window.removeTickerMessage = function(graphicId, index) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic || !graphic.items) return;
+    graphic.items.splice(index, 1);
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+    if (selectedGraphicId === graphicId) openInspector(graphicId);
+};
+
+window.addTickerMessage = function(graphicId) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic) return;
+    const input = document.getElementById(`new-ticker-msg-${graphicId}`);
+    if (!input || !input.value.trim()) return;
+    if (!graphic.items) graphic.items = [];
+    graphic.items.push(input.value.trim());
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+    if (selectedGraphicId === graphicId) openInspector(graphicId);
+    setTimeout(() => {
+        const resetInput = document.getElementById(`new-ticker-msg-${graphicId}`);
+        if(resetInput) resetInput.focus();
+    }, 50);
+};
 
 
 // ===========================================================
@@ -1235,12 +1572,13 @@ function openWysiwygModal(graphicId) {
 
     // Set editor base font from graphic's typography settings so new typing uses the right font
     const defaultFont = g.style?.typography?.fontFamily || 'Bahnschrift';
-    const defaultFontSize = (g.style?.typography?.fontSize || 24) + 'px';
-    const defaultLineHeight = g.style?.typography?.lineHeight || '1.4';
-    
+    const defaultFontSize = (g.style?.typography?.fontSize || 48) + 'px';
+    const defaultLineHeight = g.style?.typography?.lineHeight || '1.1';
+
     editor.style.fontFamily = defaultFont;
     editor.style.fontSize = defaultFontSize;
     editor.style.lineHeight = defaultLineHeight;
+    editor.style.textTransform = g.style?.typography?.textTransform || 'none';
 
     // Sync toolbar state
     const _syncToolbar = () => {
@@ -1255,7 +1593,10 @@ function openWysiwygModal(graphicId) {
         if (!fontSel || !sizeSel) return;
 
         // Reset to base editor style if no specific span is selected
-        if (lhSel) lhSel.value = editor.style.lineHeight || '1.4';
+        fontSel.value = defaultFont;
+        sizeSel.value = parseInt(defaultFontSize) || 48;
+        if (weightSel) weightSel.value = g.style?.typography?.fontWeight || '400';
+        if (lhSel) lhSel.value = defaultLineHeight;
 
         const styledEl = editor.querySelector('span[style]');
         if (styledEl) {
@@ -1497,9 +1838,9 @@ function bindWysiwygModalEvents() {
 function _wmApplyLineHeight(lh) {
     const editor = document.getElementById('wm-editor');
     if (!editor) return;
-    
+
     editor.style.lineHeight = lh;
-    
+
     // Persist to graphic style immediately so it survives refresh/save
     if (_wmGraphicId) {
         const g = state.graphics.find(g => g.id === _wmGraphicId);
@@ -1539,7 +1880,7 @@ function _wmApplyStyleToSelection(property, value) {
     // Check if the selection exactly matches an existing span ancestor
     let ancestor = range.commonAncestorContainer;
     if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentNode;
-    
+
     let existingSpan = null;
     let el = ancestor;
     while (el && el !== editor) {
@@ -1589,10 +1930,10 @@ function _wmApplyStyleToSelection(property, value) {
 function _wmClearAllFormatting() {
     const editor = document.getElementById('wm-editor');
     if (!editor) return;
-    
+
     // 1. execCommand removeFormat clears bold/italic/etc
     document.execCommand('removeFormat', false, null);
-    
+
     // 2. Custom clear: recursively strip all <span> and <font> tags while keeping text
     const stripTags = (root) => {
         const children = [...root.childNodes];
@@ -1604,16 +1945,16 @@ function _wmClearAllFormatting() {
                     while (node.firstChild) frag.appendChild(node.firstChild);
                     node.replaceWith(frag);
                     // Continue stripping on the new children
-                    stripTags(root); 
+                    stripTags(root);
                 } else if (node.hasChildNodes()) {
                     stripTags(node);
                 }
             }
         });
     };
-    
+
     stripTags(editor);
-    
+
     // 3. Reset editor base styles to defaults
     editor.style.fontWeight = 'normal';
     editor.style.fontStyle = 'normal';
@@ -1664,17 +2005,17 @@ function renderTemplateList() {
 function exportTemplate(id) {
     const tpl = state.templates.find(t => t.id === id);
     if (!tpl) return;
-    
+
     const dataStr = JSON.stringify(tpl, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `template_${tpl.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
     document.body.appendChild(a);
     a.click();
-    
+
     setTimeout(() => {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
@@ -1689,26 +2030,26 @@ function importTemplate(file) {
     reader.onload = (e) => {
         try {
             const imported = JSON.parse(e.target.result);
-            
+
             // Basic validation
             if (!imported.name || (!imported.html_template && !imported.css_template)) {
                 alert('Nieprawidłowy format pliku szablonu.');
                 return;
             }
-            
+
             // Generate new ID and mark as copy if needed
             const newTpl = {
                 ...imported,
                 id: crypto.randomUUID(),
                 name: imported.name + ' (Imported)'
             };
-            
+
             state.templates.push(newTpl);
             saveState();
             renderTemplateList();
             openTemplateEditor(newTpl.id);
             alert('Szablon został pomyślnie zaimportowany!');
-            
+
         } catch (err) {
             console.error('Import error:', err);
             alert('Błąd podczas importowania pliku JSON.');
@@ -1808,17 +2149,18 @@ function createGraphicFromTemplate(tpl) {
         title: tpl.defaultFields?.title || 'Title',
         titleHtml: tpl.defaultFields?.title || 'Title',
         subtitle: tpl.defaultFields?.subtitle || 'Subtitle',
-        introText: tpl.defaultFields?.introText || 'PILNE',
+        introText: tpl.defaultFields?.introText || '',
         items: tpl.defaultFields?.items || ['Wiadomość 1', 'Wiadomość 2'],
-        speed: 100,
-        url: '',
+        speed: tpl.defaultFields?.speed !== undefined ? tpl.defaultFields.speed : 100,
+        url: tpl.defaultFields?.url || '',
+        sideImage: tpl.defaultFields?.sideImage || '',
         variant: 'custom',
         templateId: tpl.id,
-        animation: {
+        animation: tpl.defaultAnimation ? JSON.parse(JSON.stringify(tpl.defaultAnimation)) : {
             in: { type: 'slide', direction: 'left', duration: 0.5, delay: 0, ease: 'ease-out' },
             out: { type: 'fade', direction: 'left', duration: 0.5, delay: 0, ease: 'ease-in' }
         },
-        style: {
+        style: tpl.defaultStyle ? JSON.parse(JSON.stringify(tpl.defaultStyle)) : {
             background: {
                 type: 'solid',
                 color: tpl.defaultFields?.primaryColor || '#0047AB',
@@ -1833,15 +2175,16 @@ function createGraphicFromTemplate(tpl) {
                 color: tpl.defaultFields?.titleColor || '#ffffff',
                 fontFamily: defaultFontFamily,
                 fontSize: tpl.defaultFields?.titleSize || 30,
-                fontWeight: 'bold'
+                fontWeight: tpl.defaultFields?.titleWeight || 'bold'
             },
             subtitleTypography: {
                 color: tpl.defaultFields?.subtitleColor || '#eeeeee',
                 fontFamily: 'Arial',
                 fontSize: tpl.defaultFields?.subtitleSize || 20,
-                fontWeight: 'normal'
+                fontWeight: tpl.defaultFields?.subtitleWeight || 'normal'
             }
         },
+        wiper: tpl.defaultFields?.wiper ? JSON.parse(JSON.stringify(tpl.defaultFields.wiper)) : undefined,
         groupId: null,
         layout: { x: 100, y: 800, width: undefined, height: undefined, scale: 1, layer: 1, ...(tpl.defaultLayout || {}) }
     };
@@ -2205,6 +2548,78 @@ function bindGlobalEvents() {
         }, 2000);
     };
 
+    // Inspector save as template
+    document.getElementById('btn-ins-save-template').onclick = () => {
+        if (!selectedGraphicId) return;
+        const g = state.graphics.find(gfx => gfx.id === selectedGraphicId);
+        if (!g) return;
+        const tpl = state.templates.find(t => t.id === g.templateId);
+        if (!tpl) {
+            alert('Nie znaleziono źródłowego szablonu.');
+            return;
+        }
+        const newTpl = JSON.parse(JSON.stringify(tpl));
+        newTpl.id = crypto.randomUUID();
+        newTpl.name = g.name + ' (Szablon)';
+        
+        newTpl.defaultFields = newTpl.defaultFields || {};
+        Object.assign(newTpl.defaultFields, JSON.parse(JSON.stringify(g)));
+        delete newTpl.defaultFields.id;
+        delete newTpl.defaultFields.templateId;
+        delete newTpl.defaultFields.visible;
+        delete newTpl.defaultFields.groupId;
+        
+        if (g.style) newTpl.defaultStyle = JSON.parse(JSON.stringify(g.style));
+        if (g.animation) newTpl.defaultAnimation = JSON.parse(JSON.stringify(g.animation));
+        if (g.layout) newTpl.defaultLayout = JSON.parse(JSON.stringify(g.layout));
+        if (g.wiper) newTpl.defaultFields.wiper = JSON.parse(JSON.stringify(g.wiper));
+
+        state.templates.push(newTpl);
+        saveState();
+        renderTemplateList();
+        
+        const btn = document.getElementById('btn-ins-save-template');
+        btn.innerHTML = '<span>✓ ZAPISANO</span>';
+        setTimeout(() => {
+            btn.innerHTML = '<span>ZAPISZ JAKO</span><span>SZABLON</span>';
+        }, 2000);
+    };
+
+    // Inspector export JSON
+    document.getElementById('btn-ins-export-json').onclick = () => {
+        if (!selectedGraphicId) return;
+        const g = state.graphics.find(gfx => gfx.id === selectedGraphicId);
+        if (!g) return;
+        const tpl = state.templates.find(t => t.id === g.templateId);
+        if (!tpl) {
+            alert('Nie znaleziono źródłowego szablonu.');
+            return;
+        }
+        const exportTpl = JSON.parse(JSON.stringify(tpl));
+        exportTpl.id = crypto.randomUUID();
+        exportTpl.name = g.name + ' (Eksport)';
+        
+        exportTpl.defaultFields = exportTpl.defaultFields || {};
+        Object.assign(exportTpl.defaultFields, JSON.parse(JSON.stringify(g)));
+        delete exportTpl.defaultFields.id;
+        delete exportTpl.defaultFields.templateId;
+        delete exportTpl.defaultFields.visible;
+        delete exportTpl.defaultFields.groupId;
+
+        if (g.style) exportTpl.defaultStyle = JSON.parse(JSON.stringify(g.style));
+        if (g.animation) exportTpl.defaultAnimation = JSON.parse(JSON.stringify(g.animation));
+        if (g.layout) exportTpl.defaultLayout = JSON.parse(JSON.stringify(g.layout));
+        if (g.wiper) exportTpl.defaultFields.wiper = JSON.parse(JSON.stringify(g.wiper));
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportTpl, null, 2));
+        const el = document.createElement('a');
+        el.setAttribute("href", dataStr);
+        el.setAttribute("download", `szablon_${g.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`);
+        document.body.appendChild(el);
+        el.click();
+        el.remove();
+    };
+
     // Inspector delete
     document.getElementById('btn-delete-graphic-ins').onclick = () => {
         if (!selectedGraphicId) return;
@@ -2216,7 +2631,7 @@ function bindGlobalEvents() {
             const deletedId = selectedGraphicId;
             selectedGraphicId = null;
             closeInspector();
-            
+
             if (previewGraphic?.id === deletedId) {
                 setPreviewGraphic(null);
             }
@@ -2245,24 +2660,54 @@ function bindGlobalEvents() {
         openTemplateEditor(newTpl.id);
     };
 
-    document.getElementById('btn-import-template').onclick = () => {
-        const json = prompt('Wklej JSON szablonu:');
-        if (!json) return;
-        try {
-            const parsed = JSON.parse(json);
-            const tpls = Array.isArray(parsed) ? parsed : [parsed];
-            tpls.forEach(t => {
-                if (!t.id) t.id = crypto.randomUUID();
-                const existing = state.templates.findIndex(x => x.id === t.id);
-                if (existing >= 0) state.templates[existing] = t;
-                else state.templates.push(t);
-            });
-            saveState();
-            renderTemplateList();
-            alert('Import zakończony pomyślnie!');
-        } catch (e) {
-            alert('Błąd parsowania JSON: ' + e.message);
+    const btnImportTemplate = document.getElementById('btn-import-template');
+    const tplFileInput = document.getElementById('tpl-file-input');
+
+    btnImportTemplate.onclick = () => {
+        tplFileInput.click();
+    };
+
+    tplFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const parsed = JSON.parse(evt.target.result);
+                const tpls = Array.isArray(parsed) ? parsed : [parsed];
+                tpls.forEach(t => {
+                    if (!t.id) t.id = crypto.randomUUID();
+                    const existing = state.templates.findIndex(x => x.id === t.id);
+                    if (existing >= 0) state.templates[existing] = t;
+                    else state.templates.push(t);
+                });
+                saveState();
+                renderTemplateList();
+                alert('Szablony zaimportowane pomyślnie!');
+            } catch (err) {
+                alert('Błąd parsowania JSON szablonu: ' + err.message);
+            }
+            tplFileInput.value = ''; // Reset
+        };
+        reader.readAsText(file);
+    });
+
+    document.getElementById('btn-export-template').onclick = () => {
+        if (!currentTemplateId) {
+             alert('Wybierz najpierw szablon z listy!');
+             return;
         }
+        const tpl = state.templates.find(t => t.id === currentTemplateId);
+        if (!tpl) return;
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tpl, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `szablon_${tpl.name.replace(/\s+/g, '_').toLowerCase()}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     };
 
     document.getElementById('btn-save-template').onclick = saveCurrentTemplate;
@@ -2314,6 +2759,64 @@ function bindGlobalEvents() {
         const tpl = state.templates.find(t => t.id === currentTemplateId);
         if (tpl) tpl.name = e.target.value;
     };
+
+    // Inspector close button
+    const closeInsBtn = document.getElementById('btn-close-inspector');
+    if (closeInsBtn) {
+        closeInsBtn.onclick = closeInspector;
+    }
+    
+    // ==========================================
+    // Database Management
+    // ==========================================
+    const btnExportDb = document.getElementById('btn-export-db');
+    const btnImportDbTrigger = document.getElementById('btn-import-db-trigger');
+    const dbFileInput = document.getElementById('db-file-input');
+    
+    if (btnExportDb && btnImportDbTrigger && dbFileInput) {
+        btnExportDb.onclick = () => {
+            if (!confirm('Czy na pewno chcesz pobrać aktualny stan bazy danych (Szablony, Elementy Graficzne i Ustawienia)?')) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `db_backup_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        };
+
+        btnImportDbTrigger.onclick = () => dbFileInput.click();
+
+        dbFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!confirm('UWAGA! Import bazy spowoduje nadpisanie WSZYSTKICH aktualnych grafik i szablonów. Czy na pewno chcesz kontynuować?')) {
+                dbFileInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    // Minimalna weryfikacja poprawności struktury
+                    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.templates) && Array.isArray(parsed.graphics)) {
+                        state = parsed;
+                        socket.emit('updateState', state); // Wymuszenie aktualizacji po stronie serwera
+                        init(); // Przerenderowanie całego UI
+                        alert('Baza Danych została poprawnie zaimportowana!');
+                    } else {
+                        throw new Error('Nieprawidłowy plik Bazy Danych');
+                    }
+                } catch (err) {
+                    alert('Błąd importowania bazy: ' + err.message);
+                }
+                dbFileInput.value = ''; // Reset
+            };
+            reader.readAsText(file);
+        });
+    }
 }
 
 // ===========================================================

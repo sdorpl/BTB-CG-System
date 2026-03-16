@@ -11,6 +11,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto+Condensed:ital,wght@0,300;0,400;0,700;1,400&display=swap"
     rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SortableJS dla operacji przeciągnij i upuść (Drag & Drop) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -27,6 +29,14 @@
     }
   </script>
   <style>
+    @font-face {
+      font-family: 'Bahnschrift';
+      src: url('/font/BAHNSCHRIFT.TTF') format('truetype');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+
     .custom-scrollbar::-webkit-scrollbar {
       width: 4px;
     }
@@ -119,42 +129,45 @@
 <body class="bg-gray-950 text-gray-200 h-screen font-sans overflow-hidden flex flex-col">
 
   <!-- ============================================================ HEADER == -->
-  <header class="h-12 bg-gray-900 border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
+  <header class="h-12 bg-black border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
     <div class="flex items-center gap-2">
       <div
-        class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center font-bold text-base shadow-lg shadow-blue-900/50">
+        class="w-7 h-7 bg-red-600 rounded flex items-center justify-center font-bold text-base shadow-lg shadow-red-900/50">
         V</div>
-      <h1 class="text-lg font-bold tracking-tight text-gray-200">CG Control <span
-          class="text-blue-400 text-xs uppercase ml-1">Pro</span></h1>
+      <h1 class="text-lg font-bold tracking-tight text-white uppercase italic">CG MASTER <span
+          class="text-red-500 text-xs font-black not-italic ml-1">ALPHA</span></h1>
     </div>
-    <nav class="flex items-center gap-4 text-xs">
+    <nav class="flex items-center gap-2 text-xs">
+      <div id="cloud-status" class="px-2 py-1 rounded bg-red-900/20 text-red-500 border border-red-900/50 text-[10px] font-bold uppercase tracking-widest">ŁĄCZENIE...</div>
+      
+      <div class="h-4 w-px bg-gray-700 mx-2"></div>
+      
       <button id="nav-dashboard"
-        class="nav-tab px-3 py-1.5 rounded font-bold text-blue-400 bg-blue-600/10 border border-blue-600/20">Dashboard</button>
+        class="nav-tab px-4 py-1.5 rounded font-black uppercase tracking-wider text-blue-400 bg-blue-600/10 border border-blue-600/20 text-[10px]">Panel Główny</button>
       <button id="nav-templates"
-        class="nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors">Template
-        Editor</button>
+        class="nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]">Edytor Szablonów</button>
       <button id="nav-settings"
-        class="nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors">Ustawienia</button>
-      <div class="h-4 w-px bg-gray-700"></div>
-      <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded text-green-400">
-        <div class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-        <span>ONLINE</span>
+        class="nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]">Ustawienia</button>
+      
+      <div class="h-4 w-px bg-gray-700 mx-2"></div>
+
+      <div class="flex items-center gap-1">
+        <button id="btn-bg-black" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-[9px] font-bold uppercase rounded">Tło Czarne</button>
+        <button id="btn-bg-trans" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-[9px] font-bold uppercase rounded">Tło OBS</button>
       </div>
-      <a href="output.html" target="_blank" class="hover:text-blue-400 transition-colors flex items-center gap-1">
+
+      <div class="h-4 w-px bg-gray-700 mx-1"></div>
+
+      <button id="btn-kill-all" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white border border-red-400 rounded text-[10px] font-black uppercase shadow-lg shadow-red-900/40 transition-all active:scale-95">Wyczyść Program</button>
+
+      <div class="h-4 w-px bg-gray-700 mx-1"></div>
+
+      <button id="reset-db-btn" class="text-gray-500 hover:text-red-400 p-1 transition-colors" title="Reset Database">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-        </svg>
-        WYJŚCIE
-      </a>
-      <button id="reset-db-btn" class="text-red-400 hover:text-red-300 flex items-center gap-1 text-[10px]">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <path d="M3 3v5h5" />
         </svg>
-        Reload DB
       </button>
     </nav>
   </header>
@@ -171,15 +184,15 @@
         <!-- PREVIEW Monitor -->
         <div class="flex-1 flex flex-col min-w-0" id="preview-monitor-wrap" style="display: flex; flex-direction: column;">
           <!-- Label bar ABOVE -->
-          <div class="h-7 bg-gray-900 border-t border-x border-green-600/50 rounded-t flex items-center justify-between px-3 shrink-0" style="height: 28px;">
+          <div class="h-7 bg-[#222] border-x border-gray-800 border-t-4 border-t-[#fbc02d] flex items-center justify-between px-3 shrink-0" style="height: 28px;">
             <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-green-700">PODGLĄD</span>
-                <button id="btn-toggle-safe-area" class="text-[9px] uppercase font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded px-1.5 py-0.5 transition-colors border border-gray-700">EBU Safe Area</button>
+                <span class="text-[10px] font-black tracking-widest text-[#fbc02d] uppercase">PREVIEW (PODGLĄD)</span>
+                <button id="btn-toggle-safe-area" class="text-[8px] uppercase font-bold text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 rounded px-1.5 py-0.5 transition-colors border border-gray-800">BEZPIECZNY OBSZAR</button>
             </div>
-            <span id="preview-name" class="text-[10px] text-gray-400 truncate max-w-[160px]">---</span>
+            <span id="preview-name" class="text-[9px] text-gray-500 font-mono tracking-tighter truncate max-w-[160px]">---</span>
           </div>
           <!-- Monitor Viewport -->
-          <div class="flex-1 relative bg-black border-2 border-green-600 shadow-[0_0_15px_rgba(34,197,94,0.1)] rounded-b overflow-hidden" id="preview-monitor-inner" style="flex: 1; position: relative; width: 100%;">
+          <div class="flex-1 relative bg-black border-x border-b border-gray-800 overflow-hidden" id="preview-monitor-inner" style="flex: 1; position: relative; width: 100%;">
             <!-- Grid bg -->
             <div class="absolute inset-0 opacity-10 monitor-grid pointer-events-none"></div>
             <!-- Canvas area -->
@@ -194,15 +207,18 @@
                 </div>
               </div>
             </div>
-            <div id="preview-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">BRAK SYGNAŁU</div>
+            <div id="preview-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">NO SIGNAL</div>
           </div>
           <!-- Controls below -->
-          <div class="h-10 mt-2 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 40px;">
-            <span class="text-[10px] text-gray-500 font-mono pl-1">NEXT: <span id="preview-next-label">---</span></span>
-            <div class="flex gap-1.5">
-              <button id="btn-edit-preview" disabled class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">EDYTUJ</button>
-              <button id="btn-update-active" disabled class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-[10px] font-bold uppercase transition-colors disabled:opacity-30">Aktualizuj</button>
-              <button id="btn-take-preview" disabled class="px-4 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-[10px] font-bold uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30">WEJDŹ (TAKE)</button>
+          <div class="h-10 mt-1 bg-black/40 border-x border-b border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 36px;">
+            <div class="flex flex-col">
+              <span class="text-[8px] text-gray-600 font-bold uppercase leading-none">Następny Element</span>
+              <span id="preview-next-label" class="text-[10px] text-gray-400 font-mono truncate max-w-[150px]">---</span>
+            </div>
+            <div class="flex gap-1">
+              <button id="btn-edit-preview" disabled class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded text-[9px] font-bold uppercase transition-colors disabled:opacity-30">Edytuj</button>
+              <button id="btn-update-active" disabled class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded text-[9px] font-bold uppercase transition-colors disabled:opacity-30">Synchr.</button>
+              <button id="btn-take-preview" disabled class="px-3 py-1 bg-green-700 hover:bg-green-600 text-white border border-green-500 rounded text-[9px] font-black uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30">Na Żywo</button>
             </div>
           </div>
         </div>
@@ -210,15 +226,17 @@
         <!-- PROGRAM Monitor -->
         <div class="flex-1 flex flex-col min-w-0" id="program-monitor-wrap" style="display: flex; flex-direction: column;">
           <!-- Label bar ABOVE -->
-          <div class="h-7 bg-gray-900 border-t border-x border-red-600/50 rounded-t flex items-center justify-between px-3 shrink-0" style="height: 28px;">
+          <div class="h-7 bg-[#222] border-x border-gray-800 border-t-4 border-t-[#e53935] flex items-center justify-between px-3 shrink-0" style="height: 28px;">
             <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-700">PROGRAM</span>
+                <span class="text-[10px] font-black tracking-widest text-[#e53935] uppercase">PROGRAM (WIZJA)</span>
+                <span id="program-layers-label" class="flex items-center gap-1 text-[9px] text-white bg-red-600 px-1.5 rounded animate-pulse hidden">
+                  NA ŻYWO: <span id="program-layers-count">0</span>
+                </span>
             </div>
-            <span id="program-layers-label" class="text-[10px] text-red-400 font-bold animate-pulse hidden">ON AIR:
-              <span id="program-layers-count">0</span> WARSTWY</span>
+            <div class="w-2.5 h-2.5 bg-red-600 rounded-full shadow-[0_0_8px_#e53935] animate-pulse"></div>
           </div>
           <!-- Monitor Viewport -->
-          <div class="flex-1 relative bg-black border-2 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.1)] rounded-b overflow-hidden" style="flex: 1; position: relative; width: 100%;">
+          <div class="flex-1 relative bg-black border-x border-b border-gray-800 overflow-hidden" style="flex: 1; position: relative; width: 100%;">
             <iframe id="program-iframe" src="output.html" class="absolute inset-0 w-full h-full border-0" style="pointer-events:none;"></iframe>
             <div class="ebu-safe-area hidden absolute inset-0 pointer-events-none z-50">
                <div style="position:absolute; left: 3.5%; right: 3.5%; top: 3.5%; bottom: 3.5%; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px;"></div>
@@ -226,12 +244,12 @@
                <div style="position:absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dotted rgba(255,255,255,0.3);"></div>
                <div style="position:absolute; top: 50%; left: 0; right: 0; border-top: 1px dotted rgba(255,255,255,0.3);"></div>
             </div>
-            <div id="program-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">BRAK SYGNAŁU</div>
+            <div id="program-empty" class="absolute inset-0 flex items-center justify-center text-gray-700 font-mono text-sm pointer-events-none">NO SIGNAL</div>
           </div>
           <!-- Controls below -->
-          <div class="h-10 mt-2 bg-gray-900 rounded border border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 40px;">
-            <span id="on-air-label" class="text-[10px] text-gray-500 font-bold pl-1">ON AIR: 0 LAYERS</span>
-            <button id="btn-clear-program" class="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-900/50 rounded text-[10px] font-bold uppercase transition-colors">WYCZYŚĆ</button>
+          <div class="h-10 mt-1 bg-black/40 border-x border-b border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 36px;">
+            <span id="on-air-label" class="text-[9px] text-gray-500 font-black uppercase tracking-widest pl-1">Na Żywo: 0 Warstw</span>
+            <button id="btn-clear-program" class="px-3 py-1 bg-red-900/40 hover:bg-red-800 text-red-500 border border-red-900/50 rounded text-[9px] font-black uppercase transition-colors">Wyczyść Wszystko</button>
           </div>
         </div>
       </div>
@@ -269,7 +287,7 @@
     </div>
 
     <!-- ====== RIGHT COLUMN: INSPECTOR PANEL == -->
-    <aside id="inspector-panel" class="w-72 flex flex-col bg-gray-900 border-l border-gray-800 shrink-0">
+    <aside id="inspector-panel" class="hidden w-72 flex flex-col bg-gray-900 border-l border-gray-800 shrink-0">
       <!-- Inspector Empty State -->
       <div id="inspector-empty" class="flex-1 flex flex-col items-center justify-center text-gray-600 p-8 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
@@ -285,13 +303,18 @@
       <div id="inspector-content" class="hidden flex flex-col h-full">
         <!-- Header -->
         <div class="p-2 bg-black/20 border-b border-gray-800 flex justify-between items-center text-xs text-gray-500 shrink-0">
-          <span class="font-bold uppercase text-gray-300">Inspektor</span>
-          <select id="inspector-type-select"
-            class="bg-gray-800 border border-gray-700 rounded text-[10px] px-1 py-0.5 text-blue-400 font-mono focus:outline-none">
+          <div class="flex items-center gap-2">
+            <button id="btn-close-inspector" class="text-gray-500 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <span class="font-bold uppercase text-gray-300">Inspektor</span>
+          </div>
+          <select id="inspector-type-select" disabled
+            class="bg-gray-800 border border-gray-700 rounded text-[10px] px-1 py-0.5 text-blue-400 font-mono focus:outline-none appearance-none cursor-not-allowed">
             <option value="LOWER_THIRD">BELKA</option>
             <option value="TICKER">TICKER</option>
             <option value="CLOCK">ZEGAR</option>
-            <option value="IMAGE">OBRAZEK</option>
+            <option value="IMAGE">GRAFIKA</option>
           </select>
         </div>
 
@@ -317,6 +340,20 @@
             </svg>
             ZAPISZ ZMIANY
           </button>
+
+          <div class="flex gap-2">
+            <button id="btn-ins-save-template"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-green-900/40 hover:bg-green-600 text-green-500 hover:text-white py-1.5 rounded font-bold border border-green-900/50 transition-all hover:scale-[1.02] text-[9px] text-center leading-tight">
+              <span>ZAPISZ JAKO</span>
+              <span>SZABLON</span>
+            </button>
+            <button id="btn-ins-export-json"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-gray-800 hover:bg-gray-600 text-gray-300 hover:text-white py-1.5 rounded font-bold border border-gray-700 transition-all hover:scale-[1.02] text-[9px] text-center leading-tight">
+              <span>EKSPORTUJ</span>
+              <span>KOD (JSON)</span>
+            </button>
+          </div>
+
           <button id="btn-delete-graphic-ins"
             class="w-full flex items-center justify-center gap-2 bg-red-900/40 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded font-bold border border-red-900/50 transition-all hover:scale-[1.02] text-xs">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -355,6 +392,7 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </button>
+          <input type="file" id="tpl-file-input" accept=".json" class="hidden">
         </div>
       </div>
       <div id="template-list" class="flex-1 overflow-y-auto custom-scrollbar">
@@ -381,6 +419,16 @@
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
               </svg>
               Usuń
+            </button>
+            <button id="btn-export-template"
+              class="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white rounded font-medium text-sm shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Eksportuj (.json)
             </button>
             <button id="btn-save-template"
               class="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm shadow-lg">
@@ -535,21 +583,48 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-5">
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+          Baza Danych
+        </h2>
 
+        <div class="space-y-4">
+          <p class="text-[10px] text-gray-500 mb-2">Możesz wykonać pełną kopię zapasową środowiska (szablonów, banku grafik i ustawień tła) pobierając plik ze stanem aplikacji, lub wgrać swój plik JSON, aby odtworzyć konfigurację.</p>
+          <div class="grid grid-cols-2 gap-4">
+            <button id="btn-export-db"
+              class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-green-400 border border-gray-700 py-2 rounded font-bold text-xs transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Eksportuj (Pobierz db.json)
+            </button>
+            <div class="relative w-full">
+              <input type="file" id="db-file-input" accept=".json" class="hidden">
+              <button id="btn-import-db-trigger"
+                class="w-full flex items-center justify-center gap-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/30 py-2 rounded font-bold text-xs transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Importuj Baze
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ============================================================ TEMPLATE SELECTOR MODAL == -->
-  <div id="modal-template-selector" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-    <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
-      <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-        <h3 class="font-bold text-lg">Wybierz Szablon</h3>
-        <button id="modal-tpl-close" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
-      </div>
-      <div id="modal-tpl-list" class="flex-1 overflow-y-auto custom-scrollbar p-4 grid grid-cols-2 gap-3">
-        <!-- Template cards -->
-      </div>
     </div>
   </div>
 
@@ -791,6 +866,21 @@
   <script src="gsap-fx.js"></script>
   <script src="renderer.js"></script>
   <script src="app.js"></script>
-</body>
+
+  <!-- ============================================================ TEMPLATE SELECTOR MODAL == -->
+  <div id="modal-template-selector" class="hidden fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+      <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+        <h3 class="font-bold text-lg">Wybierz Szablon</h3>
+        <button id="modal-tpl-close" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+      </div>
+      <div id="modal-tpl-list" class="flex-1 overflow-y-auto custom-scrollbar p-4 grid grid-cols-2 gap-3">
+        <!-- Template cards -->
+      </div>
+    </div>
+  </div>
+
+  
+  </body>
 
 </html>

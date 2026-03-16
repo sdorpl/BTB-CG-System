@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>CG Master Control</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root {
+            --bg-base: #111111;
+            --bg-panel: #1e1e1e;
+            --bg-input: #0a0a0a;
+            --border-color: #333333;
+            --border-highlight: #4a4a4a;
+            --text-main: #e0e0e0;
+            --text-muted: #7a7a7a;
+            --accent-live: #d32f2f;
+            --accent-live-glow: rgba(211, 47, 47, 0.4);
+            --accent-ui: #1976d2;
+            --accent-take: #c62828;
+            --accent-prev: #0277bd;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: #444; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
+        
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; color: var(--text-main); background: var(--bg-base); min-height: 100vh; overflow-x: hidden; }
+        
+        /* TOPBAR */
+        .topbar { background: #000; padding: 8px 15px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid var(--border-color); position: sticky; top: 0; z-index: 100; }
+        .brand { font-weight: 900; font-size: 16px; color: #fff; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .brand::before { content: ''; display: block; width: 12px; height: 12px; background: var(--accent-live); }
+        
+        .server-status { font-size: 11px; padding: 4px 8px; background: #220505; color: #e57373; border: 1px solid #5c1b1b; text-transform: uppercase; font-weight: bold; }
+        .server-status.online { background: #082212; color: #81c784; border-color: #1b5c33; }
+        
+        /* PRZYCISKI - HARDWARE STYLE */
+        .btn-pro { background: #2a2a2a; border: 1px solid #444; color: #ccc; cursor: pointer; font-size: 11px; padding: 6px 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: background 0.1s; }
+        .btn-pro:hover { background: #3a3a3a; color: #fff; border-color: #555; }
+        .btn-pro:active { background: #111; }
+        
+        .nav-btn { background: #111; border-color: transparent; color: var(--text-muted); }
+        .nav-btn.active { background: var(--bg-panel); border-color: var(--border-color); border-bottom-color: transparent; color: #fff; }
+        
+        /* GŁÓWNE PRZYCISKI KAFELKA */
+        .btn-take { background: var(--accent-take); border-color: #e53935; color: #fff; font-size: 12px; font-weight: 900; padding: 8px 5px; }
+        .btn-take:hover { background: #e53935; border-color: #ff5252; }
+        
+        .btn-preview { background: var(--accent-prev); border-color: #039be5; color: #fff; padding: 8px 5px; }
+        .btn-preview:hover { background: #039be5; }
+        
+        .btn-kill { background: transparent; border-color: #555; color: #aaa; padding: 8px 5px;}
+        .btn-kill:hover { background: #333; color: #fff; }
+        .btn-kill.global { border-color: var(--accent-live); color: var(--accent-live); }
+        .btn-kill.global:hover { background: var(--accent-live); color: #fff; }
+
+        /* KONTENERY */
+        .container { padding: 15px; max-width: 1900px; margin: 0 auto; }
+        .view { display: none; } 
+        .view.active { display: block; }
+        
+        /* MONITORY */
+        .monitors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 1200px; margin: 0 auto 20px auto; }
+        .monitor-col { display: flex; flex-direction: column; }
+        .monitor-label { font-size: 12px; font-weight: 900; letter-spacing: 2px; padding: 6px 12px; background: #222; border: 1px solid var(--border-color); border-bottom: none; display: flex; justify-content: space-between; align-items: center; }
+        .preview-label { color: #fbc02d; border-top: 3px solid #fbc02d; }
+        .live-label { color: #e53935; border-top: 3px solid #e53935; }
+        .monitor-wrapper { width: 100%; aspect-ratio: 16 / 9; background: #000; position: relative; overflow: hidden; border: 1px solid var(--border-color); }
+        .screen { width: 1920px; height: 1080px; transform-origin: top left; position: absolute; }
+        
+        /* KAFELKI / KONTROLERY */
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+        .cg-item { background: var(--bg-panel); border: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        
+        .cg-header { padding: 10px 12px; background: #161616; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .cg-title-area { display: flex; align-items: center; gap: 8px; }
+        .cg-title { font-size: 14px; font-weight: 800; color: #fff; margin: 0; letter-spacing: 0.5px; text-transform: uppercase; }
+        
+        .live-indicator { font-size: 9px; font-weight: 900; padding: 3px 6px; background: #2a2a2a; color: #555; border: 1px solid #444; letter-spacing: 1px; }
+        .live-indicator.live { background: var(--accent-live); color: #fff; border-color: #ff5252; box-shadow: 0 0 8px var(--accent-live-glow); }
+        
+        .cg-controls-icons button { padding: 4px 8px; font-size: 12px; border: none; background: transparent; color: #777; cursor: pointer; }
+        .cg-controls-icons button:hover { color: #fff; }
+        
+        /* OBSZAR AKCJI */
+        .cg-actions-main { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 4px; padding: 12px; border-bottom: 1px solid var(--border-color); background: #1a1a1a; }
+        
+        /* OBSZAR PÓL DANYCH */
+        .cg-inputs-area { padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--bg-panel); flex-grow: 1; }
+        
+        .form-group label { display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; font-size: 13px; font-family: 'Segoe UI', sans-serif; box-sizing: border-box; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #666; background: #111; }
+        
+        .template-wrapper { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
+
+        /* LISTY I EDYTOR */
+        .list-manager { max-height: 120px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border-color); padding: 4px; display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+        .list-item { background: #222; border: 1px solid #333; padding: 6px 8px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; }
+        .list-item span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 85%; }
+        .list-add-wrapper { display: flex; gap: 4px; }
+        
+        .btn-trash { background: #3a1c1d; border: 1px solid #5a2c2f; color: #e74c3c; cursor: pointer; font-size: 10px; padding: 4px 6px; }
+        .btn-trash:hover { background: #e74c3c; color: #fff; }
+
+        .richtext-preview { margin-top: 4px; font-size: 11px; color: #888; background: var(--bg-input); padding: 8px; border: 1px dashed var(--border-color); max-height: 35px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+        /* MODAL EDYTORA */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-content { background: var(--bg-panel); border: 1px solid #444; padding: 20px; width: 950px; max-width: 95%; display: flex; flex-direction: column; gap: 15px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .modal-header h2 { margin: 0; font-size: 18px; color: #fff; font-weight: 800; text-transform: uppercase; }
+        
+        .editor-toolbar { display: flex; flex-wrap: wrap; gap: 6px; background: #161616; padding: 8px; border: 1px solid var(--border-color); align-items: center; }
+        .editor-area { width: 100%; min-height: 250px; background: #000; border: 1px solid var(--border-highlight); color: #fff; font-size: 50px; padding: 20px; outline: none; overflow-y: auto; box-sizing: border-box; font-family: 'Bahnschrift', sans-serif; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
+        
+        /* KREATOR */
+        .creator-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+        #view-creator textarea { font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.4; }
+        .field-row { display: flex; gap: 8px; background: #161616; padding: 8px; border: 1px solid var(--border-color); margin-bottom: 5px; align-items: center; }
+        
+        @media (max-width: 1200px) {
+            .creator-grid { grid-template-columns: 1fr; }
+            .field-row { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="brand">CG MASTER</div>
+    <div id="cloud-status" class="server-status">ŁĄCZENIE...</div>
+    <div style="width: 1px; height: 15px; background: #444; margin: 0 5px;"></div>
+    <button class="btn-pro nav-btn active" onclick="switchTab('main', this)">PANEL KONTROLNY</button>
+    <button class="btn-pro nav-btn" onclick="switchTab('creator', this)">KREATOR SZABLONÓW</button>
+    
+    <div style="margin-left: auto; display: flex; gap: 8px;">
+        <button class="btn-pro" onclick="channel.postMessage({cmd:'set_background', color:'black'})">TŁO CZARNE</button>
+        <button class="btn-pro" onclick="channel.postMessage({cmd:'set_background', color:'transparent'})">TŁO OBS</button>
+        <div style="width: 1px; height: 15px; background: #444; margin: 0 5px; align-self: center;"></div>
+        <button class="btn-pro" onclick="forceRestoreDefaults()">RESETUJ BAZĘ</button>
+        <button class="btn-pro btn-kill global" onclick="stopAll()">KILL ALL (WIZJA)</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="view-main" class="view active">
+        <div class="monitors-grid">
+            <div class="monitor-col">
+                <div class="monitor-label preview-label"><span>PREVIEW (PODGLĄD)</span></div>
+                <div class="monitor-wrapper"><div class="screen" id="preview-screen"></div></div>
+            </div>
+            <div class="monitor-col">
+                <div class="monitor-label live-label"><span>PROGRAM (WIZJA)</span><span style="display:inline-block; width:10px; height:10px; background:#e53935; box-shadow: 0 0 5px #e53935;"></span></div>
+                <div class="monitor-wrapper"><div class="screen" id="live-screen"></div></div>
+            </div>
+        </div>
+        <div class="gallery" id="gallery"></div>
+    </div>
+
+    <div id="view-creator" class="view">
+        <div class="cg-item" style="max-width: 1500px; margin: 0 auto;">
+            <div class="cg-header">
+                <div class="cg-title-area"><h3 class="cg-title" id="creator-title">DODAJ SZABLON</h3></div>
+            </div>
+            <div class="cg-inputs-area">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Nazwa Szablonu</label>
+                    <input type="text" id="tpl-name" style="font-size: 16px; font-weight: bold; padding: 12px;">
+                </div>
+                
+                <div class="creator-grid">
+                    <div class="form-group">
+                        <label style="color: #4db8ff;">KOD HTML</label>
+                        <textarea id="tpl-html" rows="14"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #9cdcfe;">KOD CSS (.active = wyzwolenie animacji)</label>
+                        <textarea id="tpl-css" rows="14"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #ce9178;">SKRYPT JS (Opcjonalny)</label>
+                        <textarea id="tpl-js" rows="14"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 12px; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">PARAMETRY WEJŚCIOWE (POLA DANYCH)</label>
+                    <div id="fields-builder-container" style="margin-top: 10px;"></div>
+                    <button class="btn-pro" style="margin-top: 5px; background: #222; border-color: #555;" onclick="addFieldRow()">+ DODAJ KOLEJNY PARAMETR</button>
+                </div>
+                
+                <div style="display: flex; gap: 8px; margin-top: 20px;">
+                    <button class="btn-pro btn-take" id="btn-save-creator" style="flex-grow: 1; padding: 14px; font-size: 14px;" onclick="saveTemplate()">ZAPISZ DO BAZY</button>
+                    <button class="btn-pro" style="display: none; padding: 14px; font-size: 14px;" id="btn-cancel-edit" onclick="cancelEdit()">ANULUJ EDYCJĘ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="text-editor-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-editor-title">EDYTORS TEKSTU ZAAWANSOWANEGO</h2>
+        </div>
+        
+        <div class="editor-toolbar">
+            <button class="btn-pro" onclick="document.execCommand('bold',false,null)"><b>B</b></button>
+            <button class="btn-pro" onclick="document.execCommand('italic',false,null)"><i>I</i></button>
+            <button class="btn-pro" onclick="document.execCommand('underline',false,null)"><u>U</u></button>
+            <div style="width: 1px; height: 20px; background: #333; margin: 0 5px;"></div>
+            <button class="btn-pro" onclick="document.execCommand('fontName',false,'Bahnschrift')" style="font-family: 'Bahnschrift', sans-serif;">Bahnschrift</button>
+            <button class="btn-pro" onclick="document.execCommand('fontName',false,'Arial')" style="font-family: Arial, sans-serif;">Arial</button>
+            <div style="width: 1px; height: 20px; background: #333; margin: 0 5px;"></div>
+            <label style="font-size: 10px; color: #888; font-weight: bold;">ROZMIAR:</label>
+            <input type="number" id="font-size-val" value="80" style="width: 60px; padding: 4px; background: var(--bg-input); border: 1px solid #555; color: #fff; text-align: center; font-weight: bold;" min="10" max="300" oninput="applyFontSizeLive()">
+            <div style="margin-left: auto;">
+                <button class="btn-pro" style="color: #e57373;" onclick="cleanEditorFormat()">⌫ CZYŚĆ FORMAT</button>
+            </div>
+        </div>
+        
+        <div contenteditable="true" id="modal-editor-area" class="editor-area"></div>
+        
+        <div class="modal-footer">
+            <button class="btn-pro" onclick="closeTextEditor()">ANULUJ</button>
+            <button class="btn-pro btn-take" style="padding: 10px 20px;" onclick="saveTextEditor()">ZAPISZ ZMIANY</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const LOCAL_SERVER = "http://localhost:3001";
+
+    async function initDatabase() {
+        try {
+            const res = await fetch(`${LOCAL_SERVER}/load`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data) && data.length > 0) {
+                    templates = data;
+                } else {
+                    templates = [...defaultTemplates];
+                    saveToCloud();
+                }
+                const statusEl = document.getElementById('cloud-status');
+                statusEl.textContent = "LOCAL";
+                statusEl.classList.add('online');
+                renderGallery();
+            }
+        } catch (e) {
+            console.warn("Local server not reachable, using defaults.");
+            templates = [...defaultTemplates];
+            const statusEl = document.getElementById('cloud-status');
+            statusEl.textContent = "OFFLINE";
+            renderGallery();
+        }
+    }
+    
+    const channel = new BroadcastChannel('tv_engine');
+    let activeLiveTemplates = {};
+    let templates = [];
+    let editingTemplateId = null; 
+    let currentEditTplId = null;
+    let currentEditInputId = null;
+
+    const defaultTemplates = [
+        {
+            id: 'tpl_tag_nazywo', name: 'TAG: NA ŻYWO',
+            html: `<div id="tag-nazywo-wrap"><div class="live-tag"><span class="live-text" id="f-tag-nazywo"></span></div></div>`,
+            css: `#tag-nazywo-wrap { position: absolute; right: 110px; bottom: 300px; width: 190px; height: 40px; transform: translateX(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 9999; } .active #tag-nazywo-wrap { transform: translateX(0); opacity: 1; } #tag-nazywo-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(-45deg, #4a0404, #8b0000, #ff3333, #8b0000); background-size: 400% 400%; animation: liveGrad3 4s ease infinite; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; } #tag-nazywo-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 25px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; } @keyframes liveGrad3 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }`,
+            js: ``, inputs: [{ id: 'f-tag-nazywo', label: 'Tekst', default: 'NA ŻYWO', type: 'text' }]
+        },
+        {
+            id: 'tpl_tag_powtorka', name: 'TAG: POWTÓRKA',
+            html: `<div id="tag-powtorka-wrap"><div class="live-tag"><span class="live-text" id="f-tag-powtorka"></span></div></div>`,
+            css: `#tag-powtorka-wrap { position: absolute; right: 110px; bottom: 300px; width: 190px; height: 40px; transform: translateX(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 9999; } .active #tag-powtorka-wrap { transform: translateX(0); opacity: 1; } #tag-powtorka-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(-45deg, #ffffff, #808080, #404040); background-size: 400% 400%; animation: liveGrad2 4s ease infinite; border: 2px solid #020202; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; } #tag-powtorka-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 25px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; } @keyframes liveGrad2 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }`,
+            js: ``, inputs: [{ id: 'f-tag-powtorka', label: 'Tekst', default: 'POWTÓRKA', type: 'text' }]
+        },
+        {
+            id: 'tpl_tag_bialystok', name: 'TAG: BIAŁYSTOK',
+            html: `<div id="tag-bialystok-wrap"><div class="live-tag"><span class="live-text" id="f-tag-bialystok"></span></div></div>`,
+            css: `#tag-bialystok-wrap { position: absolute; right: 110px; bottom: 940px; width: 190px; height: 40px; transform: translateX(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 9999; } .active #tag-bialystok-wrap { transform: translateX(0); opacity: 1; } #tag-bialystok-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(-45deg, #ffffff, #808080, #404040); background-size: 400% 400%; animation: liveGrad1 4s ease infinite; box-shadow: 0 4px 10px rgba(0,0,0,0.5); } #tag-bialystok-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 25px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; } @keyframes liveGrad1 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }`,
+            js: ``, inputs: [{ id: 'f-tag-bialystok', label: 'Tekst', default: 'BIAŁYSTOK', type: 'text' }]
+        },
+        {
+            id: 'tpl_tag_specjalne_v7', name: 'TAG: WYDANIE SPECJALNE',
+            html: `<div id="tag-spec-wrap"><div class="live-tag"><span class="live-text" id="f-tag-spec"></span></div></div>`,
+            css: `#tag-spec-wrap { position: absolute; left: 30px; bottom: 115px; width: 380px; height: 40px; transform: translateX(-100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, bottom 0.5s cubic-bezier(0.25, 1, 0.5, 1); z-index: 9999; } .active #tag-spec-wrap { transform: translateX(0); opacity: 1; } #tag-spec-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(-45deg, #e91e63, #f44336, #e91e63); background-size: 200% 200%; animation: specGrad 3s ease infinite; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; } #tag-spec-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 24px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; } @keyframes specGrad { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }`,
+            js: `(() => { 
+                const root = {{DOM_CONTEXT}}; 
+                if (!root) return;
+                const wrap = root.querySelector('#tag-spec-wrap'); 
+                if (!wrap) return;
+                const container = root.parentElement || document.body;
+                
+                setInterval(() => {
+                    let lifted = false;
+                    if (container.querySelector('.lt-container')) {
+                        lifted = true;
+                    }
+                    wrap.style.bottom = lifted ? '285px' : '115px'; 
+                }, 100);
+            })();`,
+            inputs: [{ id: 'f-tag-spec', label: 'Tekst', default: 'WYDANIE SPECJALNE', type: 'text' }]
+        },
+        {
+            id: 'tpl_wiper_news', name: 'PASEK: WIADOMOŚCI ROTACYJNE (Wiper)',
+            html: `<div class="news-container-v8"><div class="news-text-v8">ŁADOWANIE...</div><div class="wiper-v8"><span class="wiper-text-v8">PILNE</span></div><div id="f-news-list" style="display:none;"></div><div id="f-width" style="display:none"></div><div id="f-height" style="display:none"></div></div>`,
+            css: `.news-container-v8 { position: absolute; bottom: 50px; width: var(--v-width, 100%); height: var(--v-height, 60px); background-color: #730000; color: white; display: flex; align-items: center; overflow: hidden; border-top: 2px solid white; border-left: 2px solid white; border-right: 2px solid white; box-sizing: border-box; font-family: 'Bahnschrift', sans-serif; transform: translateY(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 50; } .active .news-container-v8 { transform: translateY(0); opacity: 1; } .news-text-v8 { position: absolute; width: auto; left: 0; white-space: nowrap; text-align: left; font-size: 40px; font-weight: 600; text-transform: uppercase; padding-left: 170px; padding-right: 20px; box-sizing: border-box; z-index: 1; transition: opacity 0.4s ease-in-out; opacity: 0; } .news-text-v8.visible { opacity: 1; } .wiper-v8 { position: absolute; left: 0; width: 150px; height: 100%; background: linear-gradient(90deg, #ff0055 0%, #e30613 100%); display: flex; align-items: center; justify-content: center; border-left: 3px solid white; border-right: 3px solid white; box-shadow: 5px 0 15px rgba(0,0,0,0.5); z-index: 2; box-sizing: border-box; } .wiper-text-v8 { font-weight: 900; font-size: 35px; color: white; letter-spacing: 1px; } .wiper-v8.move-right { animation: slide-right-v8 1s linear forwards; } .wiper-v8.snap-back { animation: slide-back-v8 0.5s ease-in-out forwards; } @keyframes slide-right-v8 { 0% { left: 0%; } 100% { left: calc(100% - 150px); } } @keyframes slide-back-v8 { 0% { left: calc(100% - 150px); } 100% { left: 0%; } }`,
+            js: `(() => { 
+                const root = {{DOM_CONTEXT}}; 
+                const textElement = root.querySelector('.news-text-v8');
+                const container = root.querySelector('.news-container-v8');
+                const wiper = root.querySelector('.wiper-v8');
+                const dataEl = root.querySelector('#f-news-list');
+                const widthEl = root.querySelector('#f-width');
+                const heightEl = root.querySelector('#f-height');
+                if(!textElement || !container || !wiper || !dataEl) return;
+                
+                if(widthEl) container.style.setProperty('--v-width', widthEl.innerText || '100%');
+                if(heightEl) container.style.setProperty('--v-height', heightEl.innerText || '60px');
+
+                let newsList = [];
+                try { newsList = JSON.parse(dataEl.innerHTML); } catch(e) { newsList = ["BRAK DANYCH"]; }
+                if(newsList.length === 0) newsList = ["BRAK WIADOMOŚCI"];
+                
+                let currentIndex = 0;
+                let activeTimeouts = [];
+
+                function adjustFontSize() {
+                    const baseFontSize = 40;
+                    const leftPadding = 170; 
+                    const maxWidth = container.offsetWidth - (leftPadding + 20);
+                    textElement.style.fontSize = baseFontSize + "px";
+                    let currentWidth = textElement.scrollWidth - leftPadding;
+                    if (currentWidth > maxWidth && currentWidth > 0) {
+                        const newSize = (maxWidth / currentWidth) * baseFontSize;
+                        textElement.style.fontSize = newSize + "px";
+                    }
+                }
+
+                function runCycle() {
+                    if(!document.contains(container)) return;
+                    textElement.classList.remove('visible');
+                    textElement.innerText = newsList[currentIndex];
+                    adjustFontSize();
+
+                    activeTimeouts.push(setTimeout(() => { if(!document.contains(container)) return; textElement.classList.add('visible'); }, 100));
+                    activeTimeouts.push(setTimeout(() => {
+                        if(!document.contains(container)) return;
+                        textElement.classList.remove('visible');
+                        activeTimeouts.push(setTimeout(() => {
+                            if(!document.contains(container)) return;
+                            wiper.className = 'wiper-v8 move-right';
+                            activeTimeouts.push(setTimeout(() => {
+                                if(!document.contains(container)) return;
+                                wiper.className = 'wiper-v8 snap-back';
+                                activeTimeouts.push(setTimeout(() => {
+                                    if(!document.contains(container)) return;
+                                    currentIndex = (currentIndex + 1) % newsList.length;
+                                    runCycle();
+                                }, 500));
+                            }, 1000));
+                        }, 400));
+                    }, 4000));
+                }
+                runCycle();
+                window.addEventListener('resize', adjustFontSize);
+            })();`,
+            inputs: [
+                { id: 'f-news-list', label: 'Wiadomości (Wiper)', default: '["RZĄD WZYWA DO OPUSZCZENIA IRANU","KOLEJNA AFERA KORUPCYJNA WYKRYTA"]', type: 'list' },
+                { id: 'f-width', label: 'Szerokość (np. 100% lub 1920px)', default: '100%', type: 'text' },
+                { id: 'f-height', label: 'Wysokość (px)', default: '60px', type: 'text' }
+            ]
+        },
+        {
+            id: 'tpl_crawl_ticker', name: 'PASEK: SCROLL (Crawl)',
+            html: `<div class="sub-ticker-v8"><div class="ticker-wrap-v8"></div><div id="f-crawl-list" style="display:none;"></div></div>`,
+            css: `.sub-ticker-v8 { position: absolute; bottom: 0; width: 100%; height: 50px; background: linear-gradient(180deg, #ffffff 0%, #dcdcdc 100%); color: #000000; display: flex; align-items: center; overflow: hidden; box-shadow: 0 -5px 10px rgba(0,0,0,0.1); box-sizing: border-box; white-space: nowrap; font-family: 'Bahnschrift', sans-serif; transform: translateY(50px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 49; } .active .sub-ticker-v8 { transform: translateY(0); opacity: 1; } .ticker-wrap-v8 { display: inline-flex; align-items: center; animation: scroll-left-v8 40s linear infinite; } .news-item-v8 { font-size: 30px; font-weight: 400; text-transform: uppercase; padding: 0 40px; display: flex; align-items: center; } .separator-v8 { display: inline-flex; align-items: center; justify-content: center; height: 50px; padding: 0 25px; background: linear-gradient(90deg, #7F0000 0%, #7F0000 100%); color: white; font-weight: 900; font-size: 30px; font-family: ui-monospace, 'System', monospace; border-left: 2px solid white; border-right: 2px solid white; box-shadow: 2px 0 10px rgba(0,0,0,0.3); letter-spacing: -1px; } @keyframes scroll-left-v8 { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`,
+            js: `(() => { 
+                const root = {{DOM_CONTEXT}};
+                const tickerWrap = root.querySelector('.ticker-wrap-v8');
+                const dataEl = root.querySelector('#f-crawl-list');
+                if(!tickerWrap || !dataEl) return;
+                
+                let subNewsList = [];
+                try { subNewsList = JSON.parse(dataEl.innerHTML); } catch(e) { subNewsList = []; }
+                if(subNewsList.length === 0) return;
+                
+                let content = "";
+                subNewsList.forEach(news => {
+                    content += '<span class="separator-v8">BTB INFO</span>';
+                    content += '<span class="news-item-v8">' + news + '</span>';
+                });
+                tickerWrap.innerHTML = content + content;
+            })();`,
+            inputs: [{ id: 'f-crawl-list', label: 'Wiadomości (Scroll)', default: '["KGHM MA NOWEGO PREZESA","TRUMP ZAPOWIADA KOLEJNE CŁA"]', type: 'list' }]
+        },
+        {
+            id: 'tpl_belka_biala_v7', name: 'BELKA: BIAŁO-SZARA',
+            html: `<div class="lt-container"><canvas class="lower-third-canvas"></canvas><div id="f-tytul-biala" class="text-overlay" style="color:#000;"></div></div>`,
+            css: `.lt-container { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; } .lower-third-canvas { display: block; width: 100%; height: 100%; } .text-overlay { position: absolute; left: 60px; bottom: 115px; width: 1515px; height: 170px; display: flex; align-items: center; font-family: 'Bahnschrift', sans-serif; font-size: 80px; font-weight: bold; opacity: 0; pointer-events: none; white-space: nowrap; } .text-overlay font[size="7"] { font-size: 110px !important; line-height: 1; } .text-overlay font[size="5"] { font-size: 80px !important; line-height: 1; } .text-overlay font[size="4"] { font-size: 50px !important; line-height: 1; } .text-overlay * { margin: 0; }`,
+            js: `(() => { const root = {{DOM_CONTEXT}}; const canvas = root.querySelector('.lower-third-canvas'); const textEl = root.querySelector('.text-overlay'); const ctx = canvas ? canvas.getContext('2d') : null; if(canvas) { canvas.width = 1920; canvas.height = 1080; } const BAR_W = 1575, BAR_H = 170, OUTER_MARGIN = 30; const x = OUTER_MARGIN, y = 1080 - BAR_H - 115; let progress = 0, state = 'WAIT', animationId; const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; function animate() { if (!ctx || state === 'HIDDEN') return; ctx.clearRect(0, 0, 1920, 1080); if (state === 'IN') { progress += 0.025; if (progress >= 1) state = 'STAY'; } else if (state === 'OUT') { progress -= 0.035; if (progress <= 0) { state = 'HIDDEN'; return; } } const p = ease(Math.max(0, Math.min(1, progress))); const curW = BAR_W * p; if (curW > 0) { ctx.save(); const mainGrad = ctx.createLinearGradient(x, y, x + BAR_W, y); mainGrad.addColorStop(0, "#ffffff"); mainGrad.addColorStop(0.5, "#e0e0e0"); mainGrad.addColorStop(1, "#ffffff"); ctx.fillStyle = mainGrad; ctx.fillRect(x, y, curW, BAR_H); ctx.fillStyle = "#000"; ctx.globalAlpha = 0.1; ctx.fillRect(x, y + BAR_H - 4, curW, 4); ctx.restore(); } if(textEl) { if (progress > 0.4) { textEl.style.opacity = Math.min((progress - 0.4) * 2, 1); } else { textEl.style.opacity = 0; } } animationId = requestAnimationFrame(animate); } const radar = (root.parentElement || document.body).querySelector('#tag-spec-wrap'); const isRadarActive = radar && radar.closest('.template-wrapper').classList.contains('active'); if (isRadarActive) { setTimeout(() => { if (state === 'WAIT') state = 'IN'; }, 550); } else { state = 'IN'; } animate(); new MutationObserver(() => { if(!root.classList.contains('active')) state = 'OUT'; }).observe(root, {attributes:true}); })();`,
+            inputs: [{ id: 'f-tytul-biala', label: 'Treść belki', default: 'INFORMACJA DNIA', type: 'richtext' }]
+        },
+        {
+            id: 'tpl_belka_czerwona_v7', name: 'BELKA: CZERWONA',
+            html: `<div class="lt-container"><canvas class="lower-third-canvas"></canvas><div id="f-tytul-czerwona" class="text-overlay" style="color:#fff;"></div></div>`,
+            css: `.lt-container { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 100;} .lower-third-canvas { display: block; width: 100%; height: 100%; } .text-overlay { position: absolute; left: 60px; bottom: 115px; width: 1515px; height: 170px; display: flex; align-items: center; font-family: 'Bahnschrift', sans-serif; font-size: 80px; font-weight: bold; opacity: 0; pointer-events: none; white-space: nowrap; } .text-overlay * { margin: 0; }`,
+            js: `(() => { const root = {{DOM_CONTEXT}}; const canvas = root.querySelector('.lower-third-canvas'); const textEl = root.querySelector('.text-overlay'); const ctx = canvas ? canvas.getContext('2d') : null; if(canvas) { canvas.width = 1920; canvas.height = 1080; } const BAR_W = 1575, BAR_H = 170, OUTER_MARGIN = 30; const x = OUTER_MARGIN, y = 1080 - BAR_H - 115; let progress = 0, state = 'WAIT', animationId; const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; function animate() { if (!ctx || state === 'HIDDEN') return; ctx.clearRect(0, 0, 1920, 1080); if (state === 'IN') { progress += 0.025; if (progress >= 1) state = 'STAY'; } else if (state === 'OUT') { progress -= 0.035; if (progress <= 0) { state = 'HIDDEN'; return; } } const p = ease(Math.max(0, Math.min(1, progress))); const curW = BAR_W * p; if (curW > 0) { ctx.save(); const mainGrad = ctx.createLinearGradient(x, y, x + BAR_W, y); mainGrad.addColorStop(0, "#4a0404"); mainGrad.addColorStop(0.5, "#ff0000"); mainGrad.addColorStop(1, "#4a0404"); ctx.fillStyle = mainGrad; ctx.fillRect(x, y, curW, BAR_H); ctx.fillStyle = "#000"; ctx.globalAlpha = 0.3; ctx.fillRect(x, y + BAR_H - 4, curW, 4); ctx.restore(); } if(textEl) { if (progress > 0.4) { textEl.style.opacity = Math.min((progress - 0.4) * 2, 1); } else { textEl.style.opacity = 0; } } animationId = requestAnimationFrame(animate); } const radar = (root.parentElement || document.body).querySelector('#tag-spec-wrap'); const isRadarActive = radar && radar.closest('.template-wrapper').classList.contains('active'); if (isRadarActive) { setTimeout(() => { if (state === 'WAIT') state = 'IN'; }, 550); } else { state = 'IN'; } animate(); new MutationObserver(() => { if(!root.classList.contains('active')) state = 'OUT'; }).observe(root, {attributes:true}); })();`,
+            inputs: [{ id: 'f-tytul-czerwona', label: 'Treść belki', default: 'PILNE INFORMACJE', type: 'richtext' }]
+        },
+        {
+            id: 'tpl_belka_nazwiskowa_v7', name: 'BELKA: GOŚĆ',
+            html: `<div class="lt-container"><span id="f-tytul-nazwa" style="display:none;"></span><span id="f-sub-nazwa" style="display:none;"></span><canvas class="lower-third-canvas"></canvas></div>`,
+            css: `.lt-container { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; } .lower-third-canvas { display: block; width: 100%; height: 100%; }`,
+            js: `(() => { const root = {{DOM_CONTEXT}}; const canvas = root.querySelector('.lower-third-canvas'); const ctx = canvas ? canvas.getContext('2d') : null; if(canvas) { canvas.width = 1920; canvas.height = 1080; } const font = "Bahnschrift"; const BAR_W = 1575, BAR_H = 110, SUB_W = 850, SUB_H = 60, OUTER_MARGIN = 30; const x = OUTER_MARGIN, y = 1080 - BAR_H - SUB_H - 115; let progress = 0, state = 'WAIT', animationId; const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; function animate() { if (!ctx || state === 'HIDDEN') return; ctx.clearRect(0, 0, 1920, 1080); if (state === 'IN') { progress += 0.025; if (progress >= 1) state = 'STAY'; } else if (state === 'OUT') { progress -= 0.035; if (progress <= 0) { state = 'HIDDEN'; return; } } const p = ease(Math.max(0, Math.min(1, progress))); if (p > 0.2) { const sp = Math.min((progress - 0.2) * 1.5, 1); ctx.save(); ctx.globalAlpha = 0.9; const subGrad = ctx.createLinearGradient(x, y + BAR_H, x + SUB_W, y + BAR_H); subGrad.addColorStop(0, "#d1d1d1"); subGrad.addColorStop(1, "#f0f0f0"); ctx.fillStyle = subGrad; ctx.fillRect(x, y + BAR_H, SUB_W * ease(sp), SUB_H); if (sp > 0.5) { ctx.globalAlpha = sp; ctx.fillStyle = "#000"; ctx.font = "32px " + font; ctx.textBaseline = "middle"; const subEl = root.querySelector('#f-sub-nazwa'); ctx.fillText(subEl ? subEl.innerText : '', x + 30, y + BAR_H + (SUB_H / 2) + 2); } ctx.restore(); } const curW = BAR_W * p; if (curW > 0) { ctx.save(); const mainGrad = ctx.createLinearGradient(x, y, x + BAR_W, y); mainGrad.addColorStop(0, "#ffffff"); mainGrad.addColorStop(0.5, "#e0e0e0"); mainGrad.addColorStop(1, "#ffffff"); ctx.fillStyle = mainGrad; ctx.fillRect(x, y, curW, BAR_H); ctx.fillStyle = "#000"; ctx.globalAlpha = 0.1; ctx.fillRect(x, y + BAR_H - 4, curW, 4); ctx.restore(); } if (p > 0.4) { const tp = Math.min((progress - 0.4) * 2, 1); ctx.save(); ctx.globalAlpha = tp; ctx.fillStyle = "#000"; ctx.font = "bold 80px " + font; ctx.textBaseline = "middle"; const titEl = root.querySelector('#f-tytul-nazwa'); ctx.fillText(titEl ? titEl.innerText : '', x + 30, y + (BAR_H / 2)); ctx.restore(); } animationId = requestAnimationFrame(animate); } const radar = (root.parentElement || document.body).querySelector('#tag-spec-wrap'); const isRadarActive = radar && radar.closest('.template-wrapper').classList.contains('active'); if (isRadarActive) { setTimeout(() => { if (state === 'WAIT') state = 'IN'; }, 550); } else { state = 'IN'; } animate(); new MutationObserver(() => { if(!root.classList.contains('active')) state = 'OUT'; }).observe(root, {attributes:true}); })();`,
+            inputs: [{ id: 'f-tytul-nazwa', label: 'Imię i Nazwisko', default: 'JAN KOWALSKI', type: 'text' }, { id: 'f-sub-nazwa', label: 'Funkcja / Opis', default: 'Ekspert ds. Geopolityki', type: 'text' }]
+        },
+        {
+            id: 'tpl_zegar_v2', name: 'ZEGAR WIDGET',
+            html: `<div class="widget-container"><div class="clock-top"><span id="current-time"></span></div><div class="info-bottom"><div class="info-text-wrapper"><span class="btb-part">BTB</span><span class="info-part">INFO</span></div></div></div>`,
+            css: `.widget-container { position: absolute; left: 1620px; bottom: 115px; width: 190px; height: 170px; display: flex; flex-direction: column; background-color: #000000; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transform: translateX(50px) translateY(20px) scale(0.9); opacity: 0; transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 100; box-sizing: border-box; } .active .widget-container { transform: translateX(0) translateY(0) scale(1); opacity: 1; } .clock-top { display: flex; align-items: center; justify-content: center; flex: 1; background: linear-gradient(-45deg, #f0f0f0, #ffffff, #c0c0c0); background-size: 200% 200%; animation: liveGrad1 4s ease infinite; } #current-time { font-family: 'Bahnschrift', sans-serif !important; font-size: 65px !important; font-weight: 400 !important; color: #000000 !important; letter-spacing: 0px; line-height: 1; } .info-bottom { display: flex; align-items: center; justify-content: center; flex: 1; background: #8b0000; } .info-text-wrapper { font-family: system-ui, -apple-system, sans-serif !important; color: #ffffff; display: flex; align-items: center; } .btb-part { font-size: 38px; font-weight: bold; letter-spacing: 0px; } .info-part { font-size: 18px; font-weight: bold; margin-left: 6px; letter-spacing: 0px; } @keyframes liveGrad1 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }`,
+            js: `(() => { const root = {{DOM_CONTEXT}}; const clockEl = root.querySelector('#current-time'); if(!clockEl) return; function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockEl.textContent = hours + ':' + minutes; } updateClock(); const timerId = setInterval(() => { if (!document.contains(clockEl)) return clearInterval(timerId); updateClock(); }, 1000); })();`,
+            inputs: []
+        }
+    ];
+
+    initDatabase();
+
+    function forceRestoreDefaults() {
+        if(confirm('UWAGA: Zastąpi to WSZYSTKIE Twoje grafiki pakietem domyślnym. Kontynuować?')) {
+            templates = [...defaultTemplates];
+            saveToCloud();
+            renderGallery();
+        }
+    }
+
+    async function saveToCloud() {
+        try {
+            await fetch(`${LOCAL_SERVER}/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(templates)
+            });
+        } catch (e) {
+            console.error("Failed to save to local server:", e);
+        }
+    }
+
+    function renderGallery() {
+        const gal = document.getElementById('gallery'); gal.innerHTML = '';
+        templates.forEach((tpl) => {
+            if(!tpl) return; 
+            const item = document.createElement('div'); item.className = 'cg-item';
+            let inputs = '';
+            
+            if(tpl.inputs) {
+                tpl.inputs.forEach(inp => { 
+                    if (inp.type === 'richtext') {
+                        inputs += `
+                        <div class="form-group">
+                            <label>${inp.label}</label>
+                            <button class="btn-pro" style="width: 100%; text-align: left;" onclick="openTextEditor('${tpl.id}', '${inp.id}')">
+                                ✎ EDYTUJ TEKST
+                            </button>
+                            <div class="richtext-preview">
+                                ${inp.default.replace(/<[^>]*>?/gm, '') || 'Brak tekstu...'}
+                            </div>
+                        </div>`;
+                    } 
+                    else if (inp.type === 'list') {
+                        let listArr = [];
+                        try { listArr = JSON.parse(inp.default); } catch(e) { listArr = []; }
+                        
+                        let listHtml = `<div class="list-manager" id="list-mgr-${tpl.id}-${inp.id}">`;
+                        listArr.forEach((txt, idx) => {
+                            listHtml += `<div class="list-item">
+                                <span>${txt}</span>
+                                <button class="btn-trash" onclick="removeListItem('${tpl.id}','${inp.id}',${idx})">✖</button>
+                            </div>`;
+                        });
+                        listHtml += `</div>
+                        <div class="list-add-wrapper">
+                            <input type="text" id="add-in-${tpl.id}-${inp.id}" placeholder="Wpisz i enter..." onkeypress="if(event.key==='Enter') addListItem('${tpl.id}','${inp.id}')">
+                            <button class="btn-pro" onclick="addListItem('${tpl.id}','${inp.id}')">DODAJ</button>
+                        </div>`;
+                        
+                        inputs += `<div class="form-group"><label>${inp.label}</label>${listHtml}</div>`;
+                    }
+                    else {
+                        inputs += `<div class="form-group"><label>${inp.label}</label><input type="text" id="in-${tpl.id}-${inp.id}" value="${inp.default}" oninput="syncVal('${tpl.id}','${inp.id}',this.value)"></div>`; 
+                    }
+                });
+            }
+            
+            const isActive = activeLiveTemplates[tpl.id] ? true : false;
+            
+            item.innerHTML = `
+                <div class="cg-header">
+                    <div class="cg-title-area">
+                        <div class="live-indicator ${isActive ? 'live' : ''}" id="badge-${tpl.id}">ON AIR</div>
+                        <h3 class="cg-title" style="color: ${isActive ? '#fff' : 'var(--text-muted)'};">${tpl.name}</h3>
+                    </div>
+                    <div class="cg-controls-icons">
+                        <button title="Edytuj Szablon" onclick="editTpl('${tpl.id}')">⚙</button>
+                        <button title="Usuń Szablon" style="color: #c62828;" onclick="deleteTpl('${tpl.id}')">✖</button>
+                    </div>
+                </div>
+                
+                <div class="cg-actions-main">
+                    <button class="btn-pro btn-take" onclick="take('${tpl.id}')">TAKE</button>
+                    <button class="btn-pro btn-preview" onclick="preview('${tpl.id}')">PREV</button>
+                    <button class="btn-pro btn-kill" onclick="clearLive('${tpl.id}')">OFF</button>
+                </div>
+                
+                <div class="cg-inputs-area">
+                    ${inputs}
+                </div>`;
+                
+            gal.appendChild(item);
+        });
+        resizeScreens();
+    }
+
+    function addListItem(tid, iid) {
+        const input = document.getElementById(`add-in-${tid}-${iid}`);
+        const val = input.value.trim();
+        if(!val) return;
+        
+        const t = templates.find(x => x.id === tid);
+        const inp = t.inputs.find(i => i.id === iid);
+        
+        let arr = [];
+        try { arr = JSON.parse(inp.default); } catch(e) { arr = []; }
+        arr.push(val);
+        inp.default = JSON.stringify(arr);
+        
+        saveToCloud();
+        renderGallery();
+        
+        setTimeout(() => {
+            const newInput = document.getElementById(`add-in-${tid}-${iid}`);
+            if(newInput) newInput.focus();
+        }, 50);
+    }
+
+    function removeListItem(tid, iid, idx) {
+        const t = templates.find(x => x.id === tid);
+        const inp = t.inputs.find(i => i.id === iid);
+        
+        let arr = [];
+        try { arr = JSON.parse(inp.default); } catch(e) { arr = []; }
+        arr.splice(idx, 1);
+        inp.default = JSON.stringify(arr);
+        
+        saveToCloud();
+        renderGallery();
+    }
+
+    function openTextEditor(tplId, inputId) {
+        currentEditTplId = tplId;
+        currentEditInputId = inputId;
+        const t = templates.find(x => x.id === tplId);
+        const inp = t.inputs.find(i => i.id === inputId);
+        document.getElementById('modal-editor-area').innerHTML = inp.default;
+        document.getElementById('text-editor-modal').style.display = 'flex';
+        document.getElementById('modal-editor-area').focus();
+    }
+
+    function closeTextEditor() {
+        document.getElementById('text-editor-modal').style.display = 'none';
+        currentEditTplId = null;
+        currentEditInputId = null;
+    }
+
+    function saveTextEditor() {
+        if (currentEditTplId && currentEditInputId) {
+            const val = document.getElementById('modal-editor-area').innerHTML;
+            syncVal(currentEditTplId, currentEditInputId, val);
+            renderGallery(); 
+        }
+        closeTextEditor();
+    }
+    
+    function cleanEditorFormat() {
+        document.execCommand('removeFormat', false, null);
+        const area = document.getElementById('modal-editor-area');
+        area.innerHTML = area.innerText; 
+    }
+
+    let savedRange = null;
+    document.addEventListener('selectionchange', () => {
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0) {
+            const editor = document.getElementById('modal-editor-area');
+            let node = sel.anchorNode;
+            let isInside = false;
+            while (node && node !== document) {
+                if (node === editor) { isInside = true; break; }
+                node = node.parentNode;
+            }
+            if (isInside) savedRange = sel.getRangeAt(0);
+        }
+    });
+
+    function applyFontSizeLive() {
+        const inputEl = document.getElementById('font-size-val');
+        const sizePx = inputEl.value;
+        if (!sizePx) return;
+        
+        const editor = document.getElementById('modal-editor-area');
+        try {
+            const sel = window.getSelection();
+            if (!savedRange || savedRange.collapsed) {
+                const r = document.createRange();
+                r.selectNodeContents(editor);
+                savedRange = r;
+            }
+            sel.removeAllRanges();
+            sel.addRange(savedRange);
+
+            document.execCommand("styleWithCSS", false, false); 
+            document.execCommand("fontSize", false, "7");
+            
+            const elements = editor.querySelectorAll('font[size="7"]');
+            elements.forEach(f => {
+                f.removeAttribute('size');
+                f.style.fontSize = sizePx + 'px';
+                f.style.lineHeight = '1';
+                f.className = 'cg-custom-font';
+            });
+            
+            const customFonts = editor.querySelectorAll('.cg-custom-font');
+            customFonts.forEach(f => {
+                if (sel.containsNode(f, true)) f.style.fontSize = sizePx + 'px';
+            });
+
+            inputEl.focus();
+        } catch (error) {
+            savedRange = null; 
+            inputEl.focus();
+        }
+    }
+
+    function syncVal(tid, iid, val) {
+        const t = templates.find(x => x.id === tid);
+        if(t && t.inputs) t.inputs.find(i => i.id === iid).default = val;
+        saveToCloud(); 
+    }
+
+    function take(id) {
+        const tpl = templates.find(t => t.id === id); const fields = {};
+        if(tpl.inputs) { 
+            tpl.inputs.forEach(i => {
+                if (i.type === 'richtext' || i.type === 'list') {
+                    fields[i.id] = i.default; 
+                } else {
+                    const el = document.getElementById(`in-${id}-${i.id}`);
+                    fields[i.id] = el ? el.value : i.default;
+                }
+            }); 
+        }
+        activeLiveTemplates[id] = true;
+        channel.postMessage({ cmd: 'play', id: id, html: tpl.html, css: tpl.css, js: tpl.js, fields: fields });
+        renderGallery();
+        
+        const live = document.getElementById('live-screen');
+        const oldWrap = document.getElementById('live-w-'+id); if(oldWrap) oldWrap.remove();
+        const wrap = document.createElement('div'); wrap.id = 'live-w-'+id; wrap.className = 'template-wrapper';
+        const stl = document.createElement('style'); stl.innerHTML = tpl.css; wrap.appendChild(stl);
+        wrap.innerHTML += tpl.html; live.appendChild(wrapperJS(wrap, tpl, fields, id));
+        setTimeout(() => wrap.classList.add('active'), 50);
+    }
+
+    function clearLive(id) {
+        channel.postMessage({ cmd: 'stop', id: id }); delete activeLiveTemplates[id];
+        const w = document.getElementById('live-w-'+id); 
+        if(w) { w.classList.remove('active'); setTimeout(()=>w.remove(), 750); }
+        renderGallery();
+    }
+
+    function wrapperJS(container, tpl, fields, id) {
+        for(let f in fields) { 
+            const el = container.querySelector('#'+f); 
+            if(el) el.innerHTML = fields[f]; 
+        }
+        if(tpl.js) { const s = document.createElement('script'); s.textContent = tpl.js.replace(/{{DOM_CONTEXT}}/g, `document.getElementById('live-w-${id}')`); container.appendChild(s); }
+        return container;
+    }
+
+    function preview(id) {
+        const tpl = templates.find(t => t.id === id); const scr = document.getElementById('preview-screen'); scr.innerHTML = '';
+        const wrap = document.createElement('div'); wrap.id = 'prev-w-'+id; wrap.className = 'template-wrapper';
+        const stl = document.createElement('style'); stl.innerHTML = tpl.css; wrap.appendChild(stl);
+        wrap.innerHTML += tpl.html; 
+        const fields = {}; 
+        if(tpl.inputs) { 
+            tpl.inputs.forEach(i => {
+                if (i.type === 'richtext' || i.type === 'list') {
+                    fields[i.id] = i.default;
+                } else {
+                    const el = document.getElementById(`in-${id}-${i.id}`);
+                    fields[i.id] = el ? el.value : i.default;
+                }
+            }); 
+        }
+        for(let f in fields) { 
+            const el = wrap.querySelector('#'+f); 
+            if(el) el.innerHTML = fields[f]; 
+        }
+        if(tpl.js) { const s = document.createElement('script'); s.textContent = tpl.js.replace(/{{DOM_CONTEXT}}/g, `document.getElementById('prev-w-${id}')`); wrap.appendChild(s); }
+        scr.appendChild(wrap); setTimeout(() => wrap.classList.add('active'), 50);
+    }
+
+    /* === LOGIKA BUILDERA PÓL === */
+    function addFieldRow(idVal='', labelVal='', defVal='', typeVal='text') {
+        const container = document.getElementById('fields-builder-container');
+        const row = document.createElement('div');
+        row.className = 'field-row';
+        row.innerHTML = `
+            <input type="text" class="f-id" placeholder="ID elementu (np. f-tytul)" value="${idVal}" style="flex: 1;">
+            <input type="text" class="f-label" placeholder="Wyświetlana nazwa" value="${labelVal}" style="flex: 1.5;">
+            <input type="text" class="f-def" placeholder="Domyślna wartość" value="${defVal}" style="flex: 2;">
+            <select class="f-type" style="flex: 1;">
+                <option value="text" ${typeVal==='text'?'selected':''}>Krótki tekst</option>
+                <option value="richtext" ${typeVal==='richtext'?'selected':''}>Edytor Tekstu</option>
+                <option value="list" ${typeVal==='list'?'selected':''}>Lista (Tylko kod)</option>
+            </select>
+            <button class="btn-trash" style="padding: 8px 10px; font-size: 14px;" onclick="this.parentElement.remove()">✖</button>
+        `;
+        container.appendChild(row);
+    }
+
+    function editTpl(id) {
+        const tpl = templates.find(t => t.id === id); if(!tpl) return;
+        editingTemplateId = id;
+        document.getElementById('creator-title').innerText = "EDYTUJ: " + tpl.name;
+        document.getElementById('btn-save-creator').innerText = "ZAKTUALIZUJ BAZĘ";
+        document.getElementById('btn-cancel-edit').style.display = "block";
+        
+        document.getElementById('tpl-name').value = tpl.name;
+        document.getElementById('tpl-html').value = tpl.html;
+        document.getElementById('tpl-css').value = tpl.css;
+        document.getElementById('tpl-js').value = tpl.js || '';
+        
+        // Wypełnianie dynamicznych pól
+        const container = document.getElementById('fields-builder-container');
+        container.innerHTML = '';
+        if(tpl.inputs) {
+            tpl.inputs.forEach(i => addFieldRow(i.id, i.label, i.default, i.type));
+        }
+        
+        switchTab('creator', document.querySelectorAll('.nav-btn')[1]);
+    }
+
+    function cancelEdit() {
+        editingTemplateId = null;
+        document.getElementById('creator-title').innerText = "DODAJ NOWY SZABLON";
+        document.getElementById('btn-save-creator').innerText = "ZAPISZ DO BAZY";
+        document.getElementById('btn-cancel-edit').style.display = "none";
+        
+        document.getElementById('tpl-name').value = ''; 
+        document.getElementById('tpl-html').value = ''; 
+        document.getElementById('tpl-css').value = ''; 
+        document.getElementById('tpl-js').value = ''; 
+        document.getElementById('fields-builder-container').innerHTML = '';
+    }
+
+    function saveTemplate() {
+        // Pobieranie danych z buildera
+        const rows = document.querySelectorAll('#fields-builder-container .field-row');
+        const inputsArray = [];
+        rows.forEach(r => {
+            const id = r.querySelector('.f-id').value.trim();
+            const label = r.querySelector('.f-label').value.trim();
+            const def = r.querySelector('.f-def').value.trim();
+            const type = r.querySelector('.f-type').value;
+            if (id && label) {
+                inputsArray.push({ id, label, default: def, type });
+            }
+        });
+        
+        if (editingTemplateId) {
+            const idx = templates.findIndex(t => t.id === editingTemplateId);
+            if (idx > -1) {
+                templates[idx].name = document.getElementById('tpl-name').value || 'Bez Nazwy';
+                templates[idx].html = document.getElementById('tpl-html').value;
+                templates[idx].css = document.getElementById('tpl-css').value;
+                templates[idx].js = document.getElementById('tpl-js').value;
+                templates[idx].inputs = inputsArray;
+            }
+        } else {
+            templates.push({
+                id: 'tpl_custom_' + Date.now(),
+                name: document.getElementById('tpl-name').value || 'Nowy Szablon',
+                html: document.getElementById('tpl-html').value,
+                css: document.getElementById('tpl-css').value,
+                js: document.getElementById('tpl-js').value,
+                inputs: inputsArray
+            });
+        }
+        
+        saveToCloud();
+        cancelEdit(); 
+        switchTab('main', document.querySelector('.nav-btn'));
+    }
+
+    function deleteTpl(id) { if(confirm('Na pewno usunąć szablon?')) { templates = templates.filter(t => t.id !== id); saveToCloud(); clearLive(id); } }
+    function stopAll() { channel.postMessage({ cmd: 'stop_all' }); document.getElementById('live-screen').innerHTML = ''; activeLiveTemplates = {}; renderGallery(); }
+    function switchTab(t, b) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById('view-'+t).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active')); b.classList.add('active'); }
+    function resizeScreens() { document.querySelectorAll('.screen').forEach(s => s.style.transform = `scale(${s.parentElement.clientWidth/1920})`); }
+    
+    window.onresize = resizeScreens;
+</script>
+</body>
+</html>

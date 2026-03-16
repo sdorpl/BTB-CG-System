@@ -19,6 +19,12 @@
         return `scale(${autoScale}) translate(${finalX}px, ${finalY}px) scale(${scale}) rotate(${rotation}deg)`;
     }
 
+    function formatDimension(val, fallback = 'auto') {
+        if (!val) return fallback;
+        if (typeof val === 'string' && /[a-z%]/i.test(val)) return val;
+        return `${val}px`;
+    }
+
     // Safely assign GSAP global (may not be available in all contexts)
     try { if (typeof gsap !== 'undefined') window.gsap = gsap; } catch (e) { }
 
@@ -63,6 +69,7 @@
                     titleHtml: graphic.titleHtml, titleLines: graphic.titleLines,
                     layout: graphic.layout, animation: graphic.animation,
                     style: graphic.style, sideImage: graphic.sideImage,
+                    speed: graphic.speed, items: graphic.items, wiper: graphic.wiper,
                     activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(graphic.id)) ? settings.globalFontFamily : null
 
                 });
@@ -138,9 +145,10 @@
         layoutStyleWrapper.style.pointerEvents = 'none';
 
         // Set custom CSS variables exactly like VinciFlowGraphic.tsx Lines 331-338
-        layoutStyleWrapper.style.setProperty('--v-width', data.layout?.width ? `${data.layout.width}px` : '90%');
-        layoutStyleWrapper.style.setProperty('--v-height', data.layout?.height ? `${data.layout.height}px` : 'auto');
+        layoutStyleWrapper.style.setProperty('--v-width', formatDimension(data.layout?.width, '90%'));
+        layoutStyleWrapper.style.setProperty('--v-height', formatDimension(data.layout?.height, 'auto'));
         layoutStyleWrapper.style.zIndex = data.layout?.layer || 1;
+        layoutStyleWrapper.style.opacity = data.style?.opacity ?? 1;
 
         // Inner container that holds the Graphic
         const innerContainer = document.createElement('div');
@@ -163,7 +171,7 @@
 
             // Advanced Scoping:
             // By prefixing common generic classes with the parent instance ID, we sandbox the CSS.
-            cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+            cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
 
             // Gradient override: if the graphic uses a gradient background, force it onto
             // all elements that only have background-color set (which doesn't support gradients).
@@ -228,6 +236,7 @@
                 titleHtml: data.titleHtml, titleLines: data.titleLines,
                 layout: data.layout, animation: data.animation,
                 style: data.style, sideImage: data.sideImage,
+                speed: data.speed, items: data.items, wiper: data.wiper,
                 activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(data.id)) ? settings.globalFontFamily : null
             }),
             isHiding: false
@@ -407,7 +416,7 @@
                 let cssStr = prepareStr(tpl.css_template);
 
                 cssStr = cssStr.replace(new RegExp(`#${instanceId}\\s+`, 'g'), '');
-                cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+                cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
                 cssStr = cssStr.replace(/#\{\{ID\}\}|#GRAPHIC_ID/g, `#${instanceId}`);
 
                 const layoutStyleWrapper = document.createElement('div');
@@ -421,9 +430,10 @@
                 layoutStyleWrapper.style.height = '1080px';
                 layoutStyleWrapper.style.pointerEvents = 'none';
 
-                layoutStyleWrapper.style.setProperty('--v-width', graphic.layout?.width ? `${graphic.layout.width}px` : '90%');
-                layoutStyleWrapper.style.setProperty('--v-height', graphic.layout?.height ? `${graphic.layout.height}px` : 'auto');
+                layoutStyleWrapper.style.setProperty('--v-width', formatDimension(graphic.layout?.width, '90%'));
+                layoutStyleWrapper.style.setProperty('--v-height', formatDimension(graphic.layout?.height, 'auto'));
                 layoutStyleWrapper.style.zIndex = graphic.layout?.layer || 1;
+                layoutStyleWrapper.style.opacity = graphic.style?.opacity ?? 1;
 
                 const innerContainer = document.createElement('div');
                 innerContainer.style.width = '100%';
@@ -631,11 +641,56 @@
             ? `${globalShadow.offsetX ?? 0}px ${globalShadow.offsetY ?? 2}px ${globalShadow.blur ?? 4}px ${globalShadow.color || 'rgba(0,0,0,0.5)'}`
             : 'none';
 
+        const sepColor = bgStyle.borderColor || '#3b82f6';
+        const SEPARATOR_CSS = (() => {
+            switch (graphic.separatorStyle || 'skewed') {
+                case 'none':   return 'display: none;';
+                case 'dot':    return `width: 10px; height: 10px; background: ${sepColor}; border-radius: 50%; margin: 0 15px; transform: none; flex-shrink: 0;`;
+                case 'square': return `width: 10px; height: 10px; background: ${sepColor}; margin: 0 15px; transform: none; flex-shrink: 0;`;
+                case 'pipe':   return `width: 2px; height: 24px; background: ${sepColor}; margin: 0 15px; transform: none; flex-shrink: 0;`;
+                default:       return `width: 12px; height: 24px; background: ${sepColor}; transform: skewX(-30deg); margin: 0 10px; flex-shrink: 0;`;
+            }
+        })();
+
+        const wiperSettings = graphic.wiper || {};
+        const wiperBg = (() => {
+            const base = wiperSettings.bgColor || tpl.defaultFields?.secondaryColor || '#ff0000';
+            if (wiperSettings.useGradient) {
+                const c2 = wiperSettings.color2 || '#880000';
+                const angle = wiperSettings.gradientAngle || 90;
+                return `linear-gradient(${angle}deg, ${base} 0%, ${c2} 100%)`;
+            }
+            return base;
+        })();
+
+        const wiperGleamBg = (() => {
+            const color = wiperSettings.gleamColor || '#ffffff';
+            const opacity = wiperSettings.gleamOpacity ?? 0.4;
+            // Convert hexagonal opacity (e.g. 0.4 -> 66 in hex) or just use rgba
+            // For simplicity and compatibility with existing templating, we use rgba
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            return `linear-gradient(90deg, rgba(${r},${g},${b},0) 0%, rgba(${r},${g},${b},${opacity}) 50%, rgba(${r},${g},${b},0) 100%)`;
+        })();
+
         return {
             ID: instanceId,
             TITLE: rawTitle,
             SUBTITLE: graphic.subtitle || tpl.defaultFields?.subtitle || '',
-            INTRO_TEXT: graphic.introText || 'PILNE',
+            INTRO_TEXT: graphic.introText !== undefined ? graphic.introText : (tpl.defaultFields?.introText || ''),
+            WIPER_BG: wiperBg,
+            WIPER_TEXT_COLOR: wiperSettings.textColor || '#ffffff',
+            WIPER_FONT: wiperSettings.fontFamily || activeFontFamily,
+            WIPER_FONT_SIZE: wiperSettings.fontSize || 35,
+            WIPER_FONT_WEIGHT: wiperSettings.fontWeight || '900',
+            WIPER_LETTER_SPACING: wiperSettings.letterSpacing ?? 1,
+            WIPER_GLEAM_ENABLED: wiperSettings.gleamEnabled !== false,
+            WIPER_GLEAM_BG: wiperGleamBg,
+            WIPER_GLEAM_DURATION: wiperSettings.gleamDuration || 2,
+            WIPER_GLEAM_HEIGHT: wiperSettings.gleamHeight || 100,
+            WIPER_GLEAM_FREQUENCY: wiperSettings.gleamFrequency || 3,
+            WIPER_GLEAM_OPACITY: wiperSettings.gleamOpacity ?? 0.4,
             ITEMS: rawItems,
             ITEMS_JSON: JSON.stringify(rawItems),
             LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
@@ -651,6 +706,7 @@
             TITLE_SIZE: typo.fontSize || tpl.defaultFields?.titleSize || 48,
             TITLE_WEIGHT: typo.fontWeight || '800',
             TITLE_TRANSFORM: typo.textTransform || 'uppercase',
+            PADDING_Y: typo.paddingY || 0,
             BOX_SHADOW: shadowStr,
             TITLE_FONT: activeFontFamily,
             SUBTITLE_SIZE: graphic.style?.subtitleTypography?.fontSize || tpl.defaultFields?.subtitleSize || 24,
@@ -700,6 +756,7 @@
             TEXT_ANIM_SYNC: !!graphic.animation?.textSync,
             TEXT_ANIM_OUT_JSON: JSON.stringify(graphic.animation?.textOut || { type: 'none' }),
             TEXT_ANIM_OUT_SYNC: !!graphic.animation?.textOut?.syncWithBase,
+            SEPARATOR_CSS: SEPARATOR_CSS,
         };
     }
 
