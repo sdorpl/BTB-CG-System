@@ -1,0 +1,130 @@
+{
+  "id": "2ed78daa-bc6f-45fd-8f84-88fe8988274a",
+  "name": "Ticker zwykły (Eksport)",
+  "type": "TICKER",
+  "version": 1,
+  "features": {
+    "separator": true
+  },
+  "html_template": "<div class=\"rep-bottom-bar\">\n    <div class=\"ticker-track\">\n        {{#if ITEMS}}\n            {{#each ITEMS}}\n            <div class=\"ticker-item\">{{this}}</div>\n            <div class=\"ticker-sep\"></div>\n            {{/each}}\n        {{else}}\n            <div class=\"ticker-item\">GODZ. 18:00, ZAJEZDNIA KULTURY, KOLEJOWA 3, PLESZEW</div>\n            <div class=\"ticker-sep\"></div>\n            <div class=\"ticker-item\">KLUB \"GAZETY POLSKIEJ\" ŁÓDŹ ZAPRASZA</div>\n            <div class=\"ticker-sep\"></div>\n        {{/if}}\n    </div>\n</div>",
+  "css_template": "#{{ID}} .rep-bottom-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: var(--v-height, 60px);\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    overflow: hidden;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .ticker-track {\n    display: flex;\n    align-items: center;\n    white-space: nowrap;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: {{FONT_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: uppercase;\n    padding: {{PADDING_Y}}px 20px;\n}\n#{{ID}} .ticker-sep {\n    {{SEPARATOR_CSS}}\n}",
+  "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-bottom-bar\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        if (tickerTrack) {\n            tl.add(() => {\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const duration = trackWidth / speedPxPerSec;\n                    gsap.to(tickerTrack, {\n                        x: -trackWidth,\n                        duration: duration,\n                        ease: 'none',\n                        repeat: -1\n                    });\n                }\n            });\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        gsap.killTweensOf(tickerTrack);\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+  "defaultFields": {
+    "type": "TICKER",
+    "name": "Ticker zwykły",
+    "title": "Test\nMulti",
+    "subtitle": "Podtytuł",
+    "variant": "standard",
+    "animation": {
+      "in": {
+        "type": "zoom",
+        "direction": "left",
+        "duration": 0.5,
+        "delay": 0,
+        "ease": "ease-in"
+      },
+      "out": {
+        "type": "zoom",
+        "direction": "left",
+        "duration": 0.5,
+        "delay": 0,
+        "ease": "ease-out"
+      },
+      "text": {
+        "type": "reveal"
+      }
+    },
+    "style": {
+      "background": {
+        "color": "#ffffff",
+        "opacity": 1,
+        "type": "gradient",
+        "color2": "#e0e0e0",
+        "borderColor": "#e00000",
+        "gradientAngle": 160,
+        "borderRadius": 10,
+        "borderWidth": 0
+      },
+      "typography": {
+        "color": "#170d4a",
+        "fontFamily": "Arial",
+        "fontSize": 30,
+        "fontWeight": "bold",
+        "textTransform": "capitalize"
+      },
+      "subtitleTypography": {
+        "color": "#ff0000"
+      }
+    },
+    "items": [
+      "PILNE: PREZYDENT K. NAWROCKI WETUJE USTAWĘ WS. PROGRAMU \"SAFE\"",
+      "PREMIER D. TUSK OSTRO O WECIE: \"PREZES PIS POPROWADZIŁ GO JAK ZA RĄCZKĘ\"",
+      "RUCH RZĄDU W ODPOWIEDZI NA WETO. JEST NOWA UCHWAŁA I UPOWAŻNIENIA DLA MINISTRÓW",
+      "SZEF ZWIĄZKÓW ZAWODOWYCH POLICJI ALARMUJE: LUDZIE LICZYLI NA ŚRODKI Z \"SAFE\"",
+      "PILNE: ZMASOWANY ATAK USA NA IRAŃSKĄ WYSPĘ. \"JEDNO Z NAJSILNIEJSZYCH BOMBARDOWAŃ\"",
+      "TEHERAN ZAPOWIADA ODWET. REŻIM WŚCIEKŁY PO DZIAŁANIACH STANÓW ZJEDNOCZONYCH",
+      "USA OFERUJĄ GIGANTYCZNĄ NAGRODĘ ZA INFORMACJE O PRZYWÓDCACH IRANU",
+      "KONGRESMENI USA ALARMUJĄ: ZAWIESZENIE SANKCJI NA ROSYJSKĄ ROPĘ FINANSUJE MACHINĘ WOJENNĄ PUTINA"
+    ],
+    "layout": {
+      "y": 980,
+      "x": 180,
+      "layer": 3,
+      "side": "bottom-right",
+      "marginY": 50,
+      "marginX": 50,
+      "width": 1650
+    },
+    "speed": 200
+  },
+  "defaultLayout": {
+    "y": 980,
+    "x": 180,
+    "layer": 3,
+    "side": "bottom-right",
+    "marginY": 50,
+    "marginX": 50,
+    "width": 1650
+  },
+  "defaultStyle": {
+    "background": {
+      "color": "#ffffff",
+      "opacity": 1,
+      "type": "gradient",
+      "color2": "#e0e0e0",
+      "borderColor": "#e00000",
+      "gradientAngle": 160,
+      "borderRadius": 10,
+      "borderWidth": 0
+    },
+    "typography": {
+      "color": "#170d4a",
+      "fontFamily": "Arial",
+      "fontSize": 30,
+      "fontWeight": "bold",
+      "textTransform": "capitalize"
+    },
+    "subtitleTypography": {
+      "color": "#ff0000"
+    }
+  },
+  "defaultAnimation": {
+    "in": {
+      "type": "zoom",
+      "direction": "left",
+      "duration": 0.5,
+      "delay": 0,
+      "ease": "ease-in"
+    },
+    "out": {
+      "type": "zoom",
+      "direction": "left",
+      "duration": 0.5,
+      "delay": 0,
+      "ease": "ease-out"
+    },
+    "text": {
+      "type": "reveal"
+    }
+  }
+}

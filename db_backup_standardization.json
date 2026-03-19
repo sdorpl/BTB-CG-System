@@ -47,7 +47,7 @@
       "type": "LOWER_THIRD",
       "version": 1,
       "html_template": "\n<div class=\"lt-container\">\n    <div class=\"plate\">\n        <h1 class=\"title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
-      "css_template": "\n#{{ID}} .lt-container {\npadding: 0;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nline-height: {{LINE_HEIGHT}};\n}\n#{{ID}} .plate {\nbackground: {{PRIMARY_BG}};\npadding: 20px 40px;\nborder-left: 10px solid {{SECONDARY_COLOR}};\ncolor: white;\ndisplay: inline-block;\nbox-shadow: {{BOX_SHADOW}};\nopacity: 0;\ntransform: {{ANIMATION_IN_TRANSFORM}};\ntransition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .title {\nmargin: 0;\nfont-size: {{TITLE_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\nletter-spacing: -1px;\n}\n",
+      "css_template": "\n.lt-container {\n    padding: 0;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    line-height: {{LINE_HEIGHT}};\n}\n.plate {\n    background: {{PRIMARY_BG}};\n    padding: 20px 40px;\n    border-left: 10px solid {{SECONDARY_COLOR}};\n    color: white;\n    display: inline-block;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n.title {\n    margin: 0;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    letter-spacing: -1px;\n}\n",
       "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const container = root.querySelector('.plate'); root.__slt_show = () => { const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}}); const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}}); if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0); return tl; }; root.__slt_hide = () => { const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}}); const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}}); if (textTl) { const sync = {{{TEXT_ANIM_OUT_SYNC}}}; if (sync) { const combined = gsap.timeline(); combined.add(textTl); combined.add(tl, \">-0.1\"); return combined; } else { tl.add(textTl, 0); } } return tl; }; })();",
       "defaultFields": {
         "title": "VinciFlow Title",
@@ -65,7 +65,7 @@
       "type": "LOWER_THIRD",
       "version": 1,
       "html_template": "<div class=\"modern-lt-container\">\n    <div class=\"modern-plate\">\n        <h1 class=\"modern-title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
-      "css_template": "#{{ID}} .modern-lt-container {\npadding: 0;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nline-height: {{LINE_HEIGHT}};\n}\n#{{ID}} .modern-plate {\nbackground: {{PRIMARY_BG}};\npadding: 24px 48px;\nborder-radius: 12px;\ncolor: white;\ndisplay: inline-block;\nbox-shadow: {{BOX_SHADOW}};\nopacity: 0;\ntransform: {{ANIMATION_IN_TRANSFORM}};\ntransition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\nborder: 1px solid rgba(255,255,255,0.1);\nbackdrop-filter: blur(10px);\n}\n#{{ID}} .modern-title {\nmargin: 0;\nfont-size: {{TITLE_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\nletter-spacing: 1px;\ntext-shadow: 2px 2px 4px rgba(0,0,0,0.3);\n}\n#{{ID}} .modern-plate {\nposition: relative;\noverflow: hidden;\n}\n#{{ID}} .modern-plate::after {\ncontent: '';\nposition: absolute;\ntop: 0;\nleft: -100%;\nwidth: 50%;\nheight: 100%;\nbackground: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);\ntransform: skewX(-20deg);\nanimation: shine 6s infinite;\n}\n@keyframes shine {\n0% { left: -100%; }\n20% { left: 200%; }\n100% { left: 200%; }\n}",
+      "css_template": ".modern-lt-container {\n    padding: 0;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    line-height: {{LINE_HEIGHT}};\n}\n.modern-plate {\n    background: {{PRIMARY_BG}};\n    padding: 24px 48px;\n    border-radius: 12px;\n    color: white;\n    display: inline-block;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border: 1px solid rgba(255,255,255,0.1);\n    backdrop-filter: blur(10px);\n}\n.modern-title {\n    margin: 0;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    letter-spacing: 1px;\n    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);\n}\n.modern-plate {\n    position: relative;\n    overflow: hidden;\n}\n.modern-plate::after {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 50%;\n    height: 100%;\n    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);\n    transform: skewX(-20deg);\n    animation: shine 6s infinite;\n}\n@keyframes shine {\n    0% { left: -100%; }\n    20% { left: 200%; }\n    100% { left: 200%; }\n}",
       "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const container = root.querySelector('.modern-plate'); root.__slt_show = () => { const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}}); const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}}); if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0); return tl; }; root.__slt_hide = () => { const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}}); const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}}); if (textTl) { const sync = {{{TEXT_ANIM_OUT_SYNC}}}; if (sync) { const combined = gsap.timeline(); combined.add(textTl); combined.add(tl, \">-0.1\"); return combined; } else { tl.add(textTl, 0); } } return tl; }; })();",
       "defaultFields": {
         "title": "Modern Title",
@@ -295,7 +295,7 @@
         "wiper": true
       },
       "html_template": "<div class=\"news-container-v8\">\n    <div class=\"news-text-v8\">{{#if ITEMS}}{{{ITEMS.[0]}}}{{else}}ŁADOWANIE...{{/if}}</div>\n    <div class=\"wiper-v8\"><span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span></div>\n    <div id=\"f-news-list\" style=\"display:none;\">{{#if ITEMS}}{{{ITEMS_JSON}}}{{/if}}</div>\n</div>",
-      "css_template": "#{{ID}} .news-container-v8 {\nposition: absolute;\nbottom: 0;\nleft: 0;\nwidth: var(--v-width, 100%);\nmin-height: var(--v-height, 60px);\nbackground: {{PRIMARY_BG}};\ncolor: {{TITLE_COLOR}};\ndisplay: flex;\nalign-items: center;\noverflow: hidden;\nborder: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\nborder-radius: {{BORDER_RADIUS}}px;\nbox-sizing: border-box;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nopacity: 0;\ntransform: translateY(100px);\nbox-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .news-text-v8 {\nposition: absolute;\nwidth: auto;\nleft: 0;\nwhite-space: nowrap;\ntext-align: left;\nfont-size: {{TITLE_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\npadding-left: var(--wiper-width, 170px);\npadding-right: 20px;\npadding-top: {{PADDING_Y}}px;\npadding-bottom: {{PADDING_Y}}px;\nbox-sizing: border-box;\nz-index: 1;\ntransition: opacity 0.4s ease-in-out;\nopacity: 0;\n}\n#{{ID}} .news-text-v8.visible {\nopacity: 1;\n}\n#{{ID}} .wiper-v8 {\nposition: absolute;\nleft: 0;\nwidth: auto;\nmin-width: 150px;\npadding: 0 40px;\nheight: 100%;\nbackground: {{WIPER_BG}};\ndisplay: flex;\nalign-items: center;\njustify-content: center;\nbox-shadow: 5px 0 15px rgba(0,0,0,0.5);\nborder-radius: {{BORDER_RADIUS}}px;\nz-index: 2;\nbox-sizing: border-box;\noverflow: hidden;\n}\n#{{ID}} .wiper-v8::before {\ncontent: '';\nposition: absolute;\ntop: 0;\nleft: -100%;\nwidth: 60%;\nheight: 100%;\ndisplay: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\nbackground: {{WIPER_GLEAM_BG}};\ntransform: skewX(-20deg);\npointer-events: none;\nanimation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .wiper-text-v8 {\nfont-weight: {{WIPER_FONT_WEIGHT}};\nfont-size: {{WIPER_FONT_SIZE}}px;\nfont-family: {{WIPER_FONT}}, sans-serif;\ncolor: {{WIPER_TEXT_COLOR}};\nletter-spacing: {{WIPER_LETTER_SPACING}}px;\nposition: relative;\nz-index: 1;\nwhite-space: nowrap;\n}\n#{{ID}} .wiper-v8.move-right {\nanimation: slide-right-v8 1s linear forwards;\n}\n#{{ID}} .wiper-v8.snap-back {\nanimation: slide-back-v8 0.5s ease-in-out forwards;\n}\n@keyframes slide-right-v8 {\n0% { left: 0%; }\n100% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n}\n@keyframes slide-back-v8 {\n0% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n100% { left: 0%; }\n}\n@keyframes sweep-gleam-v8 {\n0% { left: -100%; }\n100% { left: 200%; }\n}",
+      "css_template": ".news-container-v8 {\n    position: absolute;\n    bottom: 0;\n    left: 0;\n    width: var(--v-width, 100%);\n    min-height: var(--v-height, 60px);\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    align-items: center;\n    overflow: hidden;\n    border: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\n    border-radius: {{BORDER_RADIUS}}px;\n    box-sizing: border-box;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    opacity: 0;\n    transform: translateY(100px);\n    box-shadow: {{BOX_SHADOW}};\n}\n.news-text-v8 {\n    position: absolute;\n    width: auto;\n    left: 0;\n    white-space: nowrap;\n    text-align: left;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    padding-left: var(--wiper-width, 170px);\n    padding-right: 20px;\n    padding-top: {{PADDING_Y}}px;\n    padding-bottom: {{PADDING_Y}}px;\n    box-sizing: border-box;\n    z-index: 1;\n    transition: opacity 0.4s ease-in-out;\n    opacity: 0;\n}\n.news-text-v8.visible {\n    opacity: 1;\n}\n.wiper-v8 {\n    position: absolute;\n    left: 0;\n    width: auto;\n    min-width: 150px;\n    padding: 0 40px;\n    height: 100%;\n    background: {{WIPER_BG}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5);\n    border-radius: {{BORDER_RADIUS}}px;\n    z-index: 2;\n    box-sizing: border-box;\n    overflow: hidden;\n}\n.wiper-v8::before {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 60%;\n    height: 100%;\n    display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{WIPER_GLEAM_BG}};\n    transform: skewX(-20deg);\n    pointer-events: none;\n    animation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n.wiper-text-v8 {\n    font-weight: {{WIPER_FONT_WEIGHT}};\n    font-size: {{WIPER_FONT_SIZE}}px;\n    font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{WIPER_TEXT_COLOR}};\n    letter-spacing: {{WIPER_LETTER_SPACING}}px;\n    position: relative;\n    z-index: 1;\n    white-space: nowrap;\n}\n.wiper-v8.move-right {\n    animation: slide-right-v8 1s linear forwards;\n}\n.wiper-v8.snap-back {\n    animation: slide-back-v8 0.5s ease-in-out forwards;\n}\n@keyframes slide-right-v8 {\n    0% { left: 0%; }\n    100% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n}\n@keyframes slide-back-v8 {\n    0% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n    100% { left: 0%; }\n}\n@keyframes sweep-gleam-v8 {\n    0% { left: -100%; }\n    100% { left: 200%; }\n}",
       "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector('.news-container-v8');\n    const textElement = root.querySelector('.news-text-v8');\n    const wiper = root.querySelector('.wiper-v8');\n    const wiperTextEl = root.querySelector('.wiper-text-v8');\n    const gleamEl = root.querySelector('.wiper-v8-gleam');\n    const dataEl = root.querySelector('#f-news-list');\n    if(!textElement || !container || !wiper || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { \n        newsList = JSON.parse(dataEl.innerHTML || \"[]\"); \n    } catch(e) { \n        newsList = [\"BRAK DANYCH\"]; \n    }\n    if(newsList.length === 0) newsList = [\"BRAK WIADOMOŚCI\"];\n\n    let currentIndex = 0;\n    let activeTimeouts = [];\n    let cycleRunning = false;\n\n    function adjustFontSize() {\n        const baseFontSizeStr = \"{{TITLE_SIZE}}\";\n        const baseFontSize = parseFloat(baseFontSizeStr) || 40;\n        const wiperEl = root.querySelector('.wiper-v8');\n        const wiperWidth = (wiperEl && wiperEl.style.display !== 'none') ? wiperEl.offsetWidth : 0;\n        if (wiperEl) {\n            container.style.setProperty('--wiper-width', (wiperWidth || 20) + 'px');\n        }\n        const leftPadding = wiperWidth > 0 ? (wiperWidth + 20) : 20;\n        const maxWidth = container.offsetWidth - (leftPadding + 20);\n        \n        textElement.style.paddingLeft = leftPadding + 'px';\n        textElement.style.fontSize = baseFontSize + \"px\";\n        \n        let currentWidth = textElement.scrollWidth - leftPadding;\n        if (currentWidth > maxWidth && currentWidth > 0) {\n            const newSize = (maxWidth / currentWidth) * baseFontSize;\n            textElement.style.fontSize = Math.min(newSize, baseFontSize) + \"px\";\n        }\n    }\n\n    function runGleam() {\n        if (!cycleRunning || !{{WIPER_GLEAM_ENABLED}}) return;\n        if (!gleamEl) return;\n        \n        gsap.fromTo(gleamEl, \n            { left: '-150%' }, \n            { \n                left: '150%', \n                duration: {{WIPER_GLEAM_DURATION}} || 2, \n                ease: \"power1.inOut\",\n                onComplete: () => {\n                    activeTimeouts.push(setTimeout(runGleam, {{WIPER_GLEAM_FREQUENCY}} * 1000));\n                }\n            }\n        );\n    }\n\n    function runCycle() {\n        if (!cycleRunning) return;\n        textElement.classList.remove('visible');\n        const currentMsg = newsList[currentIndex];\n        const text = typeof currentMsg === 'object' ? (currentMsg.text || \"\") : currentMsg;\n        const category = typeof currentMsg === 'object' ? (currentMsg.category || \"\") : \"\";\n        \n        textElement.innerText = text;\n        \n        const labelText = category || DEFAULT_WIPER;\n        if (wiper) {\n             wiper.style.display = labelText ? 'flex' : 'none';\n             if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        adjustFontSize();\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.add('visible');\n        }, 100));\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.remove('visible');\n            activeTimeouts.push(setTimeout(() => {\n                if(!cycleRunning) return;\n                if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 move-right';\n                activeTimeouts.push(setTimeout(() => {\n                    if(!cycleRunning) return;\n                    if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 snap-back';\n                    activeTimeouts.push(setTimeout(() => {\n                        if(!cycleRunning) return;\n                        currentIndex = (currentIndex + 1) % newsList.length;\n                        runCycle();\n                    }, 500));\n                }, 1000));\n            }, 400));\n        }, 4000));\n    }\n\n    root.__slt_show = () => {\n        cycleRunning = true;\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 1, y: 0, duration: 0.6, ease: \"power2.out\" });\n        tl.add(() => {\n            runCycle();\n            runGleam();\n        }, \"+ =0.1\");\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        cycleRunning = false;\n        activeTimeouts.forEach(t => clearTimeout(t));\n        activeTimeouts = [];\n        if(window.gsap && gleamEl) gsap.killTweensOf(gleamEl);\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 0, y: 100, duration: 0.4, ease: \"power2.in\" });\n        return tl;\n    };\n\n    window.addEventListener('resize', adjustFontSize);\n})();",
       "defaultFields": {
         "items": [
@@ -311,6 +311,222 @@
       }
     },
     {
+      "id": "860e1a17-51d0-4d88-9335-de21d598a82b",
+      "name": "PILNE (OCG) (Szablon)",
+      "type": "TICKER",
+      "version": 1,
+      "features": {
+        "wiper": true
+      },
+      "html_template": "<div class=\"news-container-v8\">\n    <div class=\"news-text-v8\">{{#if ITEMS}}{{{ITEMS.[0]}}}{{else}}ŁADOWANIE...{{/if}}</div>\n    <div class=\"wiper-v8\"><span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span></div>\n    <div id=\"f-news-list\" style=\"display:none;\">{{#if ITEMS}}{{{ITEMS_JSON}}}{{/if}}</div>\n</div>",
+      "css_template": ".news-container-v8 {\n    position: absolute;\n    bottom: 0;\n    left: 0;\n    width: var(--v-width, 100%);\n    min-height: var(--v-height, 60px);\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    align-items: center;\n    overflow: hidden;\n    border: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\n    border-radius: {{BORDER_RADIUS}}px;\n    box-sizing: border-box;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    opacity: 0;\n    transform: translateY(100px);\n    box-shadow: {{BOX_SHADOW}};\n}\n.news-text-v8 {\n    position: absolute;\n    width: auto;\n    left: 0;\n    white-space: nowrap;\n    text-align: left;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    padding-left: var(--wiper-width, 170px);\n    padding-right: 20px;\n    padding-top: {{PADDING_Y}}px;\n    padding-bottom: {{PADDING_Y}}px;\n    box-sizing: border-box;\n    z-index: 1;\n    transition: opacity 0.4s ease-in-out;\n    opacity: 0;\n}\n.news-text-v8.visible {\n    opacity: 1;\n}\n.wiper-v8 {\n    position: absolute;\n    left: 0;\n    width: auto;\n    min-width: 150px;\n    padding: 0 40px;\n    height: 100%;\n    background: {{WIPER_BG}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5);\n    border-radius: {{BORDER_RADIUS}}px;\n    z-index: 2;\n    box-sizing: border-box;\n    overflow: hidden;\n}\n.wiper-v8::before {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 60%;\n    height: 100%;\n    display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{WIPER_GLEAM_BG}};\n    transform: skewX(-20deg);\n    pointer-events: none;\n    animation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n.wiper-text-v8 {\n    font-weight: {{WIPER_FONT_WEIGHT}};\n    font-size: {{WIPER_FONT_SIZE}}px;\n    font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{WIPER_TEXT_COLOR}};\n    letter-spacing: {{WIPER_LETTER_SPACING}}px;\n    position: relative;\n    z-index: 1;\n    white-space: nowrap;\n}\n.wiper-v8.move-right {\n    animation: slide-right-v8 1s linear forwards;\n}\n.wiper-v8.snap-back {\n    animation: slide-back-v8 0.5s ease-in-out forwards;\n}\n@keyframes slide-right-v8 {\n    0% { left: 0%; }\n    100% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n}\n@keyframes slide-back-v8 {\n    0% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n    100% { left: 0%; }\n}\n@keyframes sweep-gleam-v8 {\n    0% { left: -100%; }\n    100% { left: 200%; }\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector('.news-container-v8');\n    const textElement = root.querySelector('.news-text-v8');\n    const wiper = root.querySelector('.wiper-v8');\n    const dataEl = root.querySelector('#f-news-list');\n    if(!textElement || !container || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { \n        newsList = JSON.parse(dataEl.innerHTML || \"[]\"); \n    } catch(e) { \n        newsList = [\"BRAK DANYCH\"]; \n    }\n    if(newsList.length === 0) newsList = [\"BRAK WIADOMOŚCI\"];\n\n    let currentIndex = 0;\n    let activeTimeouts = [];\n    let cycleRunning = false;\n\n    function adjustFontSize() {\n        const baseFontSizeStr = \"{{TITLE_SIZE}}\";\n        const baseFontSize = parseFloat(baseFontSizeStr) || 40;\n        const wiperEl = root.querySelector('.wiper-v8');\n        const wiperWidth = (wiperEl && wiperEl.style.display !== 'none') ? wiperEl.offsetWidth : 0;\n        if (wiperEl) {\n            container.style.setProperty('--wiper-width', (wiperWidth || 20) + 'px');\n        }\n        const leftPadding = wiperWidth > 0 ? (wiperWidth + 20) : 20;\n        const maxWidth = container.offsetWidth - (leftPadding + 20);\n        \n        textElement.style.paddingLeft = leftPadding + 'px';\n        textElement.style.fontSize = baseFontSize + \"px\";\n        \n        let currentWidth = textElement.scrollWidth - leftPadding;\n        if (currentWidth > maxWidth && currentWidth > 0) {\n            const newSize = (maxWidth / currentWidth) * baseFontSize;\n            textElement.style.fontSize = Math.min(newSize, baseFontSize) + \"px\";\n        }\n    }\n\n    function runCycle() {\n        if (!cycleRunning) return;\n        textElement.classList.remove('visible');\n        const currentMsg = newsList[currentIndex];\n        const text = typeof currentMsg === 'object' ? (currentMsg.text || \"\") : currentMsg;\n        const category = typeof currentMsg === 'object' ? (currentMsg.category || \"\") : \"\";\n        \n        textElement.innerText = text;\n        \n        const labelText = category || DEFAULT_WIPER;\n        const wiperTextEl = root.querySelector(\".wiper-text-v8\");\n        if (wiper) {\n             wiper.style.display = labelText ? 'flex' : 'none';\n             if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        adjustFontSize();\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.add('visible');\n        }, 100));\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.remove('visible');\n            activeTimeouts.push(setTimeout(() => {\n                if(!cycleRunning) return;\n                if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 move-right';\n                activeTimeouts.push(setTimeout(() => {\n                    if(!cycleRunning) return;\n                    if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 snap-back';\n                    activeTimeouts.push(setTimeout(() => {\n                        if(!cycleRunning) return;\n                        currentIndex = (currentIndex + 1) % newsList.length;\n                        runCycle();\n                    }, 500));\n                }, 1000));\n            }, 400));\n        }, 4000));\n    }\n\n    root.__slt_show = () => {\n        cycleRunning = true;\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 1, y: 0, duration: 0.6, ease: \"power2.out\" });\n        tl.add(() => {\n            runCycle();\n        }, \"+ =0.1\");\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        cycleRunning = false;\n        activeTimeouts.forEach(t => clearTimeout(t));\n        activeTimeouts = [];\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 0, y: 100, duration: 0.4, ease: \"power2.in\" });\n        return tl;\n    };\n\n    window.addEventListener('resize', adjustFontSize);\n})();",
+      "defaultFields": {
+        "items": [
+          "RZĄD WZYWA DO OPUSZCZENIA IRANU",
+          "KOLEJNA AFERA KORUPCYJNA WYKRYTA",
+          "PILNY KOMUNIKAT MSW: ZACHOWAJ OSTROŻNOŚĆ"
+        ],
+        "primaryColor": "#730000",
+        "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+        "titleColor": "#ffffff",
+        "fontFamily": "Bahnschrift",
+        "introText": "PILNE",
+        "type": "TICKER",
+        "name": "PILNE (OCG)",
+        "animation": {
+          "in": {
+            "type": "slide",
+            "direction": "bottom",
+            "duration": 0.6
+          },
+          "out": {
+            "type": "slide",
+            "direction": "bottom",
+            "duration": 0.4
+          }
+        },
+        "style": {
+          "background": {
+            "type": "gradient",
+            "color": "#ffcc00",
+            "borderRadius": 10,
+            "borderWidth": 0,
+            "borderColor": "#442c2c",
+            "gradientAngle": 160,
+            "color2": "#d3a012"
+          },
+          "typography": {
+            "color": "#362626",
+            "fontFamily": "Bahnschrift",
+            "fontSize": 30,
+            "fontWeight": "600",
+            "textTransform": "uppercase"
+          }
+        },
+        "accentColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+        "layout": {
+          "layer": 5,
+          "width": 1650,
+          "x": 180,
+          "side": "bottom-right",
+          "marginY": 50,
+          "marginX": 50,
+          "height": "40"
+        }
+      },
+      "defaultStyle": {
+        "background": {
+          "type": "gradient",
+          "color": "#ffcc00",
+          "borderRadius": 10,
+          "borderWidth": 0,
+          "borderColor": "#442c2c",
+          "gradientAngle": 160,
+          "color2": "#d3a012"
+        },
+        "typography": {
+          "color": "#362626",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "600",
+          "textTransform": "uppercase"
+        }
+      },
+      "defaultAnimation": {
+        "in": {
+          "type": "slide",
+          "direction": "bottom",
+          "duration": 0.6
+        },
+        "out": {
+          "type": "slide",
+          "direction": "bottom",
+          "duration": 0.4
+        }
+      },
+      "defaultLayout": {
+        "layer": 5,
+        "width": 1650,
+        "x": 180,
+        "side": "bottom-right",
+        "marginY": 50,
+        "marginX": 50,
+        "height": "40"
+      }
+    },
+    {
+      "id": "abeab51d-44c7-4584-806a-8c665e15fbc1",
+      "name": "PILNE (OCG) (Szablon)",
+      "type": "TICKER",
+      "version": 1,
+      "html_template": "<div class=\"news-container-v8\">\n    <div class=\"news-text-v8\">{{#if ITEMS}}{{{ITEMS.[0]}}}{{else}}ŁADOWANIE...{{/if}}</div>\n    <div class=\"wiper-v8\"><span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span></div>\n    <div id=\"f-news-list\" style=\"display:none;\">{{#if ITEMS}}{{{ITEMS_JSON}}}{{/if}}</div>\n</div>",
+      "css_template": ".news-container-v8 {\n    position: absolute;\n    bottom: 0;\n    left: 0;\n    width: var(--v-width, 100%);\n    min-height: var(--v-height, 60px);\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    align-items: center;\n    overflow: hidden;\n    border: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\n    border-radius: {{BORDER_RADIUS}}px;\n    box-sizing: border-box;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    opacity: 0;\n    transform: translateY(100px);\n    box-shadow: {{BOX_SHADOW}};\n}\n.news-text-v8 {\n    position: absolute;\n    width: auto;\n    left: 0;\n    white-space: nowrap;\n    text-align: left;\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    padding-left: 170px;\n    padding-right: 20px;\n    padding-top: {{PADDING_Y}}px;\n    padding-bottom: {{PADDING_Y}}px;\n    box-sizing: border-box;\n    z-index: 1;\n    transition: opacity 0.4s ease-in-out;\n    opacity: 0;\n}\n.news-text-v8.visible {\n    opacity: 1;\n}\n.wiper-v8 {\n    position: absolute;\n    left: 0;\n    width: 150px;\n    height: 100%;\n    background: {{WIPER_BG}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5);\n    border-radius: {{BORDER_RADIUS}}px;\n    z-index: 2;\n    box-sizing: border-box;\n}\n.wiper-v8::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    border-top: 2px solid rgba(255,255,255,0.8);\n    border-bottom: 2px solid rgba(255,255,255,0.8);\n    border-radius: {{BORDER_RADIUS}}px;\n    pointer-events: none;\n    animation: pulse-gleam-v8 1.5s infinite alternate ease-in-out;\n}\n.wiper-text-v8 {\n    font-weight: 900;\n    font-size: {{WIPER_FONT_SIZE}}px;\n    font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{WIPER_TEXT_COLOR}};\n    letter-spacing: 1px;\n}\n.wiper-v8.move-right {\n    animation: slide-right-v8 1s linear forwards;\n}\n.wiper-v8.snap-back {\n    animation: slide-back-v8 0.5s ease-in-out forwards;\n}\n@keyframes slide-right-v8 {\n    0% { left: 0%; }\n    100% { left: calc(var(--v-width, 100%) - 150px); }\n}\n@keyframes slide-back-v8 {\n    0% { left: calc(var(--v-width, 100%) - 150px); }\n    100% { left: 0%; }\n}\n@keyframes pulse-gleam-v8 {\n    0% { opacity: 0.2; }\n    100% { opacity: 1; }\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector('.news-container-v8');\n    const textElement = root.querySelector('.news-text-v8');\n    const wiper = root.querySelector('.wiper-v8');\n    const dataEl = root.querySelector('#f-news-list');\n    if(!textElement || !container || !wiper || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { \n        newsList = JSON.parse(dataEl.innerHTML || \"[]\"); \n    } catch(e) { \n        newsList = [\"BRAK DANYCH\"]; \n    }\n    if(newsList.length === 0) newsList = [\"BRAK WIADOMOŚCI\"];\n\n    let currentIndex = 0;\n    let activeTimeouts = [];\n    let cycleRunning = false;\n\n    function adjustFontSize() {\n        const baseFontSizeStr = \"{{TITLE_SIZE}}\"; // Bylo {{FONT_SIZE}}\n        const baseFontSize = parseFloat(baseFontSizeStr) || 40;\n        const wiperEl = root.querySelector('.wiper-v8');\n        const wiperWidth = (wiperEl && wiperEl.style.display !== 'none') ? wiperEl.offsetWidth : 150;\n        const leftPadding = (wiperEl && wiperEl.style.display !== 'none') ? 170 : 20;\n        const maxWidth = container.offsetWidth - (leftPadding + 20);\n        \n        textElement.style.paddingLeft = leftPadding + 'px';\n        textElement.style.fontSize = baseFontSize + \"px\";\n        \n        let currentWidth = textElement.scrollWidth - leftPadding;\n        if (currentWidth > maxWidth && currentWidth > 0) {\n            const newSize = (maxWidth / currentWidth) * baseFontSize;\n            textElement.style.fontSize = Math.min(newSize, baseFontSize) + \"px\";\n        }\n    }\n\n    function runCycle() {\n        if (!cycleRunning) return;\n        textElement.classList.remove('visible');\n        const currentMsg = newsList[currentIndex];\n        const text = typeof currentMsg === 'object' ? (currentMsg.text || \"\") : currentMsg;\n        const category = typeof currentMsg === 'object' ? (currentMsg.category || \"\") : \"\";\n        \n        textElement.innerText = text;\n        \n        const labelText = category || DEFAULT_WIPER;\n        const wiperTextEl = root.querySelector(\".wiper-text-v8\");\n        if (wiper) {\n             wiper.style.display = labelText ? 'flex' : 'none';\n             if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        adjustFontSize();\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.add('visible');\n        }, 100));\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.remove('visible');\n            activeTimeouts.push(setTimeout(() => {\n                if(!cycleRunning) return;\n                if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 move-right';\n                activeTimeouts.push(setTimeout(() => {\n                    if(!cycleRunning) return;\n                    if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 snap-back';\n                    activeTimeouts.push(setTimeout(() => {\n                        if(!cycleRunning) return;\n                        currentIndex = (currentIndex + 1) % newsList.length;\n                        runCycle();\n                    }, 500));\n                }, 1000));\n            }, 400));\n        }, 4000));\n    }\n\n    root.__slt_show = () => {\n        cycleRunning = true;\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 1, y: 0, duration: 0.6, ease: \"power2.out\" });\n        tl.add(() => {\n            runCycle();\n        }, \"+ =0.1\");\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        cycleRunning = false;\n        activeTimeouts.forEach(t => clearTimeout(t));\n        activeTimeouts = [];\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 0, y: 100, duration: 0.4, ease: \"power2.in\" });\n        return tl;\n    };\n\n    window.addEventListener('resize', adjustFontSize);\n})();",
+      "defaultFields": {
+        "items": [
+          "PILNE: PREZYDENT K. NAWROCKI WETUJE USTAWĘ WS. PROGRAMU \"SAFE\"",
+          "PREMIER D. TUSK OSTRO O WECIE: \"PREZES PIS POPROWADZIŁ GO JAK ZA RĄCZKĘ\"",
+          "RUCH RZĄDU W ODPOWIEDZI NA WETO. JEST NOWA UCHWAŁA I UPOWAŻNIENIA DLA MINISTRÓW",
+          "SZEF ZWIĄZKÓW ZAWODOWYCH POLICJI ALARMUJE: LUDZIE LICZYLI NA ŚRODKI Z \"SAFE\"",
+          "PILNE: ZMASOWANY ATAK USA NA IRAŃSKĄ WYSPĘ. \"JEDNO Z NAJSILNIEJSZYCH BOMBARDOWAŃ\"",
+          "TEHERAN ZAPOWIADA ODWET. REŻIM WŚCIEKŁY PO DZIAŁANIACH STANÓW ZJEDNOCZONYCH",
+          "USA OFERUJĄ GIGANTYCZNĄ NAGRODĘ ZA INFORMACJE O PRZYWÓDCACH IRANU",
+          "KONGRESMENI USA ALARMUJĄ: ZAWIESZENIE SANKCJI NA ROSYJSKĄ ROPĘ FINANSUJE MACHINĘ WOJENNĄ PUTINA"
+        ],
+        "primaryColor": "#730000",
+        "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+        "titleColor": "#ffffff",
+        "fontFamily": "Bahnschrift",
+        "type": "TICKER",
+        "name": "PILNE (OCG)",
+        "animation": {
+          "in": {
+            "type": "slide",
+            "direction": "bottom",
+            "duration": 0.6
+          },
+          "out": {
+            "type": "slide",
+            "direction": "bottom",
+            "duration": 0.4
+          }
+        },
+        "style": {
+          "background": {
+            "type": "gradient",
+            "color": "#ffcc00",
+            "borderRadius": 10,
+            "borderWidth": 0,
+            "borderColor": "#442c2c",
+            "gradientAngle": 160,
+            "color2": "#d3a012"
+          },
+          "typography": {
+            "color": "#362626",
+            "fontFamily": "Bahnschrift",
+            "fontSize": 30,
+            "fontWeight": "600",
+            "textTransform": "uppercase"
+          }
+        },
+        "accentColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+        "layout": {
+          "layer": 5,
+          "width": 1650,
+          "x": 180,
+          "side": "bottom-right",
+          "marginY": 50,
+          "marginX": 50,
+          "height": "40"
+        },
+        "wiper": {
+          "bgColor": "#901414",
+          "fontSize": 30,
+          "fontFamily": "Bahnschrift"
+        }
+      },
+      "defaultStyle": {
+        "background": {
+          "type": "gradient",
+          "color": "#ffcc00",
+          "borderRadius": 10,
+          "borderWidth": 0,
+          "borderColor": "#442c2c",
+          "gradientAngle": 160,
+          "color2": "#d3a012"
+        },
+        "typography": {
+          "color": "#362626",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "600",
+          "textTransform": "uppercase"
+        }
+      },
+      "defaultAnimation": {
+        "in": {
+          "type": "slide",
+          "direction": "bottom",
+          "duration": 0.6
+        },
+        "out": {
+          "type": "slide",
+          "direction": "bottom",
+          "duration": 0.4
+        }
+      },
+      "defaultLayout": {
+        "layer": 5,
+        "width": 1650,
+        "x": 180,
+        "side": "bottom-right",
+        "marginY": 50,
+        "marginX": 50,
+        "height": "40"
+      }
+    },
+    {
       "id": "vertical-ticker",
       "name": "Ticker Pionowy",
       "type": "TICKER",
@@ -319,7 +535,7 @@
         "vertical": true
       },
       "html_template": "<div class=\"ticker-vert-container\"><div class=\"ticker-vert-label\">{{WIPER_TEXT}}</div><div class=\"ticker-vert-viewport\"></div><div class=\"ticker-vert-data\" style=\"display:none\">{{ITEMS_JSON}}</div></div>",
-      "css_template": "#{{ID}} .ticker-vert-container {\nposition: absolute;\ntop: 0;\nleft: 0;\nwidth: var(--v-width, 100%);\nheight: var(--v-height, 60px);\ndisplay: flex;\nalign-items: stretch;\nbackground: {{PRIMARY_BG}};\nborder: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\nborder-radius: {{BORDER_RADIUS}}px;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nbox-shadow: {{BOX_SHADOW}};\nopacity: 0;\ntransform: {{ANIMATION_IN_TRANSFORM}};\ntransition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\noverflow: hidden;\n}\n#{{ID}} .ticker-vert-label {\nbackground: {{BORDER_COLOR}};\ncolor: {{TITLE_COLOR}};\npadding: 0 25px;\ndisplay: flex;\nalign-items: center;\nfont-weight: 800;\nfont-size: {{FONT_SIZE}}px;\ntext-transform: uppercase;\nletter-spacing: 1px;\nflex-shrink: 0;\nborder-right: 2px solid rgba(0,0,0,0.15);\n}\n#{{ID}} .ticker-vert-viewport {\nflex: 1;\nposition: relative;\noverflow: hidden;\n}\n#{{ID}} .ticker-vert-item {\nposition: absolute;\nwidth: 100%;\npadding: 0 25px;\nheight: 100%;\ndisplay: flex;\nalign-items: center;\ncolor: {{TITLE_COLOR}};\nfont-size: {{FONT_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\nwhite-space: nowrap;\nopacity: 0;\ntransform: translateY(100%);\n}\n#{{ID}} .ticker-vert-item.entering {\nanimation: ticker-vert-in 0.5s ease-out forwards;\n}\n#{{ID}} .ticker-vert-item.leaving {\nanimation: ticker-vert-out 0.5s ease-in forwards;\n}\n@keyframes ticker-vert-in {\nfrom { transform: translateY(100%); opacity: 0; }\nto { transform: translateY(0); opacity: 1; }\n}\n@keyframes ticker-vert-out {\nfrom { transform: translateY(0); opacity: 1; }\nto { transform: translateY(-100%); opacity: 0; }\n}",
+      "css_template": ".ticker-vert-container {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: var(--v-width, 100%);\n  height: var(--v-height, 60px);\n  display: flex;\n  align-items: stretch;\n  background: {{PRIMARY_BG}};\n  border: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\n  border-radius: {{BORDER_RADIUS}}px;\n  font-family: '{{FONT_FAMILY}}', sans-serif;\n  box-shadow: {{BOX_SHADOW}};\n  opacity: 0;\n  transform: {{ANIMATION_IN_TRANSFORM}};\n  transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n  overflow: hidden;\n}\n.ticker-vert-label {\n  background: {{BORDER_COLOR}};\n  color: {{TITLE_COLOR}};\n  padding: 0 25px;\n  display: flex;\n  align-items: center;\n  font-weight: 800;\n  font-size: {{FONT_SIZE}}px;\n  text-transform: uppercase;\n  letter-spacing: 1px;\n  flex-shrink: 0;\n  border-right: 2px solid rgba(0,0,0,0.15);\n}\n.ticker-vert-viewport {\n  flex: 1;\n  position: relative;\n  overflow: hidden;\n}\n.ticker-vert-item {\n  position: absolute;\n  width: 100%;\n  padding: 0 25px;\n  height: 100%;\n  display: flex;\n  align-items: center;\n  color: {{TITLE_COLOR}};\n  font-size: {{FONT_SIZE}}px;\n  font-weight: {{TITLE_WEIGHT}};\n  text-transform: {{TITLE_TRANSFORM}};\n  white-space: nowrap;\n  opacity: 0;\n  transform: translateY(100%);\n}\n.ticker-vert-item.entering {\n  animation: ticker-vert-in 0.5s ease-out forwards;\n}\n.ticker-vert-item.leaving {\n  animation: ticker-vert-out 0.5s ease-in forwards;\n}\n@keyframes ticker-vert-in {\n  from { transform: translateY(100%); opacity: 0; }\n  to { transform: translateY(0); opacity: 1; }\n}\n@keyframes ticker-vert-out {\n  from { transform: translateY(0); opacity: 1; }\n  to { transform: translateY(-100%); opacity: 0; }\n}",
       "js_template": "(() => {\n  const root = document.getElementById(\"{{ID}}\");\n  const container = root.querySelector('.ticker-vert-container');\n  const viewport = root.querySelector('.ticker-vert-viewport');\n  const label = root.querySelector('.ticker-vert-label');\n  const dataEl = root.querySelector('.ticker-vert-data');\n  if (!container || !viewport || !dataEl) return;\n\n  const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n  let items = [];\n  try { items = JSON.parse(dataEl.textContent || '[]'); } catch(e) { items = ['BRAK DANYCH']; }\n  if (!items.length) items = ['BRAK WIADOMOŚCI'];\n\n  let currentIndex = 0;\n  let cycleRunning = false;\n  let cycleTimer = null;\n  const displayMs = Math.max(1000, (parseFloat(\"{{TICKER_SPEED}}\") || 5) * 1000);\n\n  function runCycle() {\n    if (!cycleRunning || !viewport) return;\n    const el = document.createElement('div');\n    el.className = 'ticker-vert-item';\n\n    const currentItem = items[currentIndex];\n    const text = typeof currentItem === 'object' ? (currentItem.text || \"\") : currentItem;\n    const category = typeof currentItem === 'object' ? (currentItem.category || \"\") : \"\";\n\n    el.textContent = text;\n    \n    const labelText = category || DEFAULT_WIPER;\n    if (label) {\n        label.style.display = labelText ? 'flex' : 'none';\n        label.innerText = labelText;\n    }\n\n    viewport.appendChild(el);\n    void el.offsetWidth;\n    el.classList.add('entering');\n\n    cycleTimer = setTimeout(() => {\n      if (!cycleRunning) { if (el.parentNode) el.parentNode.removeChild(el); return; }\n      el.classList.remove('entering');\n      el.classList.add('leaving');\n      currentIndex = (currentIndex + 1) % items.length;\n      setTimeout(() => {\n        if (el.parentNode) el.parentNode.removeChild(el);\n        if (cycleRunning) runCycle();\n      }, 500);\n    }, displayMs);\n  }\n\n  root.__slt_show = () => {\n    const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n    tl.add(() => { cycleRunning = true; setTimeout(runCycle, 100); });\n    return tl;\n  };\n\n  root.__slt_hide = () => {\n    cycleRunning = false;\n    if (cycleTimer) clearTimeout(cycleTimer);\n    viewport.querySelectorAll('.ticker-vert-item').forEach(i => i.parentNode && i.parentNode.removeChild(i));\n    return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n  };\n})();",
       "defaultFields": {
         "items": [
@@ -335,6 +551,34 @@
         "marginX": 50,
         "width": 800,
         "height": 60
+      }
+    },
+    {
+      "id": "tpl-ticker-vert-ocg",
+      "name": "Ticker Pionowy (OCG Style)",
+      "type": "TICKER",
+      "version": 2,
+      "features": {
+        "vertical": true,
+        "wiper": true
+      },
+      "html_template": "<div class=\"ticker-vert-container\">\n    <div class=\"ticker-vert-label\"><span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span></div>\n    <div class=\"ticker-vert-viewport\"></div>\n    <div class=\"ticker-vert-data\" style=\"display:none;\">{{#if ITEMS}}{{{ITEMS_JSON}}}{{/if}}</div>\n</div>",
+      "css_template": ".ticker-vert-container {\n    position: absolute;\n    bottom: 0;\n    left: 0;\n    width: var(--v-width, 100%);\n    min-height: var(--v-height, 60px);\n    display: flex;\n    align-items: stretch;\n    background: {{PRIMARY_BG}};\n    border: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\n    border-radius: {{BORDER_RADIUS}}px;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: translateY(100px);\n    overflow: hidden;\n    box-sizing: border-box;\n}\n.ticker-vert-label {\n    position: relative;\n    background: {{WIPER_BG}};\n    padding: 0 40px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    flex-shrink: 0;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5);\n    z-index: 2;\n    overflow: hidden;\n}\n.ticker-vert-label::before {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 60%;\n    height: 100%;\n    display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{WIPER_GLEAM_BG}};\n    transform: skewX(-20deg);\n    pointer-events: none;\n    animation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n.wiper-text-v8 {\n    font-weight: {{WIPER_FONT_WEIGHT}};\n    font-size: {{WIPER_FONT_SIZE}}px;\n    font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{WIPER_TEXT_COLOR}};\n    letter-spacing: {{WIPER_LETTER_SPACING}}px;\n    position: relative;\n    z-index: 1;\n    white-space: nowrap;\n}\n.ticker-vert-viewport {\n    flex: 1;\n    position: relative;\n    overflow: hidden;\n}\n.ticker-vert-item {\n    position: absolute;\n    width: 100%;\n    padding: 0 25px;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: nowrap;\n    opacity: 0;\n    transform: translateY(100%);\n    box-sizing: border-box;\n}\n.ticker-vert-item.entering {\n    animation: ticker-vert-in 0.5s ease-out forwards;\n}\n.ticker-vert-item.leaving {\n    animation: ticker-vert-out 0.5s ease-in forwards;\n}\n@keyframes ticker-vert-in {\n    from { transform: translateY(100%); opacity: 0; }\n    to { transform: translateY(0); opacity: 1; }\n}\n@keyframes ticker-vert-out {\n    from { transform: translateY(0); opacity: 1; }\n    to { transform: translateY(-100%); opacity: 0; }\n}\n@keyframes sweep-gleam-v8 {\n    0% { left: -100%; }\n    100% { left: 200%; }\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector('.ticker-vert-container');\n    const viewport = root.querySelector('.ticker-vert-viewport');\n    const label = root.querySelector('.ticker-vert-label');\n    const labelTextEl = root.querySelector('.wiper-text-v8');\n    const dataEl = root.querySelector('.ticker-vert-data');\n    if (!container || !viewport || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let items = [];\n    try { items = JSON.parse(dataEl.textContent || '[]'); } catch(e) { items = ['BRAK DANYCH']; }\n    if (!items.length) items = ['BRAK WIADOMOŚCI'];\n\n    let currentIndex = 0;\n    let cycleRunning = false;\n    let cycleTimer = null;\n    const displayMs = Math.max(1000, (parseFloat(\"{{TICKER_SPEED}}\") || 5) * 1000);\n\n    function adjustFontSize(el) {\n        const baseFontSizeStr = \"{{TITLE_SIZE}}\";\n        const baseFontSize = parseFloat(baseFontSizeStr) || 40;\n        const leftPadding = (label && label.style.display !== 'none') ? label.offsetWidth : 0;\n        \n        const maxWidth = container.offsetWidth - leftPadding - 40;\n        \n        el.style.fontSize = baseFontSize + \"px\";\n        \n        let currentWidth = el.scrollWidth;\n        if (currentWidth > maxWidth && currentWidth > 0) {\n            const newSize = (maxWidth / currentWidth) * baseFontSize;\n            el.style.fontSize = Math.min(newSize, baseFontSize) + \"px\";\n        }\n    }\n\n    function runCycle() {\n        if (!cycleRunning || !viewport) return;\n        \n        const currentItem = items[currentIndex];\n        const text = typeof currentItem === 'object' ? (currentItem.text || \"\") : currentItem;\n        const category = typeof currentItem === 'object' ? (currentItem.category || \"\") : \"\";\n\n        const labelText = category || DEFAULT_WIPER;\n        if (label) {\n            label.style.display = labelText ? 'flex' : 'none';\n            if (labelTextEl) labelTextEl.innerText = labelText;\n        }\n\n        const el = document.createElement('div');\n        el.className = 'ticker-vert-item';\n        el.textContent = text;\n        viewport.appendChild(el);\n        \n        adjustFontSize(el);\n        \n        void el.offsetWidth;\n        el.classList.add('entering');\n        \n        cycleTimer = setTimeout(() => {\n            if (!cycleRunning) { if (el.parentNode) el.parentNode.removeChild(el); return; }\n            el.classList.remove('entering');\n            el.classList.add('leaving');\n            currentIndex = (currentIndex + 1) % items.length;\n            setTimeout(() => {\n                if (el.parentNode) el.parentNode.removeChild(el);\n                if (cycleRunning) runCycle();\n            }, 500);\n        }, displayMs);\n    }\n\n    root.__slt_show = () => {\n        cycleRunning = true;\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 1, y: 0, duration: 0.6, ease: \"power2.out\" });\n        tl.add(() => { runCycle(); }, \"+ =0.1\");\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        cycleRunning = false;\n        if (cycleTimer) clearTimeout(cycleTimer);\n        viewport.querySelectorAll('.ticker-vert-item').forEach(i => i.parentNode && i.parentNode.removeChild(i));\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 0, y: 100, duration: 0.4, ease: \"power2.in\" });\n        return tl;\n    };\n\n    window.addEventListener('resize', () => {\n        viewport.querySelectorAll('.ticker-vert-item').forEach(el => adjustFontSize(el));\n    });\n})();",
+      "defaultFields": {
+        "items": [
+          "PILNE: PREZYDENT K. NAWROCKI WETUJE USTAWĘ WS. PROGRAMU \"SAFE\"",
+          "PREMIER D. TUSK OSTRO O WECIE: \"PREZES PIS POPROWADZIŁ GO JAK ZA RĄCZKĘ\""
+        ],
+        "primaryColor": "#730000",
+        "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+        "titleColor": "#ffffff",
+        "fontFamily": "Bahnschrift",
+        "wiper": {
+          "bgColor": "#901414",
+          "fontSize": 30,
+          "fontFamily": "Bahnschrift"
+        }
       }
     }
   ],

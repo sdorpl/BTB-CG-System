@@ -20,9 +20,13 @@
     }
 
     function formatDimension(val, fallback = 'auto') {
-        if (!val) return fallback;
-        if (typeof val === 'string' && /[a-z%]/i.test(val)) return val;
-        return `${val}px`;
+        if (val === undefined || val === null || val === '') return fallback;
+        const sVal = String(val).trim();
+        // If it already has a unit (%, px, vh, etc.), return as is
+        if (/[a-z%]$/i.test(sVal)) return sVal;
+        // If it's a pure number, append px
+        if (!isNaN(parseFloat(sVal)) && isFinite(sVal)) return `${sVal}px`;
+        return sVal;
     }
 
     // Safely assign GSAP global (may not be available in all contexts)
@@ -70,6 +74,7 @@
                     layout: graphic.layout, animation: graphic.animation,
                     style: graphic.style, sideImage: graphic.sideImage,
                     speed: graphic.speed, items: graphic.items, wiper: graphic.wiper,
+                    fields: graphic.fields,
                     activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(graphic.id)) ? settings.globalFontFamily : null
 
                 });
@@ -237,6 +242,7 @@
                 layout: data.layout, animation: data.animation,
                 style: data.style, sideImage: data.sideImage,
                 speed: data.speed, items: data.items, wiper: data.wiper,
+                fields: data.fields,
                 activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(data.id)) ? settings.globalFontFamily : null
             }),
             isHiding: false
@@ -262,6 +268,11 @@
 
                 // Allow DOM repaints before executing GSAP show animations logic
                 setTimeout(() => {
+                    if (rootEl) {
+                        rootEl.classList.add('active');
+                        // Legacy support: also add .active to the first child (often .lt-container)
+                        if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
+                    }
                     if (rootEl.__slt_show) {
                         rootEl.__slt_show();
                     } else {
@@ -271,6 +282,13 @@
             } catch (e) {
                 console.error("Vinci JS error", e);
             }
+        } else if (rootEl) {
+            // No JS template, but still trigger active class for CSS-only templates
+            setTimeout(() => {
+                rootEl.classList.add('active');
+                if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
+                rootEl.style.display = 'block';
+            }, 30);
         }
     }
 
@@ -280,6 +298,11 @@
 
         meta.isHiding = true;
         const rootEl = document.getElementById(meta.instanceId);
+
+        if (rootEl) {
+            rootEl.classList.remove('active');
+            if (rootEl.firstElementChild) rootEl.firstElementChild.classList.remove('active');
+        }
 
         // Hide Animation logic (matches original VinciFlowGraphic lines 292-316)
         if (rootEl && rootEl.__slt_hide && typeof rootEl.__slt_hide === 'function') {
@@ -309,6 +332,11 @@
                 console.error("Hide execution error", e);
                 removeElement(id, meta);
             }
+        } else if (rootEl) {
+            // Legacy support: wait for CSS transitions triggered by .active removal
+            setTimeout(() => {
+                removeElement(id, meta);
+            }, 600);
         } else {
             removeElement(id, meta);
         }
@@ -546,6 +574,11 @@
                     } catch (e) { console.error("__slt_show error:", e); }
                 }
 
+                if (rootEl) {
+                    rootEl.classList.add('active');
+                    if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
+                }
+
                 if (options.instant && rootEl) {
                     // Use rAF to ensure DOM is committed before forcing styles
                     requestAnimationFrame(() => {
@@ -580,6 +613,18 @@
         const animOut = graphic.animation?.out || {};
         const bgStyle = graphic.style?.background || {};
         const typo = graphic.style?.typography || {};
+
+        // Prepare OCG fields (serialize arrays to JSON)
+        const customFields = {};
+        if (graphic.fields) {
+            Object.entries(graphic.fields).forEach(([k, v]) => {
+                if (Array.isArray(v)) {
+                    customFields[k] = JSON.stringify(v);
+                } else {
+                    customFields[k] = v;
+                }
+            });
+        }
 
         let activeFontFamily = typo.fontFamily || 'Arial';
         if (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(graphic.id)) {
@@ -616,10 +661,20 @@
         }
 
         let rawItems = graphic.items || tpl.defaultFields?.items || [];
-        rawItems = rawItems.map(item => {
-            if (typeof item === 'string' && item.includes('<font')) {
+        const itemsData = rawItems.map(item => {
+            let text = '';
+            let category = '';
+            
+            if (typeof item === 'string') {
+                text = item;
+            } else if (item && typeof item === 'object') {
+                text = item.text || '';
+                category = item.category || '';
+            }
+            
+            if (text && typeof text === 'string' && text.includes('<font')) {
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = item;
+                tempDiv.innerHTML = text;
                 tempDiv.querySelectorAll('font').forEach(f => {
                     const s = document.createElement('span');
                     if (f.face) s.style.fontFamily = f.face;
@@ -631,10 +686,13 @@
                     s.innerHTML = f.innerHTML;
                     f.replaceWith(s);
                 });
-                return tempDiv.innerHTML;
+                text = tempDiv.innerHTML;
             }
-            return item;
+            return { text, category };
         });
+
+        // ITEMS is still strings for legacy templates
+        const itemsStrings = itemsData.map(id => id.text);
 
         const globalShadow = settings?.globalShadow || { enabled: false };
         const shadowStr = globalShadow.enabled
@@ -691,8 +749,9 @@
             WIPER_GLEAM_HEIGHT: wiperSettings.gleamHeight || 100,
             WIPER_GLEAM_FREQUENCY: wiperSettings.gleamFrequency || 3,
             WIPER_GLEAM_OPACITY: wiperSettings.gleamOpacity ?? 0.4,
-            ITEMS: rawItems,
-            ITEMS_JSON: JSON.stringify(rawItems),
+            ITEMS: itemsStrings,
+            ITEMS_JSON: JSON.stringify(itemsData),
+            WIPER_TEXT: (graphic.introText !== undefined) ? graphic.introText : (tpl.defaultFields?.introText || 'PILNE'),
             LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
             TICKER_SPEED: graphic.speed || 100,
             PRIMARY_COLOR: bgStyle.color || '#1e3a8a',
@@ -757,6 +816,8 @@
             TEXT_ANIM_OUT_JSON: JSON.stringify(graphic.animation?.textOut || { type: 'none' }),
             TEXT_ANIM_OUT_SYNC: !!graphic.animation?.textOut?.syncWithBase,
             SEPARATOR_CSS: SEPARATOR_CSS,
+            DOM_CONTEXT: 'root',
+            ...customFields
         };
     }
 

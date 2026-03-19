@@ -148,6 +148,11 @@
         class="nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]">Edytor Szablonów</button>
       <button id="nav-settings"
         class="nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]">Ustawienia</button>
+      <a href="/output.html" target="_blank"
+        class="px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px] flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        Wyjście (Output)
+      </a>
       
       <div class="h-4 w-px bg-gray-700 mx-2"></div>
 
@@ -392,7 +397,16 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </button>
+          <button id="btn-import-ocg-template" class="p-1 hover:bg-gray-700 rounded text-orange-400" title="Import OCG (.json)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </button>
           <input type="file" id="tpl-file-input" accept=".json" class="hidden">
+          <input type="file" id="ocg-file-input" accept=".json" class="hidden">
         </div>
       </div>
       <div id="template-list" class="flex-1 overflow-y-auto custom-scrollbar">
@@ -429,6 +443,16 @@
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               Eksportuj (.json)
+            </button>
+            <button id="btn-export-ocg-template"
+              class="flex items-center gap-2 px-3 py-1.5 bg-orange-700/50 hover:bg-orange-600 border border-orange-600 text-white rounded font-medium text-sm shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Eksportuj OCG
             </button>
             <button id="btn-save-template"
               class="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm shadow-lg">

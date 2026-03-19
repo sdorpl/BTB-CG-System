@@ -54,25 +54,33 @@ async function init() {
             e.currentTarget.classList.toggle('bg-blue-600');
         });
 
-        // Bind Template Import
         const btnImport = document.getElementById('btn-import-template');
-        if (btnImport) {
-            btnImport.onclick = () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.json';
-                input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) importTemplate(file);
-                };
-                input.click();
-            };
-        }
+        const tplFileInput = document.getElementById('tpl-file-input');
+        if (btnImport) btnImport.onclick = () => tplFileInput.click();
+        if (tplFileInput) tplFileInput.onchange = (e) => {
+            const file = e.target.files?.[0];
+            if (file) importTemplate(file);
+        };
+
+        // Bind OCG Import/Export
+        const btnImportOCG = document.getElementById('btn-import-ocg-template');
+        const ocgFileInput = document.getElementById('ocg-file-input');
+        const btnExportOCG = document.getElementById('btn-export-ocg-template');
+
+        if (btnImportOCG) btnImportOCG.onclick = () => ocgFileInput.click();
+        if (ocgFileInput) ocgFileInput.onchange = (e) => {
+            const file = e.target.files?.[0];
+            if (file) importOCGTemplate(file);
+        };
+        if (btnExportOCG) btnExportOCG.onclick = () => {
+             if (currentTemplateId) exportOCGTemplate(currentTemplateId);
+        };
     });
 
     socket.on('stateUpdated', (newState) => {
         state = newState;
         renderShotbox();
+        renderTemplateList(); // Keep template list in sync
         if (selectedGraphicId) {
             refreshInspector(selectedGraphicId);
         }
@@ -767,15 +775,20 @@ function renderInspectorBody(graphic) {
                             </div>
                             <div class="space-y-1 bg-gray-900 border border-gray-800 rounded p-1 mb-2 max-h-64 overflow-y-auto" id="ticker-messages-list-${graphic.id}">
                                 ${(graphic.items || []).length === 0 ? '<div class="text-center text-gray-500 text-[10px] py-2">Brak wiadomości</div>' : ''}
-                                ${(graphic.items || []).map((msg, idx) => `
+                                ${(graphic.items || []).map((msg, idx) => {
+                                    const text = typeof msg === 'string' ? msg : (msg.text || '');
+                                    const category = typeof msg === 'object' ? (msg.category || '') : '';
+                                    return `
                                     <div class="flex items-center gap-1 group">
-                                        <input type="text" value="${escAttr(msg)}" onchange="window.updateTickerMessage('${graphic.id}', ${idx}, this.value)" class="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8">
+                                        <input type="text" value="${escAttr(text)}" onchange="window.updateTickerMessage('${graphic.id}', ${idx}, this.value, 'text')" placeholder="Wiadomość..." class="flex-[3] bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8">
+                                        <input type="text" value="${escAttr(category)}" onchange="window.updateTickerMessage('${graphic.id}', ${idx}, this.value, 'category')" placeholder="Kategoria" class="flex-1 bg-gray-900/50 border border-gray-700 rounded p-1.5 text-[10px] focus:border-blue-500 focus:outline-none text-blue-400 font-mono h-8">
                                         <button onclick="window.removeTickerMessage('${graphic.id}', ${idx})" class="w-8 h-8 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs shrink-0">&times;</button>
-                                    </div>
-                                `).join('')}
+                                    </div>`;
+                                }).join('')}
                             </div>
                             <div class="flex gap-1 mb-3">
-                                <input type="text" id="new-ticker-msg-${graphic.id}" placeholder="Nowa wiadomość..." class="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8" onkeydown="if(event.key === 'Enter') window.addTickerMessage('${graphic.id}')">
+                                <input type="text" id="new-ticker-msg-${graphic.id}" placeholder="Nowa wiadomość..." class="flex-[3] bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8" onkeydown="if(event.key === 'Enter') window.addTickerMessage('${graphic.id}')">
+                                <input type="text" id="new-ticker-cat-${graphic.id}" placeholder="Kat." class="flex-1 bg-gray-900/50 border border-gray-700 rounded p-1.5 text-[10px] focus:border-blue-500 focus:outline-none text-blue-400 font-mono h-8" onkeydown="if(event.key === 'Enter') window.addTickerMessage('${graphic.id}')">
                                 <button onclick="window.addTickerMessage('${graphic.id}')" class="px-3 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold h-8 flex items-center justify-center transition-colors">DODAJ</button>
                             </div>
                             <div class="mt-4 pt-3 border-t border-gray-800">
@@ -1218,6 +1231,45 @@ function renderInspectorBody(graphic) {
                     <div class="h-16"></div> <!-- Spacer for color picker accessibility -->
                 </div>
             </div>
+
+            ${tpl?.ocgInputs?.length ? `
+            <div class="accordion border-b border-gray-800">
+                <button class="accordion-toggle w-full flex items-center justify-between p-3 text-[10px] font-bold text-orange-400 bg-gray-900 hover:bg-gray-800 transition-colors" data-accordion="ocgFields">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        PARAMETRY OCG (NIESTANDARDOWE)
+                    </span>
+                    <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.ocgFields ? '−' : '+'}</span>
+                </button>
+                <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.ocgFields ? 'open' : ''} bg-gray-850/50 p-3 space-y-4">
+                    ${tpl.ocgInputs.map(input => {
+                        const val = graphic.fields?.[input.id] ?? input.default ?? '';
+                        return `
+                        <div>
+                            ${ctrlLabel(input.label || input.id)}
+                            ${input.type === 'list' ? `
+                                <div class="space-y-1 bg-gray-900 border border-gray-800 rounded p-1 mb-2 max-h-48 overflow-y-auto" id="ocg-list-${input.id}-${graphic.id}">
+                                    ${(Array.isArray(val) ? val : []).map((item, idx) => `
+                                        <div class="flex items-center gap-1 group">
+                                            <input type="text" value="${escAttr(item)}" onchange="window.updateOcgField('${graphic.id}', '${input.id}', ${idx}, this.value)" class="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[10px] focus:border-blue-500 focus:outline-none text-white">
+                                            <button onclick="window.removeOcgField('${graphic.id}', '${input.id}', ${idx})" class="w-6 h-6 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs shrink-0">&times;</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="flex gap-1">
+                                    <input type="text" id="new-ocg-val-${input.id}-${graphic.id}" placeholder="Dodaj element..." class="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[10px] focus:border-blue-500 focus:outline-none text-white" onkeydown="if(event.key === 'Enter') window.addOcgField('${graphic.id}', '${input.id}')">
+                                    <button onclick="window.addOcgField('${graphic.id}', '${input.id}')" class="px-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold h-6 flex items-center justify-center">DODAJ</button>
+                                </div>
+                            ` : input.type === 'richtext' ? `
+                                <textarea data-field="fields.${input.id}" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono leading-tight">${escAttr(val)}</textarea>
+                            ` : `
+                                <input type="text" data-field="fields.${input.id}" value="${escAttr(val)}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                            `}
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+            ` : ''}
         </div>
 `;
 
@@ -1500,10 +1552,21 @@ function saveWysiwyg(editorEl, graphicId) {
 }
 
 // Helpers for Ticker Messages Manager UI
-window.updateTickerMessage = function(graphicId, index, value) {
+window.updateTickerMessage = function(graphicId, index, value, field = 'text') {
     const graphic = state.graphics.find(g => g.id === graphicId);
     if (!graphic || !graphic.items) return;
-    graphic.items[index] = value;
+    
+    let item = graphic.items[index];
+    if (typeof item === 'string') {
+        item = { text: item, category: "" };
+    } else {
+        item = { ...item };
+    }
+    
+    if (field === 'text') item.text = value;
+    else if (field === 'category') item.category = value;
+    
+    graphic.items[index] = item;
     saveState();
     if (previewGraphic?.id === graphicId) {
         previewGraphic = JSON.parse(JSON.stringify(graphic));
@@ -1527,9 +1590,15 @@ window.addTickerMessage = function(graphicId) {
     const graphic = state.graphics.find(g => g.id === graphicId);
     if (!graphic) return;
     const input = document.getElementById(`new-ticker-msg-${graphicId}`);
+    const catInput = document.getElementById(`new-ticker-cat-${graphicId}`);
     if (!input || !input.value.trim()) return;
     if (!graphic.items) graphic.items = [];
-    graphic.items.push(input.value.trim());
+    
+    graphic.items.push({
+        text: input.value.trim(),
+        category: catInput ? catInput.value.trim() : ""
+    });
+    
     saveState();
     if (previewGraphic?.id === graphicId) {
         previewGraphic = JSON.parse(JSON.stringify(graphic));
@@ -1538,6 +1607,52 @@ window.addTickerMessage = function(graphicId) {
     if (selectedGraphicId === graphicId) openInspector(graphicId);
     setTimeout(() => {
         const resetInput = document.getElementById(`new-ticker-msg-${graphicId}`);
+        if(resetInput) resetInput.focus();
+    }, 50);
+};
+
+// --- OCG Field Helpers ---
+window.updateOcgField = function(graphicId, fieldId, index, value) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic || !graphic.fields || !Array.isArray(graphic.fields[fieldId])) return;
+    graphic.fields[fieldId][index] = value;
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+};
+
+window.removeOcgField = function(graphicId, fieldId, index) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic || !graphic.fields || !Array.isArray(graphic.fields[fieldId])) return;
+    graphic.fields[fieldId].splice(index, 1);
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+    if (selectedGraphicId === graphicId) openInspector(graphicId);
+};
+
+window.addOcgField = function(graphicId, fieldId) {
+    const graphic = state.graphics.find(g => g.id === graphicId);
+    if (!graphic) return;
+    const input = document.getElementById(`new-ocg-val-${fieldId}-${graphicId}`);
+    if (!input || !input.value.trim()) return;
+    
+    if (!graphic.fields) graphic.fields = {};
+    if (!Array.isArray(graphic.fields[fieldId])) graphic.fields[fieldId] = [];
+    
+    graphic.fields[fieldId].push(input.value.trim());
+    saveState();
+    if (previewGraphic?.id === graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(graphic));
+        refreshPreviewMonitor();
+    }
+    if (selectedGraphicId === graphicId) openInspector(graphicId);
+    setTimeout(() => {
+        const resetInput = document.getElementById(`new-ocg-val-${fieldId}-${graphicId}`);
         if(resetInput) resetInput.focus();
     }, 50);
 };
@@ -2030,32 +2145,147 @@ function importTemplate(file) {
     reader.onload = (e) => {
         try {
             const imported = JSON.parse(e.target.result);
-
-            // Basic validation
             if (!imported.name || (!imported.html_template && !imported.css_template)) {
                 alert('Nieprawidłowy format pliku szablonu.');
                 return;
             }
-
-            // Generate new ID and mark as copy if needed
-            const newTpl = {
-                ...imported,
-                id: crypto.randomUUID(),
-                name: imported.name + ' (Imported)'
-            };
-
+            const newTpl = { ...imported, id: crypto.randomUUID(), name: imported.name + ' (Imported)' };
             state.templates.push(newTpl);
             saveState();
             renderTemplateList();
             openTemplateEditor(newTpl.id);
             alert('Szablon został pomyślnie zaimportowany!');
-
         } catch (err) {
             console.error('Import error:', err);
             alert('Błąd podczas importowania pliku JSON.');
         }
     };
     reader.readAsText(file);
+}
+
+function importOCGTemplate(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            let imported = JSON.parse(e.target.result);
+            if (!Array.isArray(imported)) imported = [imported];
+
+            let count = 0;
+            imported.forEach(tpl => {
+                const name = tpl.name;
+                const html = tpl.html || tpl.html_template;
+                const css = tpl.css || tpl.css_template;
+                const js = tpl.js || tpl.js_template;
+
+                if (!name || (!html && !css)) return;
+                
+                let enhancedHtml = html || '';
+                if (tpl.inputs) {
+                    tpl.inputs.forEach(input => {
+                        // If HTML contains id="input.id" and it's an empty element, inject {{{ [input.id] }}}
+                        // We use [id] to support dashes in Handlebars
+                        const regex = new RegExp(`(<[^>]*id=["']${input.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>)(\\s*)(<\/[^>]+>)`, 'g');
+                        enhancedHtml = enhancedHtml.replace(regex, `$1{{{ [${input.id}] }}}$3`);
+                    });
+                }
+
+                // Infer dimensions from inputs or CSS
+                let defaultWidth = undefined;
+                let defaultHeight = undefined;
+
+                if (tpl.inputs) {
+                    const wInput = tpl.inputs.find(i => /width/i.test(i.id));
+                    const hInput = tpl.inputs.find(i => /height/i.test(i.id));
+                    if (wInput && !isNaN(parseFloat(wInput.default))) defaultWidth = parseFloat(wInput.default);
+                    if (hInput && !isNaN(parseFloat(hInput.default))) defaultHeight = parseFloat(hInput.default);
+                }
+
+                // If template is Canvas based and hardcoded to 1920x1080 (very common in OCG)
+                // Using regex for more robustness against whitespace/semicolons
+                // OCG templates often have specific CSS blocks
+                if (css && (
+                    css.includes('width: 1920px') || 
+                    css.includes('width: 100%') || 
+                    /width:\s*(1920px|100%)/.test(css)
+                )) {
+                    defaultWidth = defaultWidth || 1920;
+                    defaultHeight = defaultHeight || 1080;
+                }
+                
+                if (defaultWidth) console.log(`[OCG Import] Inferred Width: ${defaultWidth} for ${name}`);
+
+                const newTpl = {
+                    id: crypto.randomUUID(),
+                    name: name + (name.includes('(OCG)') ? '' : ' (OCG)'),
+                    type: tpl.type || 'LOWER_THIRD',
+                    html_template: enhancedHtml,
+                    css_template: css,
+                    js_template: js,
+                    ocgInputs: tpl.inputs || [],
+                    defaultFields: tpl.defaultFields || {},
+                    defaultLayout: {
+                        width: defaultWidth,
+                        height: defaultHeight,
+                        ...(tpl.defaultLayout || {})
+                    }
+                };
+
+                // Populate defaultFields from OCG inputs if not already present
+                if (tpl.inputs) {
+                    tpl.inputs.forEach(input => {
+                        if (newTpl.defaultFields[input.id] === undefined) {
+                            newTpl.defaultFields[input.id] = input.default || '';
+                        }
+                    });
+                }
+
+                state.templates.push(newTpl);
+                count++;
+            });
+
+            if (count > 0) {
+                saveState();
+                renderTemplateList();
+                alert(`Zaimportowano ${count} szablonów OCG!`);
+            } else {
+                alert('Nie znaleziono prawidłowych szablonów OCG w pliku.');
+            }
+        } catch (err) {
+            console.error('OCG Import error:', err);
+            alert('Błąd podczas importowania pliku OCG JSON.');
+        }
+    };
+    reader.readAsText(file);
+}
+
+function exportOCGTemplate(templateId) {
+    const tpl = state.templates.find(t => t.id === templateId);
+    if (!tpl) return;
+
+    const ocgTpl = {
+        id: tpl.id,
+        name: tpl.name.replace(' (OCG)', ''),
+        type: tpl.type,
+        html: tpl.html_template,
+        css: tpl.css_template,
+        js: tpl.js_template,
+        inputs: tpl.ocgInputs || []
+    };
+
+    // If it doesn't have ocgInputs but has defaultFields, try to infer?
+    // For now, only export what was imported as OCG or manually added as OCG-compatible.
+    
+    const blob = new Blob([JSON.stringify(ocgTpl, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${tpl.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }, 0);
 }
 
 function openTemplateEditor(id) {
@@ -2139,23 +2369,39 @@ function openTemplateSelectorModal() {
     });
 }
 
-function createGraphicFromTemplate(tpl) {
-    const defaultFontFamily = (state.settings && state.settings.globalFontFamily) ? state.settings.globalFontFamily : 'Arial';
+function createGraphicFromTemplate(templateIdOrTpl) {
+    let tpl;
+    if (typeof templateIdOrTpl === 'string') {
+        tpl = state.templates.find(t => t.id === templateIdOrTpl);
+    } else {
+        tpl = templateIdOrTpl;
+    }
+    
+    if (!tpl) return;
+
+    console.log(`[CreateGraphic] Template: ${tpl.name}, defaultLayout:`, tpl.defaultLayout);
+
     const newG = {
-        id: crypto.randomUUID(),
-        type: tpl.type,
-        visible: false,
-        name: `${tpl.name} (${new Date().toLocaleTimeString()})`,
-        title: tpl.defaultFields?.title || 'Title',
-        titleHtml: tpl.defaultFields?.title || 'Title',
-        subtitle: tpl.defaultFields?.subtitle || 'Subtitle',
-        introText: tpl.defaultFields?.introText || '',
-        items: tpl.defaultFields?.items || ['Wiadomość 1', 'Wiadomość 2'],
-        speed: tpl.defaultFields?.speed !== undefined ? tpl.defaultFields.speed : 100,
-        url: tpl.defaultFields?.url || '',
-        sideImage: tpl.defaultFields?.sideImage || '',
-        variant: 'custom',
+        id: 'g-' + crypto.randomUUID(),
         templateId: tpl.id,
+        type: tpl.type || 'LOWER_THIRD',
+        name: tpl.name,
+        visible: false,
+        title: tpl.defaultFields?.title || tpl.name,
+        titleHtml: tpl.defaultFields?.title || tpl.name,
+        subtitle: tpl.defaultFields?.subtitle || '',
+        items: tpl.defaultFields?.items || [],
+        speed: tpl.defaultFields?.speed !== undefined ? tpl.defaultFields.speed : 100,
+        fields: tpl.defaultFields ? JSON.parse(JSON.stringify(tpl.defaultFields)) : {},
+        layout: { 
+            x: 100, 
+            y: 800, 
+            width: tpl.defaultLayout?.width || tpl.defaultFields?.['f-width'] || tpl.defaultFields?.['width'] || undefined,
+            height: tpl.defaultLayout?.height || tpl.defaultFields?.['f-height'] || tpl.defaultFields?.['height'] || undefined,
+            scale: 1, 
+            layer: 1, 
+            ...(tpl.defaultLayout || {}) 
+        },
         animation: tpl.defaultAnimation ? JSON.parse(JSON.stringify(tpl.defaultAnimation)) : {
             in: { type: 'slide', direction: 'left', duration: 0.5, delay: 0, ease: 'ease-out' },
             out: { type: 'fade', direction: 'left', duration: 0.5, delay: 0, ease: 'ease-in' }
@@ -2168,27 +2414,26 @@ function createGraphicFromTemplate(tpl) {
                 gradientAngle: 135,
                 opacity: 1,
                 borderColor: tpl.defaultFields?.accentColor || '#ffffff',
-                borderWidth: 0, borderRadius: 0,
+                borderWidth: 0,
+                borderRadius: 0,
                 subtitleBackgroundColor: tpl.defaultFields?.subtitleBackgroundColor || '#000000'
             },
             typography: {
                 color: tpl.defaultFields?.titleColor || '#ffffff',
-                fontFamily: defaultFontFamily,
+                fontFamily: 'Inter',
                 fontSize: tpl.defaultFields?.titleSize || 30,
                 fontWeight: tpl.defaultFields?.titleWeight || 'bold'
             },
             subtitleTypography: {
                 color: tpl.defaultFields?.subtitleColor || '#eeeeee',
-                fontFamily: 'Arial',
+                fontFamily: 'Inter',
                 fontSize: tpl.defaultFields?.subtitleSize || 20,
                 fontWeight: tpl.defaultFields?.subtitleWeight || 'normal'
             }
-        },
-        wiper: tpl.defaultFields?.wiper ? JSON.parse(JSON.stringify(tpl.defaultFields.wiper)) : undefined,
-        groupId: null,
-        layout: { x: 100, y: 800, width: undefined, height: undefined, scale: 1, layer: 1, ...(tpl.defaultLayout || {}) }
+        }
     };
 
+    console.log(`[CreateGraphic] New graphic layout:`, newG.layout);
     state.graphics.push(newG);
     saveState();
     renderShotbox();
