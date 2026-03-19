@@ -27,6 +27,7 @@ async function init() {
         setupMonitorScaling();
         bindGlobalEvents();
         bindWysiwygModalEvents();
+        bindTickerEditorEvents();
         document.getElementById('loading-overlay').classList.add('hidden');
 
         // --- NEW GLOBAL ACTIONS ---
@@ -424,7 +425,11 @@ function renderShotbox() {
             </div>
 
             <div class="flex gap-1 mt-1">
-                 <button onclick="openWysiwygModal('${graphic.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edytuj Treść</button>
+                 ${graphic.type === 'TICKER' ? `
+                    <button onclick="openTickerEditor('${graphic.id}')" class="flex-1 bg-orange-950/30 hover:bg-orange-900/50 text-[8px] font-black text-orange-500 py-1 rounded border border-orange-900/40 uppercase tracking-tighter transition-all">Szybka Edycja</button>
+                 ` : `
+                    <button onclick="openWysiwygModal('${graphic.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edytuj Treść</button>
+                 `}
                  <select data-group-assign="${graphic.id}" class="flex-[1.5] bg-black border border-gray-800 rounded text-[8px] text-gray-500 py-1 px-1 focus:outline-none focus:border-blue-500" title="Grupa">
                     <option value="">— NO GROUP —</option>
                     ${groupOptions}
@@ -478,10 +483,12 @@ function renderShotbox() {
 
     // Delete
     grid.querySelectorAll('[data-delete-id]').forEach(btn => {
-        btn.addEventListener('click', e => {
+        btn.onclick = (e) => {
             e.stopPropagation();
             const id = btn.getAttribute('data-delete-id');
-            if (confirm('Usunąć tę grafikę?')) {
+            const g = state.graphics.find(gx => gx.id === id);
+            const name = g ? g.name : 'tę grafikę';
+            if (confirm(`Czy na pewno chcesz usunąć grafikę "${name}"?`)) {
                 state.graphics = state.graphics.filter(g => g.id !== id);
                 if (selectedGraphicId === id) {
                     selectedGraphicId = null;
@@ -494,7 +501,7 @@ function renderShotbox() {
                 renderShotbox();
                 updateProgramMonitor();
             }
-        });
+        };
     });
 
     // Copy
@@ -793,7 +800,7 @@ function renderInspectorBody(graphic) {
                             </div>
                             <div class="mt-4 pt-3 border-t border-gray-800">
                                 ${ctrlLabel('Alternatywny edytor wielolinijkowy')}
-                                <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono leading-tight" onchange="openInspector('${graphic.id}')">${(graphic.items || []).join('\n')}</textarea>
+                                <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono leading-tight" onchange="openInspector('${graphic.id}')">${(graphic.items || []).map(msg => typeof msg === 'string' ? msg : (msg.text || '')).join('\n')}</textarea>
                             </div>
                         </div>
                     ` : ''}
@@ -1421,7 +1428,7 @@ function handleInspectorChange(el, graphic) {
     } else if (el.multiple) {
         value = Array.from(el.selectedOptions).map(opt => opt.value).filter(val => val !== "");
     } else if (field === 'items') {
-        value = value.split('\n');
+        value = value.split('\n').filter(s => s.trim() !== '');
     } else if (el.type === 'number') {
         value = parseFloat(value) || 0;
     } else if (field === 'titleHtml') {
@@ -1803,21 +1810,10 @@ function _wmClose(save) {
     if (save && _wmGraphicId) {
         saveWysiwyg(editor, _wmGraphicId);
     } else if (!save && _wmGraphicId) {
-        const g = state.graphics.find(g => g.id === _wmGraphicId);
-        if (g && _wmSavedHtml !== null) {
-            if (g.type === 'TICKER') {
-                const rawItems = _wmSavedHtml.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
-                g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
-            } else {
-                g.titleHtml = _wmSavedHtml;
-                g.title = _wmSavedHtml.replace(/<[^>]+>/g, '');
-            }
-            saveState();
-            if (previewGraphic?.id === g.id) {
-                previewGraphic = JSON.parse(JSON.stringify(g));
-                refreshPreviewMonitor();
-            }
-        }
+        // With auto-save, we don't necessarily want to revert anymore, 
+        // as the user's intent with auto-save is that "changes are NOT lost".
+        // However, we still call saveState at the end just to be sure.
+        saveState();
     }
     modal.classList.add('hidden');
     if (_wmRo) { _wmRo.disconnect(); _wmRo = null; }
@@ -1921,7 +1917,29 @@ function bindWysiwygModalEvents() {
         else { editor.innerHTML = src.value; src.style.display = 'none'; btn.textContent = '▶ Pokaż źródło HTML'; _wmRefreshPreview(); }
     });
 
-    editor.addEventListener('input', _wmRefreshPreview);
+    editor.addEventListener('input', () => {
+        _wmRefreshPreview();
+        // Auto-save logic
+        if (_wmGraphicId) {
+            const g = state.graphics.find(gx => gx.id === _wmGraphicId);
+            if (g) {
+                if (g.type === 'TICKER') {
+                    const rawItems = editor.innerHTML.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
+                    g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
+                } else {
+                    g.titleHtml = editor.innerHTML;
+                    g.title = editor.innerHTML.replace(/<[^>]+>/g, '');
+                }
+                // Debounced saveState
+                clearTimeout(window._wysiwygAutoSaveTimer);
+                window._wysiwygAutoSaveTimer = setTimeout(() => {
+                    saveState();
+                    console.log('[AutoSave] WYSIWYG content saved for:', _wmGraphicId);
+                }, 1000);
+            }
+        }
+    });
+
     editor.addEventListener('keyup', () => {
         const src = document.getElementById('wm-html-source');
         if (src?.style.display !== 'none') src.value = editor.innerHTML;
@@ -2530,9 +2548,14 @@ function ensurePreviewRenderer() {
 // 12. GLOBAL EVENT BINDINGS
 // ===========================================================
 function bindGlobalEvents() {
+    const bind = (id, event, fn) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, fn);
+    };
+
     // Navigation
-    document.getElementById('nav-dashboard').onclick = () => switchPage('dashboard');
-    document.getElementById('nav-templates').onclick = () => switchPage('templates');
+    bind('nav-dashboard', 'click', () => switchPage('dashboard'));
+    bind('nav-templates', 'click', () => switchPage('templates'));
     const navSbtn = document.getElementById('nav-settings');
     if (navSbtn) navSbtn.onclick = () => switchPage('settings');
 
@@ -2752,23 +2775,20 @@ function bindGlobalEvents() {
         updateProgramMonitor();
     };
 
-    const clearBankBtn = document.getElementById('btn-clear-bank');
-    if (clearBankBtn) {
-        clearBankBtn.onclick = () => {
-            if (confirm('Czy na pewno chcesz usunąć WSZYSTKIE elementy z banku grafik?')) {
-                if (confirm('Jesteś absolutnie pewien? Tej operacji nie można prosto cofnąć.')) {
-                    state.graphics = [];
-                    selectedGraphicId = null;
-                    previewGraphic = null;
-                    closeInspector();
-                    saveState();
-                    renderShotbox();
-                    refreshPreviewMonitor();
-                    updateProgramMonitor();
-                }
+    bind('btn-clear-bank', 'click', () => {
+        if (confirm('Czy na pewno chcesz usunąć WSZYSTKIE elementy z banku grafik?')) {
+            if (confirm('Jesteś absolutnie pewien? Tej operacji nie można prosto cofnąć.')) {
+                state.graphics = [];
+                selectedGraphicId = null;
+                previewGraphic = null;
+                closeInspector();
+                saveState();
+                renderShotbox();
+                refreshPreviewMonitor();
+                updateProgramMonitor();
             }
-        };
-    }
+        }
+    });
 
     document.getElementById('btn-new-graphic').onclick = openTemplateSelectorModal;
     document.getElementById('modal-tpl-close').onclick = () => document.getElementById('modal-template-selector').classList.add('hidden');
@@ -2955,9 +2975,9 @@ function bindGlobalEvents() {
         downloadAnchorNode.remove();
     };
 
-    document.getElementById('btn-save-template').onclick = saveCurrentTemplate;
+    bind('btn-save-template', 'click', saveCurrentTemplate);
 
-    document.getElementById('btn-delete-template').onclick = () => {
+    bind('btn-delete-template', 'click', () => {
         if (!currentTemplateId) return;
         const tpl = state.templates.find(t => t.id === currentTemplateId);
         if (!tpl || !confirm(`Usunąć szablon "${tpl.name}"?`)) return;
@@ -2968,7 +2988,7 @@ function bindGlobalEvents() {
         document.getElementById('tpl-editor-main').classList.add('hidden');
         document.getElementById('tpl-editor-main').classList.remove('flex');
         document.getElementById('tpl-editor-empty').classList.remove('hidden');
-    };
+    });
 
     document.querySelectorAll('.tpl-tab').forEach(tab => {
         tab.onclick = () => {
@@ -3062,6 +3082,243 @@ function bindGlobalEvents() {
             reader.readAsText(file);
         });
     }
+}
+
+// ==========================================
+// Ticker Quick Edit Modal Logic
+// ==========================================
+
+let tickerEditorGraphic = null;
+
+window.openTickerEditor = function(id) {
+    const graphic = state.graphics.find(g => g.id === id);
+    if (!graphic) return;
+    
+    tickerEditorGraphic = JSON.parse(JSON.stringify(graphic)); // Deep copy for editing
+    
+    const modal = document.getElementById('modal-ticker-editor');
+    const subtitle = document.getElementById('ticker-editor-subtitle');
+    
+    if (!modal) return;
+    
+    subtitle.textContent = `${graphic.name} // ${graphic.id}`;
+    modal.classList.remove('hidden');
+    
+    renderTickerEditorBody();
+};
+
+window.renderTickerEditorBody = function() {
+    const body = document.getElementById('ticker-editor-body');
+    if (!body) return;
+    body.innerHTML = '';
+    
+    // Group messages by category
+    const categoriesMap = new Map();
+    const items = tickerEditorGraphic.items || [];
+    
+    items.forEach((item, index) => {
+        const text = typeof item === 'object' ? (item.text || "") : item;
+        const cat = (typeof item === 'object' && item.category) ? item.category : 'BRAK KATEGORII';
+        
+        if (!categoriesMap.has(cat)) categoriesMap.set(cat, []);
+        categoriesMap.get(cat).push(text);
+    });
+
+    if (categoriesMap.size === 0) {
+        categoriesMap.set('INFORMACJE', ['']);
+    }
+
+    categoriesMap.forEach((messages, catName) => {
+        const groupCard = document.createElement('div');
+        groupCard.className = 'ticker-group-card shadow-lg hover:shadow-orange-900/10';
+        groupCard.dataset.category = catName;
+        
+        groupCard.innerHTML = `
+            <div class="ticker-group-header cursor-move">
+                <div class="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
+                <input type="text" class="ticker-group-title-input transition-all focus:pl-3" value="${catName === 'BRAK KATEGORII' ? '' : catName}" 
+                    placeholder="NAZWA KATEGORII (np. PILNE, SPORT, POGODA)" 
+                    oninput="updateTickerGroupName(this)">
+                <button onclick="removeTickerGroup(this)" class="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="Usuń grupę">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                </button>
+            </div>
+            <div class="ticker-item-list space-y-2 mt-2" data-group="${catName}">
+                ${messages.map((text, idx) => `
+                    <div class="ticker-message-item group">
+                        <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 group-hover:scale-125 transition-transform shadow-[0_0_5px_#3b82f6]"></div>
+                        <input type="text" class="ticker-message-input" value="${text}" placeholder="Wpisz treść wiadomości...">
+                        <button class="ticker-item-remove p-1 hover:bg-red-500/20 rounded transition-all" onclick="removeTickerMessageItem(this)" title="Usuń wiadomość">&times;</button>
+                    </div>
+                `).join('')}
+                <div class="pt-2 flex justify-center add-message-btn-wrapper">
+                    <button class="add-message-btn w-full py-2 border-dashed border-2 opacity-60 hover:opacity-100 transition-opacity" onclick="addMessageToGroup(this)">+ DODAJ WIADOMOŚĆ</button>
+                </div>
+            </div>
+        `;
+        body.appendChild(groupCard);
+    });
+
+    // Initialize Sortable for each message list
+    if (window.Sortable) {
+        body.querySelectorAll('.ticker-item-list').forEach(list => {
+            Sortable.create(list, {
+                group: 'ticker-messages',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                draggable: '.ticker-message-item',
+                onEnd: () => {
+                    // DOM is truth here
+                }
+            });
+        });
+
+        // Initialize Sortable for categories themselves
+        Sortable.create(body, {
+            animation: 150,
+            handle: '.ticker-group-header',
+            ghostClass: 'opacity-20'
+        });
+    }
+};
+
+window.updateTickerGroupName = function(input) {
+    const card = input.closest('.ticker-group-card');
+    const list = card.querySelector('.ticker-item-list');
+    const newName = input.value.trim() || 'BRAK KATEGORII';
+    card.dataset.category = newName;
+    list.dataset.group = newName;
+};
+
+window.addMessageToGroup = function(btn) {
+    const wrapper = btn.closest('.add-message-btn-wrapper');
+    const list = btn.closest('.ticker-item-list');
+    
+    const newItem = document.createElement('div');
+    newItem.className = 'ticker-message-item group';
+    newItem.innerHTML = `
+        <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 group-hover:scale-125 transition-transform shadow-[0_0_5px_#3b82f6]"></div>
+        <input type="text" class="ticker-message-input" value="" placeholder="Wpisz treść wiadomości...">
+        <button class="ticker-item-remove p-1 hover:bg-red-500/20 rounded transition-all" onclick="removeTickerMessageItem(this)" title="Usuń wiadomość">&times;</button>
+    `;
+    list.insertBefore(newItem, wrapper);
+    newItem.querySelector('input').focus();
+};
+
+window.removeTickerMessageItem = function(el) {
+    el.closest('.ticker-message-item').remove();
+};
+
+window.removeTickerGroup = function(el) {
+    if (confirm('Czy na pewno chcesz usunąć całą grupę wraz z wiadomościami?')) {
+        el.closest('.ticker-group-card').remove();
+    }
+};
+
+window.addTickerGroup = function() {
+    const body = document.getElementById('ticker-editor-body');
+    if (!body) return;
+    const catName = "NOWA KATEGORIA";
+    
+    const groupCard = document.createElement('div');
+    groupCard.className = 'ticker-group-card shadow-lg';
+    groupCard.dataset.category = catName;
+    
+    groupCard.innerHTML = `
+        <div class="ticker-group-header cursor-move">
+            <div class="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-lg shadow-orange-900/40"></div>
+            <input type="text" class="ticker-group-title-input" value="${catName}" 
+                placeholder="NAZWA KATEGORII" 
+                oninput="updateTickerGroupName(this)">
+            <button onclick="removeTickerGroup(this)" class="p-2 text-gray-600 hover:text-red-500 rounded-lg transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            </button>
+        </div>
+        <div class="ticker-item-list space-y-2 mt-2" data-group="${catName}">
+            <div class="pt-2 flex justify-center add-message-btn-wrapper">
+                <button class="add-message-btn w-full py-2 border-dashed border-2 opacity-60 hover:opacity-100 transition-opacity" onclick="addMessageToGroup(this)">+ DODAJ WIADOMOŚĆ</button>
+            </div>
+        </div>
+    `;
+    body.appendChild(groupCard);
+    
+    if (window.Sortable) {
+        const list = groupCard.querySelector('.ticker-item-list');
+        Sortable.create(list, {
+            group: 'ticker-messages',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            draggable: '.ticker-message-item'
+        });
+    }
+    
+    const input = groupCard.querySelector('input');
+    input.select();
+    body.scrollTop = body.scrollHeight;
+};
+
+window.closeTickerEditor = function() {
+    const modal = document.getElementById('modal-ticker-editor');
+    if (modal) modal.classList.add('hidden');
+    tickerEditorGraphic = null;
+};
+
+window.saveTickerEditor = function() {
+    if (!tickerEditorGraphic) return;
+    
+    const body = document.getElementById('ticker-editor-body');
+    const groupCards = Array.from(body.querySelectorAll('.ticker-group-card'));
+    
+    const newItems = [];
+    
+    groupCards.forEach(card => {
+        const categoryInput = card.querySelector('.ticker-group-title-input');
+        const category = categoryInput.value.trim() || "";
+        
+        const messageInputs = Array.from(card.querySelectorAll('.ticker-message-input'));
+        messageInputs.forEach(input => {
+            const text = input.value.trim();
+            if (text) {
+                newItems.push({
+                    text: text,
+                    category: category
+                });
+            }
+        });
+    });
+    
+    // Update the real graphic in state
+    const realId = tickerEditorGraphic.id;
+    const realGfxIndex = state.graphics.findIndex(g => g.id === realId);
+    
+    if (realGfxIndex !== -1) {
+        state.graphics[realGfxIndex].items = newItems;
+        saveState();
+        renderShotbox();
+        updateProgramMonitor();
+        
+        if (selectedGraphicId === realId) {
+            openInspector(realId);
+        }
+        
+        if (previewGraphic?.id === realId) {
+            previewGraphic.items = newItems;
+            refreshPreviewMonitor();
+        }
+    }
+    
+    closeTickerEditor();
+};
+
+function bindTickerEditorEvents() {
+    const btnCancel = document.getElementById('ticker-editor-cancel');
+    const btnSave = document.getElementById('ticker-editor-save');
+    const btnAddGroup = document.getElementById('ticker-editor-add-group');
+    
+    if (btnCancel) btnCancel.onclick = window.closeTickerEditor;
+    if (btnSave) btnSave.onclick = window.saveTickerEditor;
+    if (btnAddGroup) btnAddGroup.onclick = window.addTickerGroup;
 }
 
 // ===========================================================
