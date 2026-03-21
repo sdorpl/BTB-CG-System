@@ -189,7 +189,7 @@
             const stagger = config.stagger ?? 0;
             const ease = this.normalizeEase(config.ease || "power2.out");
             
-            const targets = root.querySelectorAll('.title, .subtitle, .modern-title, .rep-title, .na-zywo-text, .rep-clock, .ticker-label, .text-overlay, .sub-text-overlay, .live-text, .news-text-v8, .wiper-text-v8');
+            const targets = root.querySelectorAll('.title, .subtitle, .modern-title, .rep-title, .na-zywo-text, .rep-clock, .ticker-label, .text-overlay, .sub-text-overlay, .live-text, .news-text-v8, .wiper-text-v8, .utk-msg-box, .utk-item');
             if (targets.length === 0) return null;
 
             const tl = gsap.timeline({ delay: delay });
@@ -240,7 +240,7 @@
             const stagger = config.stagger ?? 0;
             const ease = this.normalizeEase(config.ease || "power2.in");
             
-            const targets = root.querySelectorAll('.title, .subtitle, .modern-title, .rep-title, .na-zywo-text, .rep-clock, .ticker-label, .text-overlay, .sub-text-overlay, .live-text, .news-text-v8, .wiper-text-v8');
+            const targets = root.querySelectorAll('.title, .subtitle, .modern-title, .rep-title, .na-zywo-text, .rep-clock, .ticker-label, .text-overlay, .sub-text-overlay, .live-text, .news-text-v8, .wiper-text-v8, .utk-msg-box, .utk-item');
             if (targets.length === 0) return null;
 
             const tl = gsap.timeline({ delay: delay });

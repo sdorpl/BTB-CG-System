@@ -5,7 +5,22 @@
 
 const socket = io();
 let state = { templates: [], graphics: [], groups: [], settings: {} };
-window._draftGraphics = {};
+
+const draftsProxyHandler = {
+    set(target, prop, val) {
+        target[prop] = val;
+        try { localStorage.setItem('cg_drafts', JSON.stringify(target)); } catch(e){}
+        return true;
+    },
+    deleteProperty(target, prop) {
+        delete target[prop];
+        try { localStorage.setItem('cg_drafts', JSON.stringify(target)); } catch(e){}
+        return true;
+    }
+};
+let initialDrafts = {};
+try { initialDrafts = JSON.parse(localStorage.getItem('cg_drafts')) || {}; } catch(e){}
+window._draftGraphics = new Proxy(initialDrafts, draftsProxyHandler);
 
 const urlParams = new URLSearchParams(window.location.search);
 const panelMode = urlParams.get('panel'); // 'bank' | 'inspector' | null
@@ -119,7 +134,9 @@ async function init() {
         renderShotbox();
         renderTemplateList(); // Keep template list in sync
         if (selectedGraphicId) {
-            refreshInspector(selectedGraphicId);
+            if (!window._draftGraphics[selectedGraphicId]) {
+                openInspector(selectedGraphicId);
+            }
         }
     });
 }
@@ -757,7 +774,9 @@ window.syncDraftGraphic = function(id) {
     if (draft) {
         const idx = state.graphics.findIndex(g => g.id === id);
         if (idx !== -1) {
+            const isVisible = state.graphics[idx].visible;
             state.graphics[idx] = JSON.parse(JSON.stringify(draft));
+            state.graphics[idx].visible = isVisible;
             delete window._draftGraphics[id];
             saveState();
             renderShotbox();
@@ -990,32 +1009,11 @@ function renderInspectorBody(graphic) {
                             <input type="text" data-field="introText" value="${escAttr(graphic.introText || '')}" placeholder="np. PILNE lub TYLKO U NAS" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                         </div>
 
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                ${ctrlLabel('Wiadomości (Elementy paska)')}
-                            </div>
-                            <div class="space-y-1 bg-gray-900 border border-gray-800 rounded p-1 mb-2 max-h-64 overflow-y-auto" id="ticker-messages-list-${graphic.id}">
-                                ${(graphic.items || []).length === 0 ? '<div class="text-center text-gray-500 text-[10px] py-2">Brak wiadomości</div>' : ''}
-                                ${(graphic.items || []).map((msg, idx) => {
-                                    const text = typeof msg === 'string' ? msg : (msg.text || '');
-                                    const category = typeof msg === 'object' ? (msg.category || '') : '';
-                                    return `
-                                    <div class="flex items-center gap-1 group">
-                                        <input type="text" value="${escAttr(text)}" onchange="window.updateTickerMessage('${graphic.id}', ${idx}, this.value, 'text')" placeholder="Wiadomość..." class="flex-[3] bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8">
-                                        <input type="text" value="${escAttr(category)}" onchange="window.updateTickerMessage('${graphic.id}', ${idx}, this.value, 'category')" placeholder="Kategoria" class="flex-1 bg-gray-900/50 border border-gray-700 rounded p-1.5 text-[10px] focus:border-blue-500 focus:outline-none text-blue-400 font-mono h-8">
-                                        <button onclick="window.removeTickerMessage('${graphic.id}', ${idx})" class="w-8 h-8 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs shrink-0">&times;</button>
-                                    </div>`;
-                                }).join('')}
-                            </div>
-                            <div class="flex gap-1 mb-3">
-                                <input type="text" id="new-ticker-msg-${graphic.id}" placeholder="Nowa wiadomość..." class="flex-[3] bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono h-8" onkeydown="if(event.key === 'Enter') window.addTickerMessage('${graphic.id}')">
-                                <input type="text" id="new-ticker-cat-${graphic.id}" placeholder="Kat." class="flex-1 bg-gray-900/50 border border-gray-700 rounded p-1.5 text-[10px] focus:border-blue-500 focus:outline-none text-blue-400 font-mono h-8" onkeydown="if(event.key === 'Enter') window.addTickerMessage('${graphic.id}')">
-                                <button onclick="window.addTickerMessage('${graphic.id}')" class="px-3 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold h-8 flex items-center justify-center transition-colors">DODAJ</button>
-                            </div>
-                            <div class="mt-4 pt-3 border-t border-gray-800">
-                                ${ctrlLabel('Alternatywny edytor wielolinijkowy')}
-                                <textarea data-field="items" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono leading-tight" onchange="openInspector('${graphic.id}')">${(graphic.items || []).map(msg => typeof msg === 'string' ? msg : (msg.text || '')).join('\n')}</textarea>
-                            </div>
+                        <div class="mb-4">
+                            <button onclick="openTickerEditor('${graphic.id}')" class="w-full bg-orange-950/40 hover:bg-orange-900/60 text-orange-500 py-3 rounded border border-orange-900/50 uppercase tracking-wider font-bold transition-all shadow-lg shadow-orange-900/20 text-xs flex items-center justify-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                OTWÓRZ SZYBKĄ EDYCJĘ WIADOMOŚCI
+                            </button>
                         </div>
                     ` : ''}
 
@@ -1736,6 +1734,9 @@ function handleInspectorChange(el, graphic) {
     }
 
     refreshPreviewMonitor();
+    
+    // Commit to persistent draft
+    window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(g));
 
     // Re-render inspector when background type changes (shows/hides gradient fields) or layout side changes
     if (field === 'style.background.type' || field === 'layout.side') {
@@ -3414,15 +3415,34 @@ function bindGlobalEvents() {
 
     // Inspector save
     document.getElementById('btn-save-graphic').onclick = () => {
-        if (previewGraphic) {
-            const g = state.graphics.find(g => g.id === previewGraphic.id);
-            if (g) {
-                // Keep the visible flag and merge changes
-                const isVisible = g.visible;
-                Object.assign(g, previewGraphic);
-                g.visible = isVisible;
-            }
+        if (!previewGraphic) return;
+        
+        const draft = window._draftGraphics[previewGraphic.id];
+        const g = state.graphics.find(x => x.id === previewGraphic.id);
+        
+        if (g && g.visible) {
+            // Graphic is ON AIR. Do not commit state to avoid triggering an on-air reset.
+            // The user must click "Synchr." (Sync) to push changes live.
+            const btn = document.getElementById('btn-save-graphic');
+            btn.textContent = 'SCHOWANE W SZKICU (UŻYJ SYNCHR.)';
+            setTimeout(() => {
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ZAPISZ ZMIANY`;
+            }, 2000);
+            return;
         }
+
+        if (draft) {
+            const idx = state.graphics.findIndex(x => x.id === draft.id);
+            if (idx !== -1) {
+                state.graphics[idx] = JSON.parse(JSON.stringify(draft));
+                state.graphics[idx].visible = false;
+                delete window._draftGraphics[draft.id];
+            }
+        } else if (g) {
+            Object.assign(g, previewGraphic);
+            g.visible = false;
+        }
+
         saveState();
         renderShotbox();
         const btn = document.getElementById('btn-save-graphic');
@@ -3784,10 +3804,10 @@ window.renderTickerEditorBody = function() {
             </div>
             <div class="ticker-item-list space-y-2 mt-2" data-group="${catName}">
                 ${messages.map((text, idx) => `
-                    <div class="ticker-message-item group">
-                        <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 group-hover:scale-125 transition-transform shadow-[0_0_5px_#3b82f6]"></div>
-                        <input type="text" class="ticker-message-input" value="${text}" placeholder="Wpisz treść wiadomości...">
-                        <button class="ticker-item-remove p-1 hover:bg-red-500/20 rounded transition-all" onclick="removeTickerMessageItem(this)" title="Usuń wiadomość">&times;</button>
+                    <div class="ticker-message-item group items-start">
+                        <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 mt-3 group-hover:scale-125 transition-transform shadow-[0_0_5px_#3b82f6]"></div>
+                        <textarea class="ticker-message-input custom-scrollbar resize-y max-h-48 whitespace-pre-wrap" rows="2" placeholder="Wpisz treść wiadomości...">${text}</textarea>
+                        <button class="ticker-item-remove p-1 mt-1 hover:bg-red-500/20 rounded transition-all" onclick="removeTickerMessageItem(this)" title="Usuń wiadomość">&times;</button>
                     </div>
                 `).join('')}
                 <div class="pt-2 flex justify-center add-message-btn-wrapper">
@@ -3837,12 +3857,12 @@ window.addMessageToGroup = function(btn) {
     const newItem = document.createElement('div');
     newItem.className = 'ticker-message-item group';
     newItem.innerHTML = `
-        <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 group-hover:scale-125 transition-transform shadow-[0_0_5px_#3b82f6]"></div>
-        <input type="text" class="ticker-message-input" value="" placeholder="Wpisz treść wiadomości...">
-        <button class="ticker-item-remove p-1 hover:bg-red-500/20 rounded transition-all" onclick="removeTickerMessageItem(this)" title="Usuń wiadomość">&times;</button>
+        <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 mt-3 group-hover:scale-125 transition-transform shadow-[0_0_5px_#3b82f6]"></div>
+        <textarea class="ticker-message-input custom-scrollbar resize-y max-h-48 whitespace-pre-wrap" rows="2" placeholder="Wpisz treść wiadomości..."></textarea>
+        <button class="ticker-item-remove p-1 mt-1 hover:bg-red-500/20 rounded transition-all" onclick="removeTickerMessageItem(this)" title="Usuń wiadomość">&times;</button>
     `;
     list.insertBefore(newItem, wrapper);
-    newItem.querySelector('input').focus();
+    newItem.querySelector('textarea').focus();
 };
 
 window.removeTickerMessageItem = function(el) {
