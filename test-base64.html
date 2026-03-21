@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html><body>
+<script>
+const itemsData = [{text: "Wiadomości 1", category: "PILNE"}];
+const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(itemsData))));
+console.log("Encoded", b64);
+document.body.innerHTML += "<br>Encoded: " + b64;
+try {
+  const dec = JSON.parse(decodeURIComponent(escape(atob(b64))));
+  document.body.innerHTML += "<br>Decoded OK: " + dec[0].text;
+} catch (e) {
+  document.body.innerHTML += "<br>Error: " + e;
+}
+</script>
+</body></html>

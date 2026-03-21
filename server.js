@@ -31,7 +31,11 @@ const db = new sqlite3.Database(DB_FILE, (err) => {
             ensureDatabaseInitialized();
         } else {
             console.log("[DB] Database file found. Loading state...");
-            loadStateFromDB();
+            loadStateFromDB(() => {
+                syncTemplateFilesToDB(() => {
+                    startServer();
+                });
+            });
         }
     }
 });
@@ -79,8 +83,9 @@ function ensureDatabaseInitialized() {
                             }
                             
                             if (state.templates && state.templates.length > 0) {
-                                const stmt = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
+                                const stmt = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
                                 for (const t of state.templates) {
+                                    if (!t.id) continue;
                                     stmt.run(t.id, JSON.stringify(t));
                                 }
                                 stmt.finalize();
@@ -105,20 +110,63 @@ function ensureDatabaseInitialized() {
                             
                             db.run('COMMIT', () => {
                                 console.log("[DB] Seeding complete.");
-                                loadStateFromDB();
+                                loadStateFromDB(() => {
+                                    syncTemplateFilesToDB(() => {
+                                        startServer();
+                                    });
+                                });
                             });
                         });
                     } catch (e) {
                         console.error("[DB] Seeding failed:", e.message);
-                        loadStateFromDB();
+                        loadStateFromDB(() => {
+                            syncTemplateFilesToDB(() => {
+                                startServer();
+                            });
+                        });
                     }
                 } else {
                     console.log("[DB] No db.json found for seeding.");
-                    loadStateFromDB();
+                    loadStateFromDB(() => {
+                        syncTemplateFilesToDB(() => {
+                            startServer();
+                        });
+                    });
                 }
             } else {
-                loadStateFromDB();
+                loadStateFromDB(() => {
+                    syncTemplateFilesToDB(() => {
+                        startServer();
+                    });
+                });
             }
+        });
+    });
+}
+
+// Auto-sync template JSON files from templates/ directory into the DB on startup
+function syncTemplateFilesToDB(callback) {
+    const tplDir = path.join(__dirname, 'templates');
+    if (!fs.existsSync(tplDir)) { if (callback) callback(); return; }
+    const files = fs.readdirSync(tplDir).filter(f => f.endsWith('.json'));
+    if (files.length === 0) { if (callback) callback(); return; }
+
+    console.log(`[DB] Syncing ${files.length} template files from templates/ ...`);
+    db.serialize(() => {
+        const stmt = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
+        for (const fn of files) {
+            try {
+                const tpl = JSON.parse(fs.readFileSync(path.join(tplDir, fn), 'utf8'));
+                if (!tpl.id) continue;
+                stmt.run(tpl.id, JSON.stringify(tpl));
+            } catch (e) {
+                console.warn(`[DB] Skipping ${fn}: ${e.message}`);
+            }
+        }
+        stmt.finalize(() => {
+            console.log(`[DB] Template files synced.`);
+            // Reload state to pick up updated templates
+            loadStateFromDB(callback);
         });
     });
 }
@@ -200,8 +248,9 @@ function syncStateToDB(state) {
         // 2. Templates
         if (state.templates && state.templates.length > 0) {
             db.run("DELETE FROM templates");
-            const stmtTpl = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
+            const stmtTpl = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
             for (const t of state.templates) {
+                if (!t.id) continue;
                 stmtTpl.run(t.id, JSON.stringify(t));
             }
             stmtTpl.finalize();
@@ -272,23 +321,25 @@ io.on('connection', (socket) => {
 const os = require('os');
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, '0.0.0.0', () => {
-    const networkInterfaces = os.networkInterfaces();
-    let lanIp = 'localhost';
-    for (const name of Object.keys(networkInterfaces)) {
-        for (const net of networkInterfaces[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                lanIp = net.address;
-                break;
+function startServer() {
+    server.listen(PORT, '0.0.0.0', () => {
+        const networkInterfaces = os.networkInterfaces();
+        let lanIp = 'localhost';
+        for (const name of Object.keys(networkInterfaces)) {
+            for (const net of networkInterfaces[name]) {
+                if (net.family === 'IPv4' && !net.internal) {
+                    lanIp = net.address;
+                    break;
+                }
             }
         }
-    }
 
-    console.log(`========================================`);
-    console.log(`  CG Server running on port ${PORT} (SQLite)`);
-    console.log(`  Control Panel (Local): http://localhost:${PORT}/`);
-    console.log(`  Control Panel (LAN):   http://${lanIp}:${PORT}/`);
-    console.log(`  Output URL (Local):    http://localhost:${PORT}/output.html`);
-    console.log(`  Output URL (LAN):      http://${lanIp}:${PORT}/output.html`);
-    console.log(`========================================`);
-});
+        console.log(`========================================`);
+        console.log(`  CG Server running on port ${PORT} (SQLite)`);
+        console.log(`  Control Panel (Local): http://localhost:${PORT}/`);
+        console.log(`  Control Panel (LAN):   http://${lanIp}:${PORT}/`);
+        console.log(`  Output URL (Local):    http://localhost:${PORT}/output.html`);
+        console.log(`  Output URL (LAN):      http://${lanIp}:${PORT}/output.html`);
+        console.log(`========================================`);
+    });
+}

@@ -186,26 +186,47 @@
             const type = config.type;
             const duration = config.duration ?? 1;
             const delay = config.delay ?? 0.2;
+            const stagger = config.stagger ?? 0;
             const ease = this.normalizeEase(config.ease || "power2.out");
             
-            const targets = root.querySelectorAll('.title, .subtitle, .modern-title, .rep-title, .na-zywo-text, .rep-clock, .ticker-label');
+            const targets = root.querySelectorAll('.title, .subtitle, .modern-title, .rep-title, .na-zywo-text, .rep-clock, .ticker-label, .text-overlay, .sub-text-overlay, .live-text, .news-text-v8, .wiper-text-v8');
             if (targets.length === 0) return null;
 
-            const tl = gsap.timeline();
+            const tl = gsap.timeline({ delay: delay });
             
-            targets.forEach(target => {
-                if (type === 'typewriter' || type === 'reveal') {
-                    // We use reveal instead of real typewriter to preserve HTML
-                    tl.add(this.revealText(target, duration, delay, ease), 0);
-                } else if (type === 'blur' || type === 'blurIn') {
-                    tl.add(this.blurIn(target, duration, delay, ease), 0);
-                } else if (type === 'slideReveal') {
-                    // Simple slide up reveal
-                    tl.fromTo(target, 
-                        { y: 50, opacity: 0 }, 
-                        { y: 0, opacity: 1, duration: duration, delay: delay, ease: ease }, 0);
-                }
-            });
+            if (type === 'typewriter' || type === 'reveal') {
+                targets.forEach((target, i) => {
+                    tl.add(this.revealText(target, duration, i * stagger, ease), 0);
+                });
+            } else if (type === 'blur' || type === 'blurIn') {
+                tl.fromTo(targets, 
+                    { filter: "blur(20px)", opacity: 0 }, 
+                    { filter: "blur(0px)", opacity: 1, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'fade') {
+                tl.fromTo(targets, 
+                    { opacity: 0 }, 
+                    { opacity: 1, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'scale') {
+                tl.fromTo(targets, 
+                    { opacity: 0, scale: 0.5 }, 
+                    { opacity: 1, scale: 1, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'slide-up' || type === 'slideReveal') {
+                tl.fromTo(targets, 
+                    { y: 50, opacity: 0 }, 
+                    { y: 0, opacity: 1, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'slide-down') {
+                tl.fromTo(targets, 
+                    { y: -50, opacity: 0 }, 
+                    { y: 0, opacity: 1, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'slide-left') {
+                tl.fromTo(targets, 
+                    { x: 50, opacity: 0 }, 
+                    { x: 0, opacity: 1, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'slide-right') {
+                tl.fromTo(targets, 
+                    { x: -50, opacity: 0 }, 
+                    { x: 0, opacity: 1, duration: duration, stagger: stagger, ease: ease }, 0);
+            }
             
             return tl;
         },
@@ -216,26 +237,39 @@
             const type = config.type;
             const duration = config.duration ?? 0.5;
             const delay = config.delay ?? 0;
+            const stagger = config.stagger ?? 0;
             const ease = this.normalizeEase(config.ease || "power2.in");
             
-            const targets = root.querySelectorAll('.title, .subtitle, .modern-title, .rep-title, .na-zywo-text, .rep-clock, .ticker-label');
+            const targets = root.querySelectorAll('.title, .subtitle, .modern-title, .rep-title, .na-zywo-text, .rep-clock, .ticker-label, .text-overlay, .sub-text-overlay, .live-text, .news-text-v8, .wiper-text-v8');
             if (targets.length === 0) return null;
 
-            const tl = gsap.timeline();
+            const tl = gsap.timeline({ delay: delay });
             
             targets.forEach(target => {
                 if (target.style.clipPath) {
                     gsap.set(target, { clipPath: 'none' }); // Reset reveal before out animation if needed
                 }
-
-                if (type === 'fade') {
-                    tl.to(target, { opacity: 0, duration: duration, delay: delay, ease: ease }, 0);
-                } else if (type === 'blur' || type === 'blurOut') {
-                    tl.add(this.blurOut(target, duration, delay, ease), 0);
-                } else if (type === 'hide' || type === 'slideHide') {
-                    tl.add(this.hideText(target, duration, delay, ease), 0);
-                }
             });
+
+            if (type === 'fade') {
+                tl.to(targets, { opacity: 0, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'blur' || type === 'blurOut') {
+                tl.to(targets, { filter: "blur(20px)", opacity: 0, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'scale') {
+                tl.to(targets, { scale: 0.5, opacity: 0, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'hide' || type === 'slideHide') {
+                targets.forEach((target, i) => {
+                    tl.add(this.hideText(target, duration, i * stagger, ease), 0);
+                });
+            } else if (type === 'slide-up') {
+                tl.to(targets, { y: -50, opacity: 0, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'slide-down') {
+                tl.to(targets, { y: 50, opacity: 0, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'slide-left') {
+                tl.to(targets, { x: -50, opacity: 0, duration: duration, stagger: stagger, ease: ease }, 0);
+            } else if (type === 'slide-right') {
+                tl.to(targets, { x: 50, opacity: 0, duration: duration, stagger: stagger, ease: ease }, 0);
+            }
             
             return tl;
         }

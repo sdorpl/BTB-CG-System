@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+<div id="box" style="width:100px; height:100px; background:red;"></div>
+<div id="text" style="opacity:0;">HELLO</div>
+<script>
+    const tl = gsap.timeline();
+    tl.to("#box", {x: 200, duration: 1}); // base takes 1s
+    
+    const textTl = gsap.timeline({delay: 0.2});
+    textTl.to("#text", {opacity: 1, duration: 1}); // text takes 1s
+    
+    // Add textTl to main tl with >-0.1
+    tl.add(textTl, ">-0.1");
+    // tl.add(textTl, 0); 
+    
+    console.log("Timeline total duration:", tl.duration());
+</script>
+</body>
+</html>

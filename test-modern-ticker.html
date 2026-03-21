@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="renderer.js"></script>
+</head>
+<body>
+    <div id="preview-canvas"></div>
+    <script>
+        fetch('templates/ticker_unified.json').then(r=>r.json()).then(tpl => {
+            const graphic = {
+                id: 'test1',
+                templateId: tpl.id,
+                items: [
+                    {text: "Testowa Wiadomość 1", category: "PILNE"},
+                    {text: "Testowa Wiadomość 2", category: "INFO"}
+                ],
+                visible: true,
+                tickerMode: 'whip'
+            };
+            
+            const state = { templates: [tpl], settings: { cgServerUrl: '' } };
+            window.__cgRenderer.renderPreview(document.getElementById('preview-canvas'), [graphic], state.templates, state.settings);
+            
+            setTimeout(() => {
+                console.log("Canvas innerHTML:", document.getElementById('preview-canvas').innerHTML);
+                const el = document.querySelector('.utk-single-text');
+                if (el) {
+                    console.log("Text inside .utk-single-text:", el.innerHTML, "Opacity:", window.getComputedStyle(el).opacity);
+                } else {
+                    console.log("Element .utk-single-text NOT FOUND");
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

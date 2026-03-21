@@ -5,6 +5,11 @@
 
 const socket = io();
 let state = { templates: [], graphics: [], groups: [], settings: {} };
+window._draftGraphics = {};
+
+const urlParams = new URLSearchParams(window.location.search);
+const panelMode = urlParams.get('panel'); // 'bank' | 'inspector' | null
+const uiChannel = new BroadcastChannel('cg_ui_sync');
 
 let selectedGraphicId = null;   // graphic being inspected
 let previewGraphic = null;      // copy of graphic in preview monitor
@@ -15,6 +20,19 @@ let currentTemplateTab = 'html';
 let inspectorAccordionStates = {}; // graphicId -> { accordionId -> isOpen }
 let currentInspectorTab = 'main'; // Tracks active tab in inspector
 const DB_KEY = 'cg_state_backup';
+
+uiChannel.onmessage = (e) => {
+    if (e.data.action === 'select_graphic') {
+        const gfx = state.graphics.find(g => g.id === e.data.id);
+        if (gfx) {
+            setPreviewGraphic(JSON.parse(JSON.stringify(gfx)), true);
+            openInspector(e.data.id);
+        }
+    } else if (e.data.action === 'preview_graphic_update') {
+        previewGraphic = e.data.previewGraphic;
+        refreshPreviewMonitor(true);
+    }
+};
 
 // ===========================================================
 // 1. BOOT
@@ -29,6 +47,22 @@ async function init() {
         bindWysiwygModalEvents();
         bindTickerEditorEvents();
         document.getElementById('loading-overlay').classList.add('hidden');
+
+        // ==== STANDALONE PANELS SETUP ====
+        if (panelMode === 'bank') {
+            document.querySelector('header').style.display = 'none';
+            document.getElementById('preview-monitor-wrap').parentElement.style.display = 'none';
+            const inspector = document.getElementById('inspector-panel');
+            if (inspector) inspector.style.display = 'none';
+        } else if (panelMode === 'inspector') {
+            document.querySelector('header').style.display = 'none';
+            document.getElementById('dashboard-left').style.display = 'none';
+            const inspector = document.getElementById('inspector-panel');
+            if (inspector) {
+                inspector.classList.remove('hidden', 'w-72');
+                inspector.classList.add('w-full');
+            }
+        }
 
         // --- NEW GLOBAL ACTIONS ---
         document.getElementById('btn-kill-all')?.addEventListener('click', () => {
@@ -70,8 +104,10 @@ async function init() {
 
         if (btnImportOCG) btnImportOCG.onclick = () => ocgFileInput.click();
         if (ocgFileInput) ocgFileInput.onchange = (e) => {
-            const file = e.target.files?.[0];
-            if (file) importOCGTemplate(file);
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                importOCGTemplates(files);
+            }
         };
         if (btnExportOCG) btnExportOCG.onclick = () => {
              if (currentTemplateId) exportOCGTemplate(currentTemplateId);
@@ -329,82 +365,69 @@ function getGroupForGraphic(graphic) {
     return state.groups.find(g => g.id === graphic.groupId) || null;
 }
 
+// Global toggle state
+if (typeof window._groupCollapseState === 'undefined') window._groupCollapseState = {};
+
 // --- Render Shotbox ---
 function renderShotbox() {
     ensureGroups();
     const grid = document.getElementById('shotbox-grid');
     grid.innerHTML = '';
 
-    // Sort: grouped items first (by group order), then ungrouped
-    const sortedGraphics = [...state.graphics].sort((a, b) => {
-        const ga = a.groupId ? state.groups.findIndex(g => g.id === a.groupId) : 9999;
-        const gb = b.groupId ? state.groups.findIndex(g => g.id === b.groupId) : 9999;
-        if (ga !== gb) return ga - gb;
-        return state.graphics.indexOf(a) - state.graphics.indexOf(b);
+    const groupedItemsMap = {};
+    const ungroupedItems = [];
+
+    state.graphics.forEach(g => {
+        if (g.groupId) {
+            if (!groupedItemsMap[g.groupId]) groupedItemsMap[g.groupId] = [];
+            groupedItemsMap[g.groupId].push(g);
+        } else {
+            ungroupedItems.push(g);
+        }
     });
 
-    let lastGroupId = '__none__';
-
-    sortedGraphics.forEach((graphic) => {
+    const createCardElement = (graphic) => {
         const tpl = state.templates.find(t => t.id === graphic.templateId);
         const isActive = graphic.visible;
         const isPreview = previewGraphic?.id === graphic.id;
         const grp = getGroupForGraphic(graphic);
 
-        // --- Group header ---
-        if (graphic.groupId && graphic.groupId !== lastGroupId) {
-            lastGroupId = graphic.groupId;
-            const groupGraphics = state.graphics.filter(g => g.groupId === graphic.groupId);
-            const anyOn = groupGraphics.some(g => g.visible);
-
-            const header = document.createElement('div');
-            header.className = 'col-span-3 flex items-center gap-2 px-2 py-1.5 rounded-md mt-1';
-            header.style.background = grp ? grp.color + '18' : '#1f293718';
-            header.style.borderLeft = `4px solid ${grp?.color || '#555'}`;
-            header.innerHTML = `
-                <span class="text-[10px] font-bold uppercase tracking-wider flex-1 truncate" style="color:${grp?.color || '#aaa'}">${grp?.name || 'Grupa'}</span>
-                <span class="text-[9px] text-gray-500">${groupGraphics.length} el.</span>
-                <button data-group-take="${graphic.groupId}" class="text-[9px] px-3 py-1 rounded font-bold uppercase transition-all
-                    ${anyOn ? 'bg-red-600/30 text-red-400 border border-red-600/30' : 'bg-gray-800 text-gray-400 hover:bg-blue-700/30 hover:text-white'}">
-                    ${anyOn ? 'WSZYSTKIE OFF' : 'WSZYSTKIE ON'}
-                </button>
-            `;
-            grid.appendChild(header);
-        } else if (!graphic.groupId && lastGroupId !== '__none__') {
-            lastGroupId = '__none__';
-        }
-
-        // --- Card ---
         const card = document.createElement('div');
         card.className = `shotbox-card cursor-pointer rounded border p-2 relative group flex flex-col gap-2 transition-all duration-200
             ${isActive ? 'border-red-600 bg-red-900/20 shadow-[0_0_15px_rgba(229,57,53,0.3)] ring-1 ring-red-500' :
                 isPreview ? 'border-yellow-500 bg-yellow-900/10 shadow-[0_0_10px_rgba(251,192,45,0.2)]' :
                     'border-gray-800 bg-[#111] hover:border-gray-600'}`;
 
-        // Colored top border for groups like in OCG
         if (grp) {
             card.style.borderTopWidth = '3px';
             card.style.borderTopColor = grp.color;
         }
 
-        // Action buttons
         const actionBtns = `
             <div class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button data-copy-id="${graphic.id}" title="Kopiuj" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-blue-900/60 text-gray-500 hover:text-blue-400 text-[10px] leading-none">📋</button>
                 <button data-delete-id="${graphic.id}" title="Usuń" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs leading-none">&times;</button>
             </div>`;
 
-        // Group selector dropdown
         const groupOptions = state.groups.map(g =>
             `<option value="${g.id}" ${graphic.groupId === g.id ? 'selected' : ''}>${g.name}</option>`
         ).join('');
+
+        let primaryText = graphic.name;
+        if (tpl && tpl.ocgInputs?.length > 0) {
+            const titleInput = tpl.ocgInputs.find(i => i.id === 'TITLE') || tpl.ocgInputs.find(i => i.id === 'WIPER_TEXT') || tpl.ocgInputs[0];
+            const val = graphic.fields?.[titleInput.id];
+            if (val) primaryText = String(val).replace(/<[^>]+>/g, '');
+        } else if (graphic.title && graphic.type !== 'TICKER') {
+            primaryText = graphic.title.replace(/<[^>]+>/g, '');
+        }
 
         card.innerHTML = `
             ${actionBtns}
             <div class="flex justify-between items-start mb-1">
                 <div class="flex flex-col min-w-0">
-                    <span class="text-[10px] font-black text-white truncate uppercase tracking-tight">${graphic.name}</span>
-                    <span class="text-[8px] text-gray-500 font-mono truncate uppercase">${tpl ? tpl.type : 'NONE'} ${grp ? `// ${grp.name}` : ''}</span>
+                    <span class="text-[10px] font-black text-white truncate uppercase tracking-tight" title="${escAttr(graphic.name)}">${escAttr(primaryText || graphic.name)}</span>
+                    <span class="text-[8px] text-gray-500 font-mono truncate uppercase">${tpl ? tpl.type : 'NONE'} // ${escAttr(graphic.name)}</span>
                 </div>
                 ${isActive ? `<div class="flex items-center gap-1 bg-red-600 px-1 rounded shadow-[0_0_8px_rgba(229,57,53,0.5)]"><span class="text-[8px] font-black text-white italic">LIVE</span></div>` : ''}
             </div>
@@ -422,6 +445,9 @@ function renderShotbox() {
                 <button data-off-id="${graphic.id}" class="flex-1 text-[10px] py-1.5 rounded font-black uppercase bg-black text-red-500 border border-red-900/50 hover:bg-red-900 hover:text-white transition-all">
                     OFF
                 </button>` : ''}
+                <button onclick="window._openGraphicInspector('${graphic.id}')" title="Ustawienia grafiki" class="w-7 shrink-0 flex items-center justify-center py-1.5 rounded bg-[#1a1a2a] hover:bg-blue-900/60 text-gray-500 hover:text-blue-300 border border-gray-800 hover:border-blue-700 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
             </div>
 
             <div class="flex gap-1 mt-1">
@@ -436,21 +462,90 @@ function renderShotbox() {
                     <option value="__new__">＋ NEW GROUP…</option>
                 </select>
             </div>
+            ${window._draftGraphics[graphic.id] ? `
+            <div class="flex gap-1 mt-1 p-1 bg-yellow-900/40 border border-yellow-700/50 rounded animate-pulse">
+                <button onclick="window.syncDraftGraphic('${graphic.id}')" class="flex-[2] bg-green-700 hover:bg-green-600 text-white text-[9px] font-black uppercase py-1 rounded shadow-md border-t border-green-500">
+                    SYNC NA ANTENĘ
+                </button>
+                <button onclick="window.revertDraftGraphic('${graphic.id}')" class="flex-[1] bg-red-900/80 hover:bg-red-700 text-red-200 text-[8px] font-bold uppercase py-1 rounded border-t border-red-800">
+                    ODRZUĆ
+                </button>
+            </div>
+            ` : ''}
         `;
 
-        // Click on card to preview
         card.addEventListener('click', (e) => {
             if (e.target.closest('button') || e.target.closest('select')) return;
-            const gfx = state.graphics.find(g => g.id === graphic.id);
-            if (gfx) setPreviewGraphic(JSON.parse(JSON.stringify(gfx)));
+            const gfx = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
+            if (gfx) {
+                setPreviewGraphic(JSON.parse(JSON.stringify(gfx)));
+                if (panelMode !== 'inspector') {
+                    uiChannel.postMessage({ action: 'select_graphic', id: graphic.id });
+                }
+            }
         });
 
-        grid.appendChild(card);
+        return card;
+    };
+
+    state.groups.forEach(grp => {
+        const groupGraphics = groupedItemsMap[grp.id] || [];
+        if (groupGraphics.length === 0) return;
+
+        const anyOn = groupGraphics.some(g => g.visible);
+        const isCollapsed = window._groupCollapseState[grp.id];
+
+        const groupWrapper = document.createElement('div');
+        groupWrapper.className = 'col-span-3 bg-[#111] border border-gray-800 rounded-lg flex flex-col transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.5)]';
+        groupWrapper.style.borderLeft = `4px solid ${grp.color || '#555'}`;
+        groupWrapper.setAttribute('data-group-container-id', grp.id);
+
+        const header = document.createElement('div');
+        header.className = 'flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-800/80 transition-colors shrink-0';
+        header.style.background = grp.color + '18';
+        
+        const chevronRot = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+        const chevronIcon = `<svg style="transform:${chevronRot}; transition: transform 0.2s" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
+        header.innerHTML = `
+            <div class="flex items-center gap-2 flex-1 min-w-0" data-group-toggle="${grp.id}">
+                ${chevronIcon}
+                <span class="text-[11px] font-black uppercase tracking-wider truncate" style="color:${grp.color || '#aaa'}">${grp.name || 'Grupa'}</span>
+                <span class="text-[9px] text-gray-500 font-mono tracking-tighter bg-black/40 px-1.5 py-0.5 rounded border border-gray-800/50 shadow-inner">${groupGraphics.length} EL.</span>
+            </div>
+            <button data-group-take="${grp.id}" class="text-[9px] px-3 py-1 rounded font-bold uppercase transition-all shadow-md shrink-0
+                ${anyOn ? 'bg-red-600 text-white border-t border-red-400 animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.4)]' : 'bg-[#2a2a2a] text-gray-400 hover:bg-red-700 hover:text-white border-t border-gray-700'}">
+                ${anyOn ? 'WSZYSTKIE OFF' : 'WSZYSTKIE ON'}
+            </button>
+        `;
+
+        header.querySelector('[data-group-toggle]').addEventListener('click', (e) => {
+            window._groupCollapseState[grp.id] = !window._groupCollapseState[grp.id];
+            renderShotbox();
+        });
+
+        groupWrapper.appendChild(header);
+
+        const innerGrid = document.createElement('div');
+        innerGrid.className = 'group-inner-grid grid grid-cols-3 gap-2 p-2 pt-2 transition-all duration-300 min-h-[10px]';
+        if (isCollapsed) {
+            innerGrid.style.display = 'none';
+        }
+
+        groupGraphics.forEach(graphic => {
+            innerGrid.appendChild(createCardElement(graphic));
+        });
+
+        groupWrapper.appendChild(innerGrid);
+        grid.appendChild(groupWrapper);
+    });
+
+    ungroupedItems.forEach(graphic => {
+        grid.appendChild(createCardElement(graphic));
     });
 
     // ---- Bind all shotbox events ----
 
-    // Preview
     grid.querySelectorAll('[data-preview-id]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -459,7 +554,6 @@ function renderShotbox() {
         });
     });
 
-    // Take (single)
     grid.querySelectorAll('[data-take-id]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -481,7 +575,27 @@ function renderShotbox() {
         });
     });
 
-    // Delete
+    grid.querySelectorAll('[data-off-id]').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-off-id');
+            const g = state.graphics.find(gx => gx.id === id);
+            if (g && g.visible) {
+                g.visible = false;
+                saveState();
+                renderShotbox();
+                updateProgramMonitor();
+                if (previewGraphic?.id === id) {
+                    previewGraphic.visible = false;
+                    refreshPreviewControls();
+                }
+                if (selectedGraphicId === id) {
+                    openInspector(id);
+                }
+            }
+        });
+    });
+
     grid.querySelectorAll('[data-delete-id]').forEach(btn => {
         btn.onclick = (e) => {
             e.stopPropagation();
@@ -504,7 +618,6 @@ function renderShotbox() {
         };
     });
 
-    // Copy
     grid.querySelectorAll('[data-copy-id]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -512,7 +625,6 @@ function renderShotbox() {
         });
     });
 
-    // Group take all
     grid.querySelectorAll('[data-group-take]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -522,7 +634,6 @@ function renderShotbox() {
         });
     });
 
-    // Group assign
     grid.querySelectorAll('[data-group-assign]').forEach(sel => {
         sel.addEventListener('change', e => {
             e.stopPropagation();
@@ -539,39 +650,55 @@ function renderShotbox() {
         });
     });
 
-    // Sortable JS Init dla siatki banku grafik "Drag & Drop"
     if (window.Sortable) {
-        if (window._shotboxSortable) {
-            window._shotboxSortable.destroy();
+        if (window._shotboxSortables) {
+            window._shotboxSortables.forEach(instance => instance.destroy());
         }
-        window._shotboxSortable = Sortable.create(grid, {
-            animation: 150,
-            ghostClass: 'opacity-50',
-            onEnd: function (evt) {
-                // Odczytanie nowego układu HTML i reorganizacja tablicy state.graphics
-                // W Sortable grid jest pełen elementów shotbox-card i opcjonalnie header-ów
-                const cardNodes = Array.from(grid.querySelectorAll('.shotbox-card'));
-                
-                // Ułożenie docelowe pobierane jest na podstawie HTML Data ID buttonów wewnątrz
-                const newOrderIds = cardNodes.map(card => {
-                    const delBtn = card.querySelector('[data-delete-id]');
-                    return delBtn ? delBtn.getAttribute('data-delete-id') : null;
-                }).filter(id => id !== null);
+        window._shotboxSortables = [];
 
-                // Rekordy nie biorące udziału w widoku, ale będące w bazie dodajemy na koniec
-                const missedGraphics = state.graphics.filter(g => !newOrderIds.includes(g.id));
-                
-                // Budowa nowej ułożonej kolekcji
-                const orderedGraphics = [];
-                newOrderIds.forEach(id => {
-                    const item = state.graphics.find(g => g.id === id);
-                    if (item) orderedGraphics.push(item);
-                });
+        const handleSortEnd = () => {
+             const cardNodes = Array.from(grid.querySelectorAll('.shotbox-card'));
+             const newOrderIds = [];
 
-                state.graphics = [...orderedGraphics, ...missedGraphics];
-                saveState(); // Zapisanie stanu ze zmienioną tablicą
-                renderShotbox(); // Odbudowanie drzewa DOM po evencie aby przywrócić Grupy jeśli pękły
-            }
+             cardNodes.forEach(card => {
+                  const delBtn = card.querySelector('[data-delete-id]');
+                  const id = delBtn ? delBtn.getAttribute('data-delete-id') : null;
+                  if (id) {
+                      newOrderIds.push(id);
+                      const gfx = state.graphics.find(g => g.id === id);
+                      if (gfx) {
+                          const wrapper = card.closest('[data-group-container-id]');
+                          gfx.groupId = wrapper ? wrapper.getAttribute('data-group-container-id') : null;
+                      }
+                  }
+             });
+
+             const missedGraphics = state.graphics.filter(g => !newOrderIds.includes(g.id));
+             const orderedGraphics = [];
+             newOrderIds.forEach(id => {
+                 const item = state.graphics.find(g => g.id === id);
+                 if (item) orderedGraphics.push(item);
+             });
+
+             state.graphics = [...orderedGraphics, ...missedGraphics];
+             saveState();
+             renderShotbox();
+        };
+
+        window._shotboxSortables.push(Sortable.create(grid, {
+             animation: 150,
+             ghostClass: 'opacity-50',
+             group: 'shotbox-drag',
+             onEnd: handleSortEnd
+        }));
+
+        grid.querySelectorAll('.group-inner-grid').forEach(inner => {
+             window._shotboxSortables.push(Sortable.create(inner, {
+                 animation: 150,
+                 ghostClass: 'opacity-50',
+                 group: 'shotbox-drag',
+                 onEnd: handleSortEnd
+             }));
         });
     }
 
@@ -581,14 +708,17 @@ function renderShotbox() {
 // ===========================================================
 // 6. PREVIEW MONITOR
 // ===========================================================
-function setPreviewGraphic(graphic) {
+function setPreviewGraphic(graphic, skipBroadcast = false) {
     previewGraphic = graphic;
-    refreshPreviewMonitor();
+    refreshPreviewMonitor(skipBroadcast);
     refreshPreviewControls();
     renderShotbox();
 }
 
-function refreshPreviewMonitor() {
+function refreshPreviewMonitor(skipBroadcast = false) {
+    if (!skipBroadcast && typeof uiChannel !== 'undefined') {
+        uiChannel.postMessage({ action: 'preview_graphic_update', previewGraphic });
+    }
     const canvas = document.getElementById('preview-canvas');
     const empty = document.getElementById('preview-empty');
     const label = document.getElementById('preview-next-label');
@@ -621,6 +751,45 @@ function refreshPreviewMonitor() {
     }
 
 }
+
+window.syncDraftGraphic = function(id) {
+    const draft = window._draftGraphics[id];
+    if (draft) {
+        const idx = state.graphics.findIndex(g => g.id === id);
+        if (idx !== -1) {
+            state.graphics[idx] = JSON.parse(JSON.stringify(draft));
+            delete window._draftGraphics[id];
+            saveState();
+            renderShotbox();
+            if (selectedGraphicId === id) refreshPreviewControls();
+        }
+    }
+};
+
+window.revertDraftGraphic = function(id) {
+    if (window._draftGraphics[id]) {
+        delete window._draftGraphics[id];
+        renderShotbox();
+        if (selectedGraphicId === id) {
+            openInspector(id);
+        }
+    }
+};
+
+window._openGraphicInspector = function(id) {
+    const g = window._draftGraphics[id] || state.graphics.find(x => x.id === id);
+    if (!g) return;
+    if (panelMode === 'bank') {
+        // Standalone bank mode — open/focus a dedicated inspector window, then tell it to select the graphic
+        window.open('/?panel=inspector', 'cg_inspector', 'width=380,height=900');
+        setTimeout(() => {
+            uiChannel.postMessage({ action: 'select_graphic', id });
+        }, 900);
+    } else {
+        setPreviewGraphic(JSON.parse(JSON.stringify(g)));
+        openInspector(id);
+    }
+};
 
 function refreshPreviewControls() {
     const hasPreview = !!previewGraphic;
@@ -677,7 +846,7 @@ function closeInspector() {
 
 function openInspector(id) {
     selectedGraphicId = id;
-    const graphicRaw = state.graphics.find(g => g.id === id);
+    const graphicRaw = window._draftGraphics[id] || state.graphics.find(g => g.id === id);
     if (!graphicRaw) return;
 
     // Fallback: if graphic doesn't have an explicit type, get it from the template
@@ -741,6 +910,45 @@ function renderInspectorBody(graphic) {
                         <input type="text" data-field="name" value="${escAttr(graphic.name)}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                     </div>
 
+                    ${tpl && (tpl.ocgInputs || []).length > 0 ? `
+                    <!-- OCG Variables Panel in ZAWARTOŚĆ -->
+                    <div class="border-t border-gray-800 pt-3 mt-1">
+                        <div class="text-[9px] font-black uppercase tracking-widest text-blue-400 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                            POLA SZABLONU
+                        </div>
+                        ${(tpl.ocgInputs || []).map(inp => {
+                            const val = graphic.fields?.[inp.id] ?? (graphic[inp.id.toLowerCase()] ?? inp.default ?? '');
+                            if (inp.type === 'richtext') {
+                                return `
+                                <div class="mb-3">
+                                    ${ctrlLabel(inp.label)}
+                                    <div class="relative">
+                                        <textarea
+                                            data-field="fields.${inp.id}"
+                                            rows="3"
+                                            placeholder="${escAttr(inp.label)}"
+                                            class="w-full bg-gray-800 border border-gray-700 rounded p-2 pr-8 text-xs text-white leading-relaxed focus:border-blue-500 focus:outline-none font-mono resize-none"
+                                        >${escAttr(String(val))}</textarea>
+                                        <button data-ocg-wysiwyg="${inp.id}"
+                                            title="Edytuj w edytorze WYSIWYG"
+                                            style="position:absolute;top:5px;right:5px;width:22px;height:22px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:4px;color:#60a5fa;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">&#9999;</button>
+                                    </div>
+                                </div>`;
+                            } else {
+                                return `
+                                <div class="mb-3">
+                                    ${ctrlLabel(inp.label)}
+                                    <input type="text"
+                                        data-field="fields.${inp.id}"
+                                        value="${escAttr(String(val))}"
+                                        placeholder="${escAttr(inp.label)}"
+                                        class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                </div>`;
+                            }
+                        }).join('')}
+                    </div>
+                    ` : `
                     ${graphic.type === 'LOWER_THIRD' ? `
                         <div>
                             ${ctrlLabel('Tytuł')}
@@ -748,6 +956,11 @@ function renderInspectorBody(graphic) {
                                 <div style="color:#fff;font-size:13px;line-height:1.4;max-height:80px;overflow:hidden;" id="title-preview-content">${graphic.titleHtml || graphic.title || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>'}</div>
                                 <button id="btn-open-wysiwyg" title="Edytuj tekst" style="position:absolute;top:6px;right:6px;width:26px;height:26px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:4px;color:#60a5fa;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;">&#9999;</button>
                             </div>
+                        </div>
+
+                        <div class="mt-3">
+                            ${ctrlLabel('Podtytuł / Gość (Tylko belki dwupoziomowe)')}
+                            <input type="text" data-field="subtitle" value="${escAttr(graphic.subtitle || '')}" placeholder="Podtytuł, stanowisko..." class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                         </div>
 
                         ${['republika-composite', 'republika-lower-third', 'belka-exp-graphic', '528dc35a-546a-4e7f-8da7-a0c365f81680'].includes(graphic.templateId) ? `
@@ -769,6 +982,7 @@ function renderInspectorBody(graphic) {
                         </div>
                         ` : ''}
                     ` : ''}
+                    `}
 
                     ${graphic.type === 'TICKER' ? `
                         <div class="mb-4">
@@ -833,9 +1047,19 @@ function renderInspectorBody(graphic) {
                     <span class="accordion-arrow">${inspectorAccordionStates[graphic.id]?.tickerSettings ? '−' : '+'}</span>
                 </button>
                 <div class="accordion-content ${inspectorAccordionStates[graphic.id]?.tickerSettings ? 'open' : ''} bg-gray-850/50 p-3 space-y-3">
+                    ${tpl?.features?.ticker_mode ? `
                     <div>
-                        ${ctrlLabel(tpl?.features?.vertical ? 'Czas wyświetlania jednej wiadomości (s)' : 'Prędkość paska (px/s)')}
-                        <input type="number" data-field="speed" value="${graphic.speed || (tpl?.features?.vertical ? 5 : 100)}" min="${tpl?.features?.vertical ? 1 : 10}" step="${tpl?.features?.vertical ? 0.5 : 10}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                        ${ctrlLabel('Tryb Tickera')}
+                        <select data-field="tickerMode" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
+                            <option value="whip" ${(graphic.tickerMode || 'whip') === 'whip' ? 'selected' : ''}>Whip (Z wycieraczką)</option>
+                            <option value="horizontal" ${graphic.tickerMode === 'horizontal' ? 'selected' : ''}>Poziomy (Przewijany)</option>
+                            <option value="vertical" ${graphic.tickerMode === 'vertical' ? 'selected' : ''}>Pionowy</option>
+                        </select>
+                    </div>
+                    ` : ''}
+                    <div>
+                        ${ctrlLabel((graphic.tickerMode === 'vertical' || tpl?.features?.vertical) ? 'Czas wyświetlania jednej wiadomości (s)' : 'Prędkość paska (px/s)')}
+                        <input type="number" data-field="speed" value="${graphic.speed || ((graphic.tickerMode === 'vertical' || tpl?.features?.vertical) ? 5 : 100)}" min="${(graphic.tickerMode === 'vertical' || tpl?.features?.vertical) ? 1 : 10}" step="${(graphic.tickerMode === 'vertical' || tpl?.features?.vertical) ? 0.5 : 10}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                     </div>
 
                     ${tpl?.features?.separator ? `
@@ -853,7 +1077,13 @@ function renderInspectorBody(graphic) {
 
                     ${tpl?.features?.wiper ? `
                          <div class="border-t border-gray-800 pt-3 mt-1">
-                            <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Wiper (Pasek Pilny)</div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Wiper (Pasek Pilny)</span>
+                                <label class="flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="checkbox" data-field="wiper.show" ${(graphic.wiper?.show !== false) ? 'checked' : ''} class="w-4 h-4 bg-gray-800 border-gray-600 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 cursor-pointer">
+                                    <span class="text-[9px] text-gray-300 font-bold uppercase">Pokaż etykietę (Wiper)</span>
+                                </label>
+                            </div>
                             
                             <div class="mb-3">
                                 ${ctrlLabel('Tło Etykiety Wipera')}
@@ -909,7 +1139,7 @@ function renderInspectorBody(graphic) {
                             </div>
 
                             <div class="mb-2">
-                                ${ctrlLabel('Krój Czcionki Wipera')}
+                                ${ctrlLabel('Krój Czcionki Wipera (Kategorii)')}
                                 <select data-field="wiper.fontFamily" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
                                     <option value="">Domyślna układu</option>
                                     <option value="Arial" ${graphic.wiper?.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
@@ -972,7 +1202,7 @@ function renderInspectorBody(graphic) {
                         </div>
                     </div>
                     <div>
-                        ${ctrlLabel('Kolor Akcentu / Obramowania')}
+                        ${ctrlLabel('Kolor Akcentu / Tła Podtytułu (Kolor 2)')}
                         ${colorPickerHtml('style.background.borderColor', graphic.style?.background?.borderColor || '#3b82f6')}
                     </div>
                     <div>
@@ -983,13 +1213,19 @@ function renderInspectorBody(graphic) {
 
                     <div class="border-t border-gray-800 pt-3 mt-2">
                         <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Typografia</div>
-                        <div class="mb-2">
-                            ${ctrlLabel('Kolor Czcionki')}
-                            ${colorPickerHtml('style.typography.color', graphic.style?.typography?.color || '#ffffff')}
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                ${ctrlLabel('Kolor Tytułu')}
+                                ${colorPickerHtml('style.typography.color', graphic.style?.typography?.color || '#ffffff')}
+                            </div>
+                            <div>
+                                ${ctrlLabel('Kolor Podtytułu')}
+                                ${colorPickerHtml('style.subtitleTypography.color', graphic.style?.subtitleTypography?.color || '#eeeeee')}
+                            </div>
                         </div>
                         ${graphic.type === 'TICKER' ? `
                         <div class="mb-2">
-                            ${ctrlLabel('Krój czcionki (Font Family)')}
+                            ${ctrlLabel('Krój Czcionki Treści (Wiadomości)')}
                             <select data-field="style.typography.fontFamily" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white appearance-none">
                                 <option value="Roboto Condensed" ${(graphic.style?.typography?.fontFamily || '') === 'Roboto Condensed' ? 'selected' : ''}>Roboto Condensed</option>
                                 <option value="Bahnschrift" ${(graphic.style?.typography?.fontFamily || '') === 'Bahnschrift' ? 'selected' : ''}>Bahnschrift</option>
@@ -1156,14 +1392,28 @@ function renderInspectorBody(graphic) {
                             ${ctrlLabel('Typ')}
                             <select data-field="animation.text.type" class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
                                 <option value="none" ${(!graphic.animation?.text?.type || graphic.animation.text.type === 'none') ? 'selected' : ''}>✕ Brak (Pojawia się z belką)</option>
-                                <option value="reveal" ${graphic.animation?.text?.type === 'reveal' ? 'selected' : ''}>Odsłonięcie (Reveal)</option>
-                                <option value="typewriter" ${graphic.animation?.text?.type === 'typewriter' ? 'selected' : ''}>Pisanie (Typewriter)</option>
+                                <option value="reveal" ${graphic.animation?.text?.type === 'reveal' ? 'selected' : ''}>Odsłonięcie (Reveal / Typewriter)</option>
+                                <option value="fade" ${graphic.animation?.text?.type === 'fade' ? 'selected' : ''}>Zanikanie (Fade Letters)</option>
                                 <option value="blur" ${graphic.animation?.text?.type === 'blur' ? 'selected' : ''}>Rozmycie (Blur In)</option>
-                                <option value="slideReveal" ${graphic.animation?.text?.type === 'slideReveal' ? 'selected' : ''}>Wjazd od dołu (Slide Reveal)</option>
+                                <option value="scale" ${graphic.animation?.text?.type === 'scale' ? 'selected' : ''}>Skalowanie (Scale)</option>
+                                <option value="slide-up" ${graphic.animation?.text?.type === 'slide-up' ? 'selected' : ''}>Wjazd od dołu (Slide Up)</option>
+                                <option value="slide-down" ${graphic.animation?.text?.type === 'slide-down' ? 'selected' : ''}>Wjazd od góry (Slide Down)</option>
+                                <option value="slide-left" ${graphic.animation?.text?.type === 'slide-left' ? 'selected' : ''}>Wjazd od prawej (Slide Left)</option>
+                                <option value="slide-right" ${graphic.animation?.text?.type === 'slide-right' ? 'selected' : ''}>Wjazd od lewej (Slide Right)</option>
                             </select>
+                            
+                            <div class="flex items-center gap-2 mt-2 mb-2">
+                                <input type="checkbox" id="sync-text-in-${graphic.id}" data-field="animation.textSync" ${graphic.animation?.textSync ? 'checked' : ''} class="w-3 h-3 bg-gray-800 border-gray-600 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 cursor-pointer">
+                                <label for="sync-text-in-${graphic.id}" class="text-[9px] text-gray-300 font-bold uppercase cursor-pointer">Rozpocznij po wejściu belki (Sekwencyjnie)</label>
+                            </div>
+
                             <div class="grid grid-cols-2 gap-2">
                                 <div>${ctrlLabel('Czas (s)')}<input type="number" data-field="animation.text.duration" value="${graphic.animation?.text?.duration ?? 1.0}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                                <div>${ctrlLabel('Opóźnienie względem belki (s)')}<input type="number" data-field="animation.text.delay" value="${graphic.animation?.text?.delay ?? 0.2}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                                <div>${ctrlLabel('Opóźnienie (s)')}<input type="number" data-field="animation.text.delay" value="${graphic.animation?.text?.delay ?? 0.2}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                            </div>
+                            <div>
+                                ${ctrlLabel('Stagger (Opóźnienie między elementami)')}
+                                <input type="number" data-field="animation.text.stagger" value="${graphic.animation?.text?.stagger ?? 0.1}" step="0.05" min="0" max="2" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                             </div>
                         </div>
                     </div>
@@ -1176,17 +1426,26 @@ function renderInspectorBody(graphic) {
                                 <option value="none" ${(!graphic.animation?.textOut?.type || graphic.animation.textOut.type === 'none') ? 'selected' : ''}>✕ Brak (Razem z belką / Sztywne ucięcie)</option>
                                 <option value="fade" ${graphic.animation?.textOut?.type === 'fade' ? 'selected' : ''}>Zanikanie (Fade)</option>
                                 <option value="blurOut" ${graphic.animation?.textOut?.type === 'blurOut' ? 'selected' : ''}>Rozmycie (Blur Out)</option>
-                                <option value="hide" ${graphic.animation?.textOut?.type === 'hide' ? 'selected' : ''}>Zasłonięcie (Hide)</option>
+                                <option value="scale" ${graphic.animation?.textOut?.type === 'scale' ? 'selected' : ''}>Skalowanie (Scale)</option>
+                                <option value="slide-up" ${graphic.animation?.textOut?.type === 'slide-up' ? 'selected' : ''}>Zjazd do góry (Slide Up)</option>
+                                <option value="slide-down" ${graphic.animation?.textOut?.type === 'slide-down' ? 'selected' : ''}>Zjazd do dołu (Slide Down)</option>
+                                <option value="slide-left" ${graphic.animation?.textOut?.type === 'slide-left' ? 'selected' : ''}>Zjazd w lewo (Slide Left)</option>
+                                <option value="slide-right" ${graphic.animation?.textOut?.type === 'slide-right' ? 'selected' : ''}>Zjazd w prawo (Slide Right)</option>
+                                <option value="hide" ${graphic.animation?.textOut?.type === 'hide' ? 'selected' : ''}>Zasłonięcie (Hide / Clip)</option>
                             </select>
                             
                             <div class="flex items-center gap-2 mt-2 mb-2">
-                                <input type="checkbox" id="sync-text-out" data-field="animation.textOut.syncWithBase" ${graphic.animation?.textOut?.syncWithBase ? 'checked' : ''} class="w-3 h-3 bg-gray-800 border-gray-600 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 cursor-pointer">
-                                <label for="sync-text-out" class="text-[9px] text-gray-300 font-bold uppercase cursor-pointer">Synchronizuj z wyjściem belki (Auto-kalkulacja)</label>
+                                <input type="checkbox" id="sync-text-out-${graphic.id}" data-field="animation.textOut.syncWithBase" ${graphic.animation?.textOut?.syncWithBase ? 'checked' : ''} class="w-3 h-3 bg-gray-800 border-gray-600 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 cursor-pointer">
+                                <label for="sync-text-out-${graphic.id}" class="text-[9px] text-gray-300 font-bold uppercase cursor-pointer">Rozpocznij przed wyjściem belki (Sekwencyjnie)</label>
                             </div>
                             
-                            <div class="grid grid-cols-2 gap-2" style="${graphic.animation?.textOut?.syncWithBase ? 'opacity:0.3; pointer-events:none;' : ''}">
+                            <div class="grid grid-cols-2 gap-2">
                                 <div>${ctrlLabel('Czas (s)')}<input type="number" data-field="animation.textOut.duration" value="${graphic.animation?.textOut?.duration ?? 0.5}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
-                                <div>${ctrlLabel('Wyprzedzenie wyjścia belki (s)')}<input type="number" data-field="animation.textOut.delay" value="${graphic.animation?.textOut?.delay ?? 0}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                                <div>${ctrlLabel('Opóźnienie (s)')}<input type="number" data-field="animation.textOut.delay" value="${graphic.animation?.textOut?.delay ?? 0}" step="0.1" min="0" max="5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white"></div>
+                            </div>
+                            <div>
+                                ${ctrlLabel('Stagger')}
+                                <input type="number" data-field="animation.textOut.stagger" value="${graphic.animation?.textOut?.stagger ?? 0}" step="0.05" min="0" max="2" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                             </div>
                         </div>
                     </div>
@@ -1313,10 +1572,14 @@ function renderInspectorBody(graphic) {
             if (file) {
                 try {
                     const res = await uploadFile(file);
-                    const g = state.graphics.find(g => g.id === graphic.id);
+                    let g = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
                     if (g) {
+                        g = JSON.parse(JSON.stringify(g));
                         g.url = res.url;
-                        saveState();
+                        window._draftGraphics[graphic.id] = g;
+                        if (previewGraphic?.id === graphic.id) Object.assign(previewGraphic, g);
+                        refreshPreviewMonitor();
+                        renderShotbox();
                         openInspector(graphic.id);
                     }
                 } catch (err) {
@@ -1335,10 +1598,14 @@ function renderInspectorBody(graphic) {
             if (file) {
                 try {
                     const res = await uploadFile(file);
-                    const g = state.graphics.find(g => g.id === graphic.id);
+                    let g = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
                     if (g) {
+                        g = JSON.parse(JSON.stringify(g));
                         g.sideImage = res.url;
-                        saveState();
+                        window._draftGraphics[graphic.id] = g;
+                        if (previewGraphic?.id === graphic.id) Object.assign(previewGraphic, g);
+                        refreshPreviewMonitor();
+                        renderShotbox();
                         openInspector(graphic.id);
                     }
                 } catch (err) {
@@ -1354,10 +1621,14 @@ function renderInspectorBody(graphic) {
     if (removeSideBtn) {
         removeSideBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const g = state.graphics.find(g => g.id === graphic.id);
+            let g = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
             if (g) {
+                g = JSON.parse(JSON.stringify(g));
                 g.sideImage = '';
-                saveState();
+                window._draftGraphics[graphic.id] = g;
+                if (previewGraphic?.id === graphic.id) Object.assign(previewGraphic, g);
+                refreshPreviewMonitor();
+                renderShotbox();
                 openInspector(graphic.id);
             }
         });
@@ -1366,10 +1637,14 @@ function renderInspectorBody(graphic) {
     // Direction buttons (animation)
     body.querySelectorAll('[data-dir-field]').forEach(btn => {
         btn.addEventListener('click', () => {
-            const g = state.graphics.find(g => g.id === selectedGraphicId);
+            let g = window._draftGraphics[selectedGraphicId] || state.graphics.find(g => g.id === selectedGraphicId);
             if (!g) return;
+            g = JSON.parse(JSON.stringify(g));
             deepSet(g, btn.getAttribute('data-dir-field'), btn.getAttribute('data-dir-value'));
-            saveState();
+            window._draftGraphics[selectedGraphicId] = g;
+            if (previewGraphic?.id === selectedGraphicId) Object.assign(previewGraphic, g);
+            refreshPreviewMonitor();
+            renderShotbox();
             openInspector(g.id); // re-render to update button states
         });
     });
@@ -1382,6 +1657,18 @@ function renderInspectorBody(graphic) {
         openWysiwygBtn.addEventListener('click', handler);
         if (titleBox) titleBox.addEventListener('click', handler);
     }
+
+    // ---- OCG richtext WYSIWYG buttons (data-ocg-wysiwyg) ----
+    body.querySelectorAll('[data-ocg-wysiwyg]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const fieldId = btn.getAttribute('data-ocg-wysiwyg');
+            const g = state.graphics.find(gx => gx.id === graphic.id);
+            if (!g) return;
+            const currentVal = g.fields?.[fieldId] ?? '';
+            openWysiwygModalForField(g.id, fieldId, currentVal);
+        });
+    });
 
     // ---- Accordion toggles ----
     body.querySelectorAll('.accordion-toggle').forEach(btn => {
@@ -1416,8 +1703,8 @@ function renderInspectorBody(graphic) {
 }
 
 function handleInspectorChange(el, graphic) {
-    const g = state.graphics.find(g => g.id === graphic.id);
-    if (!g) return;
+    if (!previewGraphic || previewGraphic.id !== graphic.id) return;
+    const g = previewGraphic;
 
     const field = el.getAttribute('data-field');
     let value = el.value;
@@ -1434,27 +1721,26 @@ function handleInspectorChange(el, graphic) {
     } else if (field === 'titleHtml') {
         g.title = el.value.replace(/<[^>]+>/g, ''); // strip html for title
         g.titleHtml = el.value;
-        saveState();
-        if (previewGraphic?.id === g.id) {
-            previewGraphic = JSON.parse(JSON.stringify(g));
-            refreshPreviewMonitor();
-        }
+        refreshPreviewMonitor();
         return;
     }
 
     deepSet(g, field, value);
-    saveState();
+    
+    // Sync to legacy properties
+    if (field === 'fields.TITLE') {
+        g.title = (value || '').replace(/<[^>]+>/g, '');
+        g.titleHtml = value;
+    } else if (field === 'fields.SUBTITLE') {
+        g.subtitle = (value || '').replace(/<[^>]+>/g, '');
+    }
+
+    refreshPreviewMonitor();
 
     // Re-render inspector when background type changes (shows/hides gradient fields) or layout side changes
     if (field === 'style.background.type' || field === 'layout.side') {
-        openInspector(g.id);
+        renderInspectorBody(previewGraphic);
         return;
-    }
-
-    // Also update preview if same graphic
-    if (previewGraphic?.id === g.id) {
-        previewGraphic = JSON.parse(JSON.stringify(g));
-        refreshPreviewMonitor();
     }
 }
 
@@ -1528,8 +1814,8 @@ function _wmNormalizeHtml(root) {
 }
 
 function saveWysiwyg(editorEl, graphicId) {
-    const g = state.graphics.find(g => g.id === graphicId);
-    if (!g) return;
+    if (!previewGraphic || previewGraphic.id !== graphicId) return;
+    const g = previewGraphic;
 
     // Normalize and sanitize HTML before saving
     const tempDiv = document.createElement('div');
@@ -1537,33 +1823,42 @@ function saveWysiwyg(editorEl, graphicId) {
     _wmNormalizeHtml(tempDiv);
     const html = tempDiv.innerHTML;
 
-    if (g.type === 'TICKER') {
-        const rawItems = html.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
-        g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
-        if (selectedGraphicId === g.id) {
-            // Refresh inspector to show updated items in the new UI list
-            openInspector(g.id);
+    if (_wmTargetField) {
+        if (!g.fields) g.fields = {};
+        g.fields[_wmTargetField] = html;
+        if (_wmTargetField === 'TITLE') {
+            g.titleHtml = html;
+            g.title = editorEl.textContent || editorEl.innerText || '';
+        } else if (_wmTargetField === 'SUBTITLE') {
+            g.subtitle = editorEl.textContent || editorEl.innerText || '';
         }
     } else {
-        g.titleHtml = html;
-        g.title = editorEl.textContent || editorEl.innerText || '';
-        const previewBox = document.getElementById('title-preview-content');
-        if (previewBox) previewBox.innerHTML = html || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>';
+        if (g.type === 'TICKER') {
+            const rawItems = html.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
+            g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
+            if (selectedGraphicId === g.id) {
+                renderInspectorBody(previewGraphic);
+            }
+        } else {
+            g.titleHtml = html;
+            g.title = editorEl.textContent || editorEl.innerText || '';
+            const previewBox = document.getElementById('title-preview-content');
+            if (previewBox) previewBox.innerHTML = html || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>';
+        }
     }
-    saveState();
-    // Update preview monitor
-    if (previewGraphic?.id === g.id) {
-        previewGraphic = JSON.parse(JSON.stringify(g));
-        refreshPreviewMonitor();
-    }
+    
+    window._draftGraphics[g.id] = JSON.parse(JSON.stringify(g));
+    refreshPreviewMonitor();
+    
+    clearTimeout(window._shotboxSyncTimer);
+    window._shotboxSyncTimer = setTimeout(() => renderShotbox(), 300);
 }
 
 // Helpers for Ticker Messages Manager UI
 window.updateTickerMessage = function(graphicId, index, value, field = 'text') {
-    const graphic = state.graphics.find(g => g.id === graphicId);
-    if (!graphic || !graphic.items) return;
+    if (!previewGraphic || previewGraphic.id !== graphicId || !previewGraphic.items) return;
     
-    let item = graphic.items[index];
+    let item = previewGraphic.items[index];
     if (typeof item === 'string') {
         item = { text: item, category: "" };
     } else {
@@ -1573,45 +1868,31 @@ window.updateTickerMessage = function(graphicId, index, value, field = 'text') {
     if (field === 'text') item.text = value;
     else if (field === 'category') item.category = value;
     
-    graphic.items[index] = item;
-    saveState();
-    if (previewGraphic?.id === graphicId) {
-        previewGraphic = JSON.parse(JSON.stringify(graphic));
-        refreshPreviewMonitor();
-    }
+    previewGraphic.items[index] = item;
+    refreshPreviewMonitor();
 };
 
 window.removeTickerMessage = function(graphicId, index) {
-    const graphic = state.graphics.find(g => g.id === graphicId);
-    if (!graphic || !graphic.items) return;
-    graphic.items.splice(index, 1);
-    saveState();
-    if (previewGraphic?.id === graphicId) {
-        previewGraphic = JSON.parse(JSON.stringify(graphic));
-        refreshPreviewMonitor();
-    }
-    if (selectedGraphicId === graphicId) openInspector(graphicId);
+    if (!previewGraphic || previewGraphic.id !== graphicId || !previewGraphic.items) return;
+    previewGraphic.items.splice(index, 1);
+    refreshPreviewMonitor();
+    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
 };
 
 window.addTickerMessage = function(graphicId) {
-    const graphic = state.graphics.find(g => g.id === graphicId);
-    if (!graphic) return;
+    if (!previewGraphic || previewGraphic.id !== graphicId) return;
     const input = document.getElementById(`new-ticker-msg-${graphicId}`);
     const catInput = document.getElementById(`new-ticker-cat-${graphicId}`);
     if (!input || !input.value.trim()) return;
-    if (!graphic.items) graphic.items = [];
+    if (!previewGraphic.items) previewGraphic.items = [];
     
-    graphic.items.push({
+    previewGraphic.items.push({
         text: input.value.trim(),
         category: catInput ? catInput.value.trim() : ""
     });
     
-    saveState();
-    if (previewGraphic?.id === graphicId) {
-        previewGraphic = JSON.parse(JSON.stringify(graphic));
-        refreshPreviewMonitor();
-    }
-    if (selectedGraphicId === graphicId) openInspector(graphicId);
+    refreshPreviewMonitor();
+    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
     setTimeout(() => {
         const resetInput = document.getElementById(`new-ticker-msg-${graphicId}`);
         if(resetInput) resetInput.focus();
@@ -1620,44 +1901,29 @@ window.addTickerMessage = function(graphicId) {
 
 // --- OCG Field Helpers ---
 window.updateOcgField = function(graphicId, fieldId, index, value) {
-    const graphic = state.graphics.find(g => g.id === graphicId);
-    if (!graphic || !graphic.fields || !Array.isArray(graphic.fields[fieldId])) return;
-    graphic.fields[fieldId][index] = value;
-    saveState();
-    if (previewGraphic?.id === graphicId) {
-        previewGraphic = JSON.parse(JSON.stringify(graphic));
-        refreshPreviewMonitor();
-    }
+    if (!previewGraphic || previewGraphic.id !== graphicId || !previewGraphic.fields || !Array.isArray(previewGraphic.fields[fieldId])) return;
+    previewGraphic.fields[fieldId][index] = value;
+    refreshPreviewMonitor();
 };
 
 window.removeOcgField = function(graphicId, fieldId, index) {
-    const graphic = state.graphics.find(g => g.id === graphicId);
-    if (!graphic || !graphic.fields || !Array.isArray(graphic.fields[fieldId])) return;
-    graphic.fields[fieldId].splice(index, 1);
-    saveState();
-    if (previewGraphic?.id === graphicId) {
-        previewGraphic = JSON.parse(JSON.stringify(graphic));
-        refreshPreviewMonitor();
-    }
-    if (selectedGraphicId === graphicId) openInspector(graphicId);
+    if (!previewGraphic || previewGraphic.id !== graphicId || !previewGraphic.fields || !Array.isArray(previewGraphic.fields[fieldId])) return;
+    previewGraphic.fields[fieldId].splice(index, 1);
+    refreshPreviewMonitor();
+    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
 };
 
 window.addOcgField = function(graphicId, fieldId) {
-    const graphic = state.graphics.find(g => g.id === graphicId);
-    if (!graphic) return;
+    if (!previewGraphic || previewGraphic.id !== graphicId) return;
     const input = document.getElementById(`new-ocg-val-${fieldId}-${graphicId}`);
     if (!input || !input.value.trim()) return;
     
-    if (!graphic.fields) graphic.fields = {};
-    if (!Array.isArray(graphic.fields[fieldId])) graphic.fields[fieldId] = [];
+    if (!previewGraphic.fields) previewGraphic.fields = {};
+    if (!Array.isArray(previewGraphic.fields[fieldId])) previewGraphic.fields[fieldId] = [];
     
-    graphic.fields[fieldId].push(input.value.trim());
-    saveState();
-    if (previewGraphic?.id === graphicId) {
-        previewGraphic = JSON.parse(JSON.stringify(graphic));
-        refreshPreviewMonitor();
-    }
-    if (selectedGraphicId === graphicId) openInspector(graphicId);
+    previewGraphic.fields[fieldId].push(input.value.trim());
+    refreshPreviewMonitor();
+    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
     setTimeout(() => {
         const resetInput = document.getElementById(`new-ocg-val-${fieldId}-${graphicId}`);
         if(resetInput) resetInput.focus();
@@ -1669,13 +1935,21 @@ window.addOcgField = function(graphicId, fieldId) {
 // WYSIWYG MODAL
 // ===========================================================
 let _wmGraphicId = null;
+let _wmTargetField = null;
 let _wmRo = null;
 let _wmSavedHtml = null;
 
 function openWysiwygModal(graphicId) {
-    const g = state.graphics.find(g => g.id === graphicId);
+    const g = window._draftGraphics[graphicId] || state.graphics.find(g => g.id === graphicId);
     if (!g) return;
+    // Ensure previewGraphic is set for live drafting
+    if (!previewGraphic || previewGraphic.id !== graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(g));
+        refreshPreviewMonitor();
+        refreshPreviewControls();
+    }
     _wmGraphicId = graphicId;
+    _wmTargetField = null; // Clear target field (legacy mode)
     if (g.type === 'TICKER') {
         _wmSavedHtml = (g.items || []).join('<br>');
     } else {
@@ -1683,6 +1957,25 @@ function openWysiwygModal(graphicId) {
         _wmSavedHtml = g.titleHtml || (g.titleLines && g.titleLines.length > 0 ? g.titleLines.map(l => `<div style="font-size:${l.fontSize || 48}px;font-weight:${l.fontWeight || '800'};color:${l.color || '#fff'};font-family:'${l.fontFamily || 'Inter'}',sans-serif;text-transform:${l.textTransform || 'uppercase'}" > ${l.text}</div> `).join('') : (g.title || tpl?.defaultFields?.title || ''));
     }
 
+    _wmOpenModal(g);
+}
+
+function openWysiwygModalForField(graphicId, fieldId, currentHtml) {
+    const g = window._draftGraphics[graphicId] || state.graphics.find(g => g.id === graphicId);
+    if (!g) return;
+    if (!previewGraphic || previewGraphic.id !== graphicId) {
+        previewGraphic = JSON.parse(JSON.stringify(g));
+        refreshPreviewMonitor();
+        refreshPreviewControls();
+    }
+    _wmGraphicId = graphicId;
+    _wmTargetField = fieldId;
+    _wmSavedHtml = currentHtml || '';
+
+    _wmOpenModal(g);
+}
+
+function _wmOpenModal(g) {
     const modal = document.getElementById('modal-wysiwyg');
     const editor = document.getElementById('wm-editor');
     const bgInput = document.getElementById('wm-bg');
@@ -1786,16 +2079,27 @@ function _wmRefreshPreview(instant = true) {
         const canvas = document.getElementById('wm-preview-canvas');
         const editor = document.getElementById('wm-editor');
         if (!canvas || !editor || !window.__cgRenderer) return;
-        const g = state.graphics.find(g => g.id === _wmGraphicId);
+        const g = window._draftGraphics[_wmGraphicId] || state.graphics.find(g => g.id === _wmGraphicId);
         if (!g) return;
         const tempG = JSON.parse(JSON.stringify(g));
 
-        if (g.type === 'TICKER') {
-            const rawItems = editor.innerHTML.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
-            tempG.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
+        if (_wmTargetField) {
+            if (!tempG.fields) tempG.fields = {};
+            tempG.fields[_wmTargetField] = editor.innerHTML;
+            if (_wmTargetField === 'TITLE') {
+                tempG.titleHtml = editor.innerHTML;
+                tempG.title = editor.textContent;
+            } else if (_wmTargetField === 'SUBTITLE') {
+                tempG.subtitle = editor.textContent;
+            }
         } else {
-            tempG.titleHtml = editor.innerHTML;
-            tempG.title = editor.textContent;
+            if (tempG.type === 'TICKER') {
+                const rawItems = editor.innerHTML.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
+                tempG.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
+            } else {
+                tempG.titleHtml = editor.innerHTML;
+                tempG.title = editor.textContent;
+            }
         }
 
         tempG.visible = true;
@@ -1810,14 +2114,17 @@ function _wmClose(save) {
     if (save && _wmGraphicId) {
         saveWysiwyg(editor, _wmGraphicId);
     } else if (!save && _wmGraphicId) {
-        // With auto-save, we don't necessarily want to revert anymore, 
-        // as the user's intent with auto-save is that "changes are NOT lost".
-        // However, we still call saveState at the end just to be sure.
-        saveState();
+        // If they cancel, we just leave the draft as it was (from autosave drafting)
     }
     modal.classList.add('hidden');
     if (_wmRo) { _wmRo.disconnect(); _wmRo = null; }
     _wmGraphicId = null;
+    _wmTargetField = null;
+    
+    // Refresh inspector correctly to show new html in richtext boxes
+    if (save && selectedGraphicId) {
+        openInspector(selectedGraphicId);
+    }
 }
 
 function bindWysiwygModalEvents() {
@@ -1919,10 +2226,19 @@ function bindWysiwygModalEvents() {
 
     editor.addEventListener('input', () => {
         _wmRefreshPreview();
-        // Auto-save logic
-        if (_wmGraphicId) {
-            const g = state.graphics.find(gx => gx.id === _wmGraphicId);
-            if (g) {
+        // Save to DRAFT ONLY — never touch state.graphics directly
+        if (_wmGraphicId && previewGraphic && previewGraphic.id === _wmGraphicId) {
+            const g = previewGraphic;
+            if (_wmTargetField) {
+                if (!g.fields) g.fields = {};
+                g.fields[_wmTargetField] = editor.innerHTML;
+                if (_wmTargetField === 'TITLE') {
+                    g.titleHtml = editor.innerHTML;
+                    g.title = editor.innerHTML.replace(/<[^>]+>/g, '');
+                } else if (_wmTargetField === 'SUBTITLE') {
+                    g.subtitle = editor.innerHTML.replace(/<[^>]+>/g, '');
+                }
+            } else {
                 if (g.type === 'TICKER') {
                     const rawItems = editor.innerHTML.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
                     g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
@@ -1930,13 +2246,13 @@ function bindWysiwygModalEvents() {
                     g.titleHtml = editor.innerHTML;
                     g.title = editor.innerHTML.replace(/<[^>]+>/g, '');
                 }
-                // Debounced saveState
-                clearTimeout(window._wysiwygAutoSaveTimer);
-                window._wysiwygAutoSaveTimer = setTimeout(() => {
-                    saveState();
-                    console.log('[AutoSave] WYSIWYG content saved for:', _wmGraphicId);
-                }, 1000);
             }
+            // Store in draft — debounced so we're not thrashing
+            clearTimeout(window._wysiwygDraftTimer);
+            window._wysiwygDraftTimer = setTimeout(() => {
+                window._draftGraphics[g.id] = JSON.parse(JSON.stringify(g));
+                renderShotbox();
+            }, 600);
         }
     });
 
@@ -2181,14 +2497,23 @@ function importTemplate(file) {
     reader.readAsText(file);
 }
 
-function importOCGTemplate(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            let imported = JSON.parse(e.target.result);
+async function importOCGTemplates(files) {
+    let count = 0;
+
+    const readFileAsText = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(e);
+        reader.readAsText(file);
+    });
+
+    try {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const text = await readFileAsText(file);
+            let imported = JSON.parse(text);
             if (!Array.isArray(imported)) imported = [imported];
 
-            let count = 0;
             imported.forEach(tpl => {
                 const name = tpl.name;
                 const html = tpl.html || tpl.html_template;
@@ -2198,53 +2523,236 @@ function importOCGTemplate(file) {
                 if (!name || (!html && !css)) return;
                 
                 let enhancedHtml = html || '';
+                const mappedFields = { title: null, subtitle: null };
+
                 if (tpl.inputs) {
                     tpl.inputs.forEach(input => {
-                        // If HTML contains id="input.id" and it's an empty element, inject {{{ [input.id] }}}
-                        // We use [id] to support dashes in Handlebars
-                        const regex = new RegExp(`(<[^>]*id=["']${input.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>)(\\s*)(<\/[^>]+>)`, 'g');
-                        enhancedHtml = enhancedHtml.replace(regex, `$1{{{ [${input.id}] }}}$3`);
+                        let hbKey = `[${input.id}]`;
+                        const lowerId = input.id.toLowerCase();
+                        
+                        if (lowerId.includes('tytul') || lowerId.includes('nazwa') || lowerId.includes('title') || lowerId === 'f1') {
+                            if (!lowerId.includes('sub')) {
+                                mappedFields.title = input.default || '';
+                            }
+                        }
+                        
+                        if (lowerId.includes('sub') || lowerId.includes('opis') || lowerId.includes('funkcja') || lowerId === 'f2') {
+                            mappedFields.subtitle = input.default || '';
+                        }
+
+                        // We use [id] to support dashes in Handlebars, or the plain mapped key
+                        const regex = new RegExp(`(<[^>]*id=["']${input.id.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}["'][^>]*>)(\\s*)(<\\/[^>]+>)`, 'g');
+                        enhancedHtml = enhancedHtml.replace(regex, `$1{{{ ${hbKey} }}}$3`);
+                    });
+                }
+                
+                if (!tpl.defaultFields) tpl.defaultFields = {};
+                if (mappedFields.title !== null && !tpl.defaultFields.title) tpl.defaultFields.title = mappedFields.title;
+                if (mappedFields.subtitle !== null && !tpl.defaultFields.subtitle) tpl.defaultFields.subtitle = mappedFields.subtitle;
+
+                // --- AUTO-CORRECTION FOR COMPATIBILITY ---
+                let enhancedJs = js || '';
+                // OCG JS defines `const root = {{DOM_CONTEXT}};`. The renderer wrapper now provides `root` correctly.
+                enhancedJs = enhancedJs.replace(/const\s+root\s*=\s*(?:\{\{DOM_CONTEXT\}\}|'root'|"root");?/g, '/* root injected by CG wrapper */');
+                enhancedJs = enhancedJs.replace(/\.innerText/g, '.textContent');
+
+                // Infer dimensions and layout positioning from CSS
+                let enhancedCss = css || '';
+                let defaultWidth = undefined;
+                let defaultHeight = undefined;
+                let defaultX = 0;
+                let defaultY = 0;
+
+                if (enhancedCss) {
+                    const blockRegex = /([^{]+)\{([^}]+)\}/g;
+                    let rootBlockFound = false;
+
+                    enhancedCss = enhancedCss.replace(blockRegex, (fullMatch, selector, rules) => {
+                        if (rootBlockFound) return fullMatch;
+                        
+                        // Heuristic: The root wrapper usually has `position: absolute;`
+                        if (/position:\s*absolute/i.test(rules) && !rules.includes('z-index: 999999')) {
+                            rootBlockFound = true;
+                            
+                            const extract = (prop) => {
+                                const r = new RegExp(`${prop}:\\s*([^;]+);`, 'i');
+                                const m = rules.match(r);
+                                return m ? m[1].trim() : null;
+                            };
+
+                            const w = extract('width');
+                            const h = extract('height');
+                            const l = extract('left');
+                            const r = extract('right');
+                            const t = extract('top');
+                            const b = extract('bottom');
+                            
+                            const parsePx = (val, isW) => {
+                                if (!val) return null;
+                                if (val.endsWith('px')) return parseFloat(val);
+                                if (val === '100%') return isW ? 1920 : 1080;
+                                return null;
+                            };
+                            
+                            let pxW = parsePx(w, true);
+                            let pxH = parsePx(h, false);
+                            let pxL = parsePx(l, true);
+                            let pxR = parsePx(r, true);
+                            let pxT = parsePx(t, false);
+                            let pxB = parsePx(b, false);
+                            
+                            if (pxW !== null) defaultWidth = pxW;
+                            if (pxH !== null) defaultHeight = pxH;
+                            
+                            // Estimate X/Y position in 1920x1080 bounds
+                            if (pxL !== null) {
+                                defaultX = pxL;
+                            } else if (pxR !== null && pxW !== null) {
+                                defaultX = 1920 - pxW - pxR;
+                            } else if (pxR !== null) {
+                                defaultX = 1920 - pxR - 200; // fallback width guess
+                            }
+                            
+                            if (pxT !== null) {
+                                defaultY = pxT;
+                            } else if (pxB !== null && pxH !== null) {
+                                defaultY = 1080 - pxH - pxB;
+                            } else if (pxB !== null) {
+                                defaultY = 1080 - pxB - 100; // fallback height guess
+                            }
+                            
+                            // Strip hardcoded bounds from CSS so Alpha container can size it
+                            let newRules = rules
+                                .replace(/position:\s*absolute/gi, 'position: relative')
+                                .replace(/left:\s*[^;]+(;|(?=\}))/gi, '')
+                                .replace(/right:\s*[^;]+(;|(?=\}))/gi, '')
+                                .replace(/top:\s*[^;]+(;|(?=\}))/gi, '')
+                                .replace(/bottom:\s*[^;]+(;|(?=\}))/gi, '');
+                            
+                            if (w && pxW !== null && pxW !== 1920) {
+                                newRules = newRules.replace(new RegExp(`width:\\s*${w.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')};?`, 'gi'), 'width: var(--v-width, 100%);');
+                            } else {
+                                newRules = newRules.replace(/width:\s*100%;?/gi, 'width: var(--v-width, 100%);');
+                            }
+                            if (h && pxH !== null && pxH !== 1080) {
+                                newRules = newRules.replace(new RegExp(`height:\\s*${h.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')};?`, 'gi'), 'height: var(--v-height, 100%);');
+                            } else {
+                                newRules = newRules.replace(/height:\s*100%;?/gi, 'height: var(--v-height, 100%);');
+                            }
+                            
+                            // Strip transitional bounding bugs
+                            newRules = newRules.replace(/,\s*(bottom|top|left|right)\s+([^,;]+)/gi, '');
+                            newRules = newRules.replace(/(bottom|top|left|right)\s+([^,;]+),\s*/gi, '');
+
+                            return `${selector}{${newRules}}`;
+                        }
+                        return fullMatch;
                     });
                 }
 
-                // Infer dimensions from inputs or CSS
-                let defaultWidth = undefined;
-                let defaultHeight = undefined;
+                // Wipers & Tags widths fallback for non-root elements
+                if (enhancedCss) {
+                    enhancedCss = enhancedCss.replace(/width:\s*190px;/g, 'width: var(--v-width, 190px);');
+                    enhancedCss = enhancedCss.replace(/width:\s*380px;/g, 'width: var(--v-width, 380px);');
+                }
 
                 if (tpl.inputs) {
                     const wInput = tpl.inputs.find(i => /width/i.test(i.id));
                     const hInput = tpl.inputs.find(i => /height/i.test(i.id));
-                    if (wInput && !isNaN(parseFloat(wInput.default))) defaultWidth = parseFloat(wInput.default);
-                    if (hInput && !isNaN(parseFloat(hInput.default))) defaultHeight = parseFloat(hInput.default);
+                    if (wInput && !isNaN(parseFloat(wInput.default)) && !defaultWidth) defaultWidth = parseFloat(wInput.default);
+                    if (hInput && !isNaN(parseFloat(hInput.default)) && !defaultHeight) defaultHeight = parseFloat(hInput.default);
                 }
 
-                // If template is Canvas based and hardcoded to 1920x1080 (very common in OCG)
-                // Using regex for more robustness against whitespace/semicolons
-                // OCG templates often have specific CSS blocks
-                if (css && (
-                    css.includes('width: 1920px') || 
-                    css.includes('width: 100%') || 
-                    /width:\s*(1920px|100%)/.test(css)
+                if (enhancedCss && (
+                    enhancedCss.includes('width: 1920px') || 
+                    enhancedCss.includes('width: 100%') || 
+                    /width:\s*(1920px|100%)/.test(enhancedCss)
                 )) {
                     defaultWidth = defaultWidth || 1920;
                     defaultHeight = defaultHeight || 1080;
                 }
                 
-                if (defaultWidth) console.log(`[OCG Import] Inferred Width: ${defaultWidth} for ${name}`);
+                if (defaultWidth) console.log(`[OCG Import] Bounds Inferred: W:${defaultWidth} H:${defaultHeight} X:${defaultX} Y:${defaultY} for ${name}`);
+
+                // --- CSS NORMALIZATION (Wygląd i Typografia) ---
+                let defaultFontFamily = 'Bahnschrift'; 
+                let defaultPrimaryBg = '#0047AB';
+                let defaultTitleColor = '#ffffff';
+
+                if (enhancedCss) {
+                    // Extract font-family and replace
+                    enhancedCss = enhancedCss.replace(/font-family:\s*([^;]+);/gi, (match, fontVal) => {
+                        const firstFont = fontVal.split(',')[0].replace(/['"]/g, '').trim();
+                        if (firstFont && !firstFont.includes('{{')) defaultFontFamily = firstFont;
+                        return `font-family: '{{FONT_FAMILY}}', sans-serif;`;
+                    });
+
+                    // Discover text color
+                    let textColFound = false;
+                    enhancedCss = enhancedCss.replace(/color:\s*(#[0-9a-fA-F]+|rgba?\([^)]+\))/gi, (match, colVal) => {
+                        // Exclude background-color or border-color that might be caught if regex is loose
+                        if (!textColFound && match.trim().toLowerCase().startsWith('color:')) {
+                            defaultTitleColor = colVal;
+                            textColFound = true;
+                        }
+                        return `color: {{TITLE_COLOR}}`;
+                    });
+
+                    // Discover background color
+                    let bgFound = false;
+                    enhancedCss = enhancedCss.replace(/background(-color)?:\s*(#[0-9a-fA-F]+|rgba?\([^)]+\))/gi, (match, bType, colVal) => {
+                        if (!bgFound) {
+                            defaultPrimaryBg = colVal;
+                            bgFound = true;
+                        }
+                        return `background${bType || ''}: {{PRIMARY_COLOR}}`;
+                    });
+                }
 
                 const newTpl = {
                     id: crypto.randomUUID(),
                     name: name + (name.includes('(OCG)') ? '' : ' (OCG)'),
                     type: tpl.type || 'LOWER_THIRD',
-                    html_template: enhancedHtml,
-                    css_template: css,
-                    js_template: js,
-                    ocgInputs: tpl.inputs || [],
+                    html_template: tpl.html_template || enhancedHtml,
+                    css_template: tpl.css_template || enhancedCss,
+                    js_template: tpl.js_template || enhancedJs,
+                    ocgInputs: tpl.inputs || tpl.ocgInputs || [],
                     defaultFields: tpl.defaultFields || {},
                     defaultLayout: {
-                        width: defaultWidth,
-                        height: defaultHeight,
-                        ...(tpl.defaultLayout || {})
+                        width: defaultWidth || 1920,
+                        height: defaultHeight || 1080,
+                        x: defaultX || 0,
+                        y: defaultY || 0,
+                        ...(tpl.defaultLayout || tpl.layout || {})
+                    },
+                    defaultStyle: tpl.defaultStyle || tpl.style || {
+                        background: {
+                            type: 'solid',
+                            color: defaultPrimaryBg,
+                            color2: '#000000',
+                            gradientAngle: 135,
+                            opacity: 1,
+                            borderColor: '#ffffff',
+                            borderWidth: 0,
+                            borderRadius: (tpl.type === 'TICKER' ? 10 : 0)
+                        },
+                        typography: {
+                            fontFamily: defaultFontFamily,
+                            fontSize: (tpl.type === 'TICKER' ? 30 : 80),
+                            color: defaultTitleColor,
+                            fontWeight: 'bold',
+                            textTransform: (tpl.type === 'TICKER' ? 'uppercase' : 'none')
+                        },
+                        subtitleTypography: {
+                            color: '#eeeeee',
+                            fontFamily: defaultFontFamily,
+                            fontSize: 40,
+                            fontWeight: 'normal'
+                        }
+                    },
+                    defaultAnimation: tpl.defaultAnimation || tpl.animation || {
+                        in: { type: (tpl.type === 'TICKER' ? 'slide' : 'fade'), direction: 'bottom', duration: 0.6 },
+                        out: { type: (tpl.type === 'TICKER' ? 'slide' : 'fade'), direction: 'bottom', duration: 0.4 }
                     }
                 };
 
@@ -2260,20 +2768,19 @@ function importOCGTemplate(file) {
                 state.templates.push(newTpl);
                 count++;
             });
-
-            if (count > 0) {
-                saveState();
-                renderTemplateList();
-                alert(`Zaimportowano ${count} szablonów OCG!`);
-            } else {
-                alert('Nie znaleziono prawidłowych szablonów OCG w pliku.');
-            }
-        } catch (err) {
-            console.error('OCG Import error:', err);
-            alert('Błąd podczas importowania pliku OCG JSON.');
         }
-    };
-    reader.readAsText(file);
+
+        if (count > 0) {
+            saveState();
+            renderTemplateList();
+            alert(`Zaimportowano ${count} szablonów OCG! Automatyczne poprawki kompatybilności zostały zastosowane.`);
+        } else {
+            alert('Nie znaleziono prawidłowych szablonów OCG w wybranych plikach.');
+        }
+    } catch (err) {
+        console.error('OCG Import error:', err);
+        alert('Błąd podczas importowania plików OCG JSON.');
+    }
 }
 
 function exportOCGTemplate(templateId) {
@@ -2328,12 +2835,30 @@ function updateTemplateEditorTab() {
     if (!tpl) return;
 
     const editor = document.getElementById('tpl-code-editor');
-    const valMap = { html: tpl.html_template, css: tpl.css_template, js: tpl.js_template };
-    editor.value = valMap[currentTemplateTab] || '';
+    const builderWrapper = document.getElementById('fields-builder-wrapper');
 
-    // Style the editor
-    const colorMap = { html: '#fde68a', css: '#93c5fd', js: '#fdba74' };
-    editor.style.color = colorMap[currentTemplateTab];
+    if (currentTemplateTab === 'vars') {
+        // Show builder, hide textarea
+        editor.classList.add('hidden');
+        if (builderWrapper) {
+            builderWrapper.classList.remove('hidden');
+            builderWrapper.classList.add('flex');
+        }
+        renderFieldsBuilder(tpl);
+    } else {
+        // Show textarea, hide builder
+        editor.classList.remove('hidden');
+        if (builderWrapper) {
+            builderWrapper.classList.add('hidden');
+            builderWrapper.classList.remove('flex');
+        }
+
+        const valMap = { html: tpl.html_template, css: tpl.css_template, js: tpl.js_template };
+        editor.value = valMap[currentTemplateTab] || '';
+
+        const colorMap = { html: '#fde68a', css: '#93c5fd', js: '#fdba74' };
+        editor.style.color = colorMap[currentTemplateTab];
+    }
 
     // Update tab styles
     document.querySelectorAll('.tpl-tab').forEach(tab => {
@@ -2346,11 +2871,29 @@ function updateTemplateEditorTab() {
 function saveCurrentTemplate() {
     const tpl = state.templates.find(t => t.id === currentTemplateId);
     if (!tpl) return;
-    const editor = document.getElementById('tpl-code-editor');
     const nameInput = document.getElementById('tpl-name-input');
-    const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
-    tpl[fieldMap[currentTemplateTab]] = editor.value;
     tpl.name = nameInput.value || tpl.name;
+
+    if (currentTemplateTab === 'vars') {
+        // Collect rows from the fields builder
+        const rows = document.querySelectorAll('#fields-builder-container .field-builder-row');
+        const inputsArray = [];
+        rows.forEach(r => {
+            const idVal = r.querySelector('.f-id').value.trim();
+            const labelVal = r.querySelector('.f-label').value.trim();
+            const defVal = r.querySelector('.f-def').value.trim();
+            const typeVal = r.querySelector('.f-type').value;
+            if (idVal && labelVal) {
+                inputsArray.push({ id: idVal, label: labelVal, default: defVal, type: typeVal });
+            }
+        });
+        tpl.ocgInputs = inputsArray;
+    } else {
+        const editor = document.getElementById('tpl-code-editor');
+        const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
+        tpl[fieldMap[currentTemplateTab]] = editor.value;
+    }
+
     saveState();
     renderTemplateList();
 
@@ -2361,6 +2904,61 @@ function saveCurrentTemplate() {
         btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Zapisz`;
         btn.classList.replace('bg-green-600', 'bg-blue-600');
     }, 2000);
+}
+
+// ===========================================================
+// 9a. FIELDS BUILDER (Variable Definition System)
+// ===========================================================
+function renderFieldsBuilder(tpl) {
+    const container = document.getElementById('fields-builder-container');
+    if (!container) return;
+    container.innerHTML = '';
+    const inputs = tpl.ocgInputs || [];
+    inputs.forEach(inp => addFieldRow(inp.id, inp.label, inp.default, inp.type));
+    refreshFieldsBuilderEmptyState();
+}
+
+function addFieldRow(idVal = '', labelVal = '', defVal = '', typeVal = 'text') {
+    const container = document.getElementById('fields-builder-container');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.className = 'field-builder-row grid gap-2 items-center bg-[#111827] border border-gray-800 rounded px-3 py-2 hover:border-gray-700 transition-colors';
+    row.style.gridTemplateColumns = '1fr 1.3fr 2fr 1fr auto';
+
+    const typeOptions = [
+        { value: 'text',     label: 'Krótki tekst' },
+        { value: 'richtext', label: 'Edytor tekstu' },
+        { value: 'list',     label: 'Lista (JSON)' },
+    ];
+    const typeSelectHtml = typeOptions.map(o =>
+        `<option value="${o.value}" ${typeVal === o.value ? 'selected' : ''}>${o.label}</option>`
+    ).join('');
+
+    row.innerHTML = `
+        <input type="text" class="f-id w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] font-mono text-yellow-300 focus:outline-none focus:border-yellow-500 placeholder-gray-600" placeholder="np. f-tytul" value="${escAttr(idVal)}">
+        <input type="text" class="f-label w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-gray-200 focus:outline-none focus:border-blue-500 placeholder-gray-600" placeholder="Wyświetlana nazwa" value="${escAttr(labelVal)}">
+        <input type="text" class="f-def w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-gray-400 focus:outline-none focus:border-blue-500 placeholder-gray-600" placeholder="Wartość domyślna" value="${escAttr(defVal)}">
+        <select class="f-type w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-blue-400 focus:outline-none focus:border-blue-500 appearance-none">${typeSelectHtml}</select>
+        <button class="field-row-delete w-7 h-7 rounded flex items-center justify-center bg-red-900/30 hover:bg-red-700 text-red-400 hover:text-white border border-red-900/50 transition-all text-sm shrink-0" title="Usuń zmienną">&times;</button>
+    `;
+
+    row.querySelector('.field-row-delete').addEventListener('click', () => {
+        row.remove();
+        refreshFieldsBuilderEmptyState();
+    });
+
+    container.appendChild(row);
+    refreshFieldsBuilderEmptyState();
+}
+
+function refreshFieldsBuilderEmptyState() {
+    const container = document.getElementById('fields-builder-container');
+    const emptyMsg = document.getElementById('fields-builder-empty');
+    if (!container || !emptyMsg) return;
+    const hasRows = container.querySelectorAll('.field-builder-row').length > 0;
+    emptyMsg.classList.toggle('hidden', hasRows);
+    container.classList.toggle('hidden', !hasRows);
 }
 
 // ===========================================================
@@ -2410,7 +3008,14 @@ function createGraphicFromTemplate(templateIdOrTpl) {
         subtitle: tpl.defaultFields?.subtitle || '',
         items: tpl.defaultFields?.items || [],
         speed: tpl.defaultFields?.speed !== undefined ? tpl.defaultFields.speed : 100,
-        fields: tpl.defaultFields ? JSON.parse(JSON.stringify(tpl.defaultFields)) : {},
+        fields: (() => {
+            const f = tpl.defaultFields ? JSON.parse(JSON.stringify(tpl.defaultFields)) : {};
+            // Initialize all ocgInputs with their defaults if not already present
+            (tpl.ocgInputs || []).forEach(inp => {
+                if (f[inp.id] === undefined) f[inp.id] = inp.default || '';
+            });
+            return f;
+        })(),
         layout: { 
             x: 100, 
             y: 800, 
@@ -2482,7 +3087,7 @@ function animTypeSelect(field, value, animDir = '') {
         ['none', '✕ Brak (Cut)'],
     ];
     // onchange re-opens inspector so direction buttons update
-    const onChange = animDir ? `onchange="(function(sel){var g=state.graphics.find(g=>g.id===selectedGraphicId);if(g){deepSet(g, '${field}', sel.value);saveState();openInspector(g.id);};})(this)"` : '';
+    const onChange = animDir ? `onchange="(function(sel){var g=window._draftGraphics[selectedGraphicId]||state.graphics.find(g=>g.id===selectedGraphicId);if(g){g=JSON.parse(JSON.stringify(g));deepSet(g, '${field}', sel.value);window._draftGraphics[selectedGraphicId]=g;if(previewGraphic?.id===selectedGraphicId)Object.assign(previewGraphic,g);window.refreshPreviewMonitor();window.renderShotbox();window.openInspector(g.id);};})(this)"` : '';
     return `<select data-field="${field}" ${onChange} class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
             ${opts.map(([v, l]) => `<option value="${v}" ${value === v ? 'selected' : ''}>${l}</option>`).join('')}
         </select>`;
@@ -2747,18 +3352,23 @@ function bindGlobalEvents() {
 
     document.getElementById('btn-update-active').onclick = () => {
         if (!previewGraphic) return;
-        const g = state.graphics.find(g => g.id === previewGraphic.id);
-        if (g) Object.assign(g, previewGraphic);
-        saveState();
-        renderShotbox();
+        window.syncDraftGraphic(previewGraphic.id);
     };
 
     document.getElementById('btn-take-preview').onclick = () => {
         if (!previewGraphic) return;
+        
+        // Ensure any unsaved edits are synced first
+        if (window._draftGraphics[previewGraphic.id]) {
+            // we do sync but keep previewGraphic as is
+            const draft = window._draftGraphics[previewGraphic.id];
+            const idx = state.graphics.findIndex(g => g.id === draft.id);
+            if (idx !== -1) state.graphics[idx] = JSON.parse(JSON.stringify(draft));
+            delete window._draftGraphics[previewGraphic.id];
+        }
+        
         const g = state.graphics.find(g => g.id === previewGraphic.id);
         if (g) {
-            // Save then toggle
-            Object.assign(g, previewGraphic);
             if (!g.visible) g.visible = true;
             else g.visible = false;
             previewGraphic.visible = g.visible;
@@ -2804,6 +3414,15 @@ function bindGlobalEvents() {
 
     // Inspector save
     document.getElementById('btn-save-graphic').onclick = () => {
+        if (previewGraphic) {
+            const g = state.graphics.find(g => g.id === previewGraphic.id);
+            if (g) {
+                // Keep the visible flag and merge changes
+                const isVisible = g.visible;
+                Object.assign(g, previewGraphic);
+                g.visible = isVisible;
+            }
+        }
         saveState();
         renderShotbox();
         const btn = document.getElementById('btn-save-graphic');
@@ -2996,15 +3615,35 @@ function bindGlobalEvents() {
             if (currentTemplateId) {
                 const tpl = state.templates.find(t => t.id === currentTemplateId);
                 if (tpl) {
-                    const editor = document.getElementById('tpl-code-editor');
-                    const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
-                    tpl[fieldMap[currentTemplateTab]] = editor.value;
+                    if (currentTemplateTab === 'vars') {
+                        // Save fields builder state
+                        const rows = document.querySelectorAll('#fields-builder-container .field-builder-row');
+                        const inputsArray = [];
+                        rows.forEach(r => {
+                            const idVal = r.querySelector('.f-id').value.trim();
+                            const labelVal = r.querySelector('.f-label').value.trim();
+                            const defVal = r.querySelector('.f-def').value.trim();
+                            const typeVal = r.querySelector('.f-type').value;
+                            if (idVal && labelVal) {
+                                inputsArray.push({ id: idVal, label: labelVal, default: defVal, type: typeVal });
+                            }
+                        });
+                        tpl.ocgInputs = inputsArray;
+                    } else {
+                        const editor = document.getElementById('tpl-code-editor');
+                        const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
+                        tpl[fieldMap[currentTemplateTab]] = editor.value;
+                    }
                 }
             }
             currentTemplateTab = tab.getAttribute('data-tab');
             updateTemplateEditorTab();
         };
     });
+
+    // Bind fields builder 'Add Variable' button
+    const btnAddFieldRow = document.getElementById('btn-add-field-row');
+    if (btnAddFieldRow) btnAddFieldRow.onclick = () => addFieldRow();
 
     // Auto-save template code on edit
     document.getElementById('tpl-code-editor').oninput = () => {
@@ -3091,7 +3730,7 @@ function bindGlobalEvents() {
 let tickerEditorGraphic = null;
 
 window.openTickerEditor = function(id) {
-    const graphic = state.graphics.find(g => g.id === id);
+    const graphic = window._draftGraphics[id] || state.graphics.find(g => g.id === id);
     if (!graphic) return;
     
     tickerEditorGraphic = JSON.parse(JSON.stringify(graphic)); // Deep copy for editing
@@ -3290,21 +3929,22 @@ window.saveTickerEditor = function() {
     
     // Update the real graphic in state
     const realId = tickerEditorGraphic.id;
-    const realGfxIndex = state.graphics.findIndex(g => g.id === realId);
+    let g = window._draftGraphics[realId] || state.graphics.find(gx => gx.id === realId);
     
-    if (realGfxIndex !== -1) {
-        state.graphics[realGfxIndex].items = newItems;
-        saveState();
+    if (g) {
+        g = JSON.parse(JSON.stringify(g));
+        g.items = newItems;
+        window._draftGraphics[realId] = g;
+        
+        if (previewGraphic && previewGraphic.id === realId) {
+            Object.assign(previewGraphic, g);
+            refreshPreviewMonitor();
+        }
+        
         renderShotbox();
-        updateProgramMonitor();
         
         if (selectedGraphicId === realId) {
             openInspector(realId);
-        }
-        
-        if (previewGraphic?.id === realId) {
-            previewGraphic.items = newItems;
-            refreshPreviewMonitor();
         }
     }
     

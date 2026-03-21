@@ -83,10 +83,21 @@
                     console.log('HASH MISMATCH FOR:', graphic.id);
                     console.log('OLD HASH:', existingHash);
                     console.log('NEW HASH:', newHash);
-                    // Update properties by fast re-render without out-animation
-                    container.removeChild(activeGraphics[graphic.id].el);
-                    delete activeGraphics[graphic.id];
-                    showGraphic(graphic, settings, graphics);
+                    
+                    const oldMeta = activeGraphics[graphic.id];
+                    let durationMs = 550;
+                    try {
+                        const dataHash = JSON.parse(oldMeta.hash);
+                        durationMs = ((dataHash.animation?.out?.duration) || 0.5) * 1000 + 50;
+                    } catch(e) {}
+
+                    // Trigger OUT animation of old graphic
+                    hideGraphic(graphic.id);
+                    
+                    // Trigger IN animation of new graphic after the OUT animation completes
+                    setTimeout(() => {
+                        showGraphic(graphic, settings, graphics);
+                    }, durationMs + 50);
                 }
             }
         });
@@ -389,7 +400,9 @@
         if (meta.el && meta.el.parentNode) {
             meta.el.parentNode.removeChild(meta.el);
         }
-        delete activeGraphics[id];
+        if (activeGraphics[id] === meta) {
+            delete activeGraphics[id];
+        }
     }
 
     // ===========================================================
@@ -611,8 +624,12 @@
     function buildPreviewContext(graphic, tpl, instanceId, settings = {}) {
         const animIn = graphic.animation?.in || {};
         const animOut = graphic.animation?.out || {};
-        const bgStyle = graphic.style?.background || {};
-        const typo = graphic.style?.typography || {};
+        
+        // Merge styles: Instance overrides Template Defaults
+        const ds = tpl.defaultStyle || {};
+        const bgStyle = { ...(ds.background || {}), ...(graphic.style?.background || {}) };
+        const typo = { ...(ds.typography || {}), ...(graphic.style?.typography || {}) };
+        const subTypo = { ...(ds.subtitleTypography || {}), ...(graphic.style?.subtitleTypography || {}) };
 
         // Prepare OCG fields (serialize arrays to JSON)
         const customFields = {};
@@ -732,7 +749,7 @@
             return `linear-gradient(90deg, rgba(${r},${g},${b},0) 0%, rgba(${r},${g},${b},${opacity}) 50%, rgba(${r},${g},${b},0) 100%)`;
         })();
 
-        return {
+        const ctx = {
             ID: instanceId,
             TITLE: rawTitle,
             SUBTITLE: graphic.subtitle || tpl.defaultFields?.subtitle || '',
@@ -751,24 +768,27 @@
             WIPER_GLEAM_OPACITY: wiperSettings.gleamOpacity ?? 0.4,
             ITEMS: itemsStrings,
             ITEMS_JSON: JSON.stringify(itemsData),
-            WIPER_TEXT: (graphic.introText !== undefined) ? graphic.introText : (tpl.defaultFields?.introText || 'PILNE'),
+            ITEMS_B64: (() => { try { const s = JSON.stringify(itemsData); const b64 = (typeof btoa !== 'undefined') ? btoa(unescape(encodeURIComponent(s))) : Buffer.from(s).toString('base64'); return b64.replace(/=+$/, ''); } catch(e) { return ''; } })(),
+            WIPER_TEXT: (graphic.introText !== undefined) ? graphic.introText : (tpl.defaultFields?.introText || ''),
+            WIPER_SHOW: wiperSettings.show !== false,
             LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
             TICKER_SPEED: graphic.speed || 100,
+            TICKER_MODE: graphic.tickerMode || tpl.defaultFields?.tickerMode || 'whip',
             PRIMARY_COLOR: bgStyle.color || '#1e3a8a',
             PRIMARY_BG: bg,
             SECONDARY_COLOR: graphic.accentColor || bgStyle.borderColor || '#000000',
             BORDER_COLOR: bgStyle.borderColor || '#3b82f6',
             TITLE_COLOR: typo.color || '#ffffff',
-            SUBTITLE_COLOR: graphic.style?.subtitleTypography?.color || '#eeeeee',
+            SUBTITLE_COLOR: subTypo.color || '#eeeeee',
             FONT_FAMILY: activeFontFamily,
             FONT_SIZE: typo.fontSize || 30,
-            TITLE_SIZE: typo.fontSize || tpl.defaultFields?.titleSize || 48,
+            TITLE_SIZE: typo.fontSize || 48,
             TITLE_WEIGHT: typo.fontWeight || '800',
             TITLE_TRANSFORM: typo.textTransform || 'uppercase',
             PADDING_Y: typo.paddingY || 0,
             BOX_SHADOW: shadowStr,
             TITLE_FONT: activeFontFamily,
-            SUBTITLE_SIZE: graphic.style?.subtitleTypography?.fontSize || tpl.defaultFields?.subtitleSize || 24,
+            SUBTITLE_SIZE: subTypo.fontSize || 24,
             BACKGROUND: bg,
             BORDER_RADIUS: (settings && settings.globalRadiusGraphics && settings.globalRadiusGraphics.includes(graphic.id)) ? (settings.globalBorderRadius || 0) : (bgStyle.borderRadius || 0),
             BORDER_WIDTH: bgStyle.borderWidth || 0,
@@ -802,8 +822,8 @@
             ANIMATION_OUT_EASE: animOut.ease || 'ease-in',
             LAYOUT_X: graphic.layout?.x || 0,
             LAYOUT_Y: graphic.layout?.y || 0,
-            V_WIDTH: tpl.defaultLayout?.width || 1920,
-            V_HEIGHT: tpl.defaultLayout?.height || 1080,
+            V_WIDTH: graphic.layout?.width || tpl.defaultLayout?.width || 1920,
+            V_HEIGHT: graphic.layout?.height || tpl.defaultLayout?.height || 1080,
             SIDE_IMAGE: graphic.sideImage || '',
             LOGO_WIDTH: graphic.layout?.width || null,
             LOGO_HEIGHT: graphic.layout?.height || null,
@@ -816,9 +836,25 @@
             TEXT_ANIM_OUT_JSON: JSON.stringify(graphic.animation?.textOut || { type: 'none' }),
             TEXT_ANIM_OUT_SYNC: !!graphic.animation?.textOut?.syncWithBase,
             SEPARATOR_CSS: SEPARATOR_CSS,
-            DOM_CONTEXT: 'root',
+            DOM_CONTEXT: `document.getElementById("${instanceId}")`,
             ...customFields
         };
+
+        // Intelligent OCG mapping: if TITLE/SUBTITLE are still standard/empty, 
+        // try to find matching OCG fields (e.g. f-tytul-nazwa -> TITLE)
+        const isStandardTitle = (ctx.TITLE === graphic.title || ctx.TITLE === tpl.defaultFields?.title || ctx.TITLE === tpl.name);
+        if (isStandardTitle) {
+            const titleKey = Object.keys(customFields).find(k => /title|tytul|nazwa/i.test(k) && !/sub/i.test(k));
+            if (titleKey) ctx.TITLE = customFields[titleKey];
+        }
+        const isStandardSub = (!ctx.SUBTITLE || ctx.SUBTITLE === tpl.defaultFields?.subtitle);
+        if (isStandardSub) {
+            const subKey = Object.keys(customFields).find(k => /sub|opis|funkcja/i.test(k));
+            if (subKey) ctx.SUBTITLE = customFields[subKey];
+        }
+
+        console.log("RENDERER CONTEXT FOR:", graphic.id, tpl.id, ctx);
+        return ctx;
     }
 
     // Start — only run if this is the output.html renderer context
