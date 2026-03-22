@@ -1,0 +1,20 @@
+{
+  "id": "na-zywo-badge",
+  "name": "Plakietka NA ŻYWO",
+  "type": "LOWER_THIRD",
+  "version": 1,
+  "html_template": "<div class=\"na-zywo-wrapper\">\n    <div class=\"na-zywo-container\">\n        <span class=\"na-zywo-dot\"></span>\n        <span class=\"na-zywo-text\">{{{TITLE}}}</span>\n    </div>\n</div>",
+  "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n#{{ID}} .na-zywo-dot {\n    width: 14px;\n    height: 14px;\n    background-color: #ffffff;\n    border-radius: 50%;\n    margin-right: 12px;\n    animation: pulse-dot 1s infinite alternate;\n    box-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n@keyframes pulse-dot {\n    0% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
+  "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+  "defaultFields": {
+    "title": "NA ŻYWO",
+    "primaryColor": "#b91c1c"
+  },
+  "defaultLayout": {
+    "x": 100,
+    "y": 100,
+    "layer": 99,
+    "scale": 1.5
+  },
+  "ocgInputs": []
+}

@@ -1,0 +1,36 @@
+{
+  "id": "vertical-ticker",
+  "name": "Ticker Pionowy",
+  "type": "TICKER",
+  "version": 1,
+  "features": {
+    "vertical": true
+  },
+  "html_template": "<div class=\"ticker-vert-container\"><div class=\"ticker-vert-label\">{{WIPER_TEXT}}</div><div class=\"ticker-vert-viewport\"></div><div class=\"ticker-vert-data\" style=\"display:none\">{{ITEMS_JSON}}</div></div>",
+  "css_template": "#{{ID}} .ticker-vert-container {\nposition: absolute;\ntop: 0;\nleft: 0;\nwidth: var(--v-width, 100%);\nheight: var(--v-height, 60px);\ndisplay: flex;\nalign-items: stretch;\nbackground: {{PRIMARY_BG}};\nborder: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\nborder-radius: {{BORDER_RADIUS}}px;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nbox-shadow: {{BOX_SHADOW}};\nopacity: 0;\ntransform: {{ANIMATION_IN_TRANSFORM}};\ntransition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\noverflow: hidden;\n}\n#{{ID}} .ticker-vert-label {\nbackground: {{BORDER_COLOR}};\ncolor: {{TITLE_COLOR}};\npadding: 0 25px;\ndisplay: flex;\nalign-items: center;\nfont-weight: 800;\nfont-size: {{FONT_SIZE}}px;\ntext-transform: uppercase;\nletter-spacing: 1px;\nflex-shrink: 0;\nborder-right: 2px solid rgba(0,0,0,0.15);\n}\n#{{ID}} .ticker-vert-viewport {\nflex: 1;\nposition: relative;\noverflow: hidden;\n}\n#{{ID}} .ticker-vert-item {\nposition: absolute;\nwidth: 100%;\npadding: 0 25px;\nheight: 100%;\ndisplay: flex;\nalign-items: center;\ncolor: {{TITLE_COLOR}};\nfont-size: {{FONT_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\nwhite-space: nowrap;\nopacity: 0;\ntransform: translateY(100%);\n}\n#{{ID}} .ticker-vert-item.entering {\nanimation: ticker-vert-in 0.5s ease-out forwards;\n}\n#{{ID}} .ticker-vert-item.leaving {\nanimation: ticker-vert-out 0.5s ease-in forwards;\n}\n@keyframes ticker-vert-in {\nfrom { transform: translateY(100%); opacity: 0; }\nto { transform: translateY(0); opacity: 1; }\n}\n@keyframes ticker-vert-out {\nfrom { transform: translateY(0); opacity: 1; }\nto { transform: translateY(-100%); opacity: 0; }\n}",
+  "js_template": "(() => {\n  const root = document.getElementById(\"{{ID}}\");\n  const container = root.querySelector('.ticker-vert-container');\n  const viewport = root.querySelector('.ticker-vert-viewport');\n  const label = root.querySelector('.ticker-vert-label');\n  const dataEl = root.querySelector('.ticker-vert-data');\n  if (!container || !viewport || !dataEl) return;\n\n  const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n  let items = [];\n  try { items = JSON.parse(dataEl.textContent || '[]'); } catch(e) { items = ['BRAK DANYCH']; }\n  if (!items.length) items = ['BRAK WIADOMOŚCI'];\n\n  let currentIndex = 0;\n  let cycleRunning = false;\n  let cycleTimer = null;\n  const displayMs = Math.max(1000, (parseFloat(\"{{TICKER_SPEED}}\") || 5) * 1000);\n\n  function runCycle() {\n    if (!cycleRunning || !viewport) return;\n    const el = document.createElement('div');\n    el.className = 'ticker-vert-item';\n\n    const currentItem = items[currentIndex];\n    const text = typeof currentItem === 'object' ? (currentItem.text || \"\") : currentItem;\n    const category = typeof currentItem === 'object' ? (currentItem.category || \"\") : \"\";\n\n    el.textContent = text;\n    \n    const labelText = (category || \"\").trim() || (DEFAULT_WIPER || \"\").trim();\n    if (label) {\n        label.style.display = labelText ? 'flex' : 'none';\n        label.innerText = labelText;\n    }\n\n    viewport.appendChild(el);\n    void el.offsetWidth;\n    el.classList.add('entering');\n\n    cycleTimer = setTimeout(() => {\n      if (!cycleRunning) { if (el.parentNode) el.parentNode.removeChild(el); return; }\n      el.classList.remove('entering');\n      el.classList.add('leaving');\n      currentIndex = (currentIndex + 1) % items.length;\n      setTimeout(() => {\n        if (el.parentNode) el.parentNode.removeChild(el);\n        if (cycleRunning) runCycle();\n      }, 500);\n    }, displayMs);\n  }\n\n  root.__slt_show = () => {\n    const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n    tl.add(() => { cycleRunning = true; setTimeout(runCycle, 100); });\n    return tl;\n  };\n\n  root.__slt_hide = () => {\n    cycleRunning = false;\n    if (cycleTimer) clearTimeout(cycleTimer);\n    viewport.querySelectorAll('.ticker-vert-item').forEach(i => i.parentNode && i.parentNode.removeChild(i));\n    return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n  };\n})();",
+  "defaultFields": {
+    "items": [
+      "Przykładowa wiadomość pionowa nr 1",
+      "Kolejna ważna informacja",
+      "Trzecia wiadomość tickera"
+    ],
+    "introText": "AKTUALNOŚCI",
+    "WIPER_TEXT": ""
+  },
+  "defaultLayout": {
+    "side": "bottom-left",
+    "marginY": 50,
+    "marginX": 50,
+    "width": 800,
+    "height": 60
+  },
+  "ocgInputs": [
+    {
+      "id": "WIPER_TEXT",
+      "label": "Etykieta Wipera / Label",
+      "default": "",
+      "type": "text"
+    }
+  ]
+}

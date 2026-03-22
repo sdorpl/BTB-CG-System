@@ -16,14 +16,15 @@ Każdy szablon składa się z poniższych pól:
   "name": "Nazwa Wyświetlana",
   "type": "LOWER_THIRD", 
   "version": 2,
-  "features": {
-    "wiper": true,          // Czy szablon obsługuje pasek "wiper" (intro text)
-    "ticker_mode": true,    // Czy obsługuje tryby Ticker (Whip/Scroll/Vert)
-    "separator": true       // Czy obsługuje wybór separatora dla trybu Scroll
   },
-  "html_template": "...",
-  "css_template": "...",
-  "js_template": "...",
+  "ocgInputs": [
+    {
+      "id": "TITLE",
+      "label": "Tytuł",
+      "default": "Tekst domyślny",
+      "type": "richtext"  // "text" (zwykły), "richtext" (WYSIWYG), "list" (tablica)
+    }
+  ],
   "defaultFields": { ... },
   "defaultLayout": {
     "x": 100, "y": 800, "width": 1600, "height": 60, "scale": 1, "layer": 5
@@ -40,6 +41,11 @@ Każdy szablon składa się z poniższych pól:
 * `TICKER`: Paski informacyjne (np. pilne wiadomości).
 * `CLOCK`: Widżety czasowe / odliczania.
 * `IMAGE`: Logotypy, grafiki statyczne.
+
+### Typy pól wejściowych (`ocgInputs`)
+* `text`: Standardowe pole tekstowe (jedna linia).
+* `richtext`: Pole obsługujące formatowanie **WYSIWYG**. Włącza przycisk edycji w Inspektorze. Wartość powinna być renderowana w szablonie za pomocą potrójnych wąsów: `{{{TITLE}}}`.
+* `list`: Tablica elementów JSON (np. dla tickerów).
 
 ---
 

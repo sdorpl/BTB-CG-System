@@ -1,0 +1,34 @@
+{
+  "id": "system-standard",
+  "name": "Lw ",
+  "type": "LOWER_THIRD",
+  "version": 1,
+  "html_template": "\n<div class=\"lt-container\">\n    <div class=\"plate\">\n        <h1 class=\"title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
+  "css_template": "\n#{{ID}} .lt-container {\npadding: 0;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nline-height: {{LINE_HEIGHT}};\n}\n#{{ID}} .plate {\nbackground: {{PRIMARY_BG}};\npadding: 20px 40px;\nborder-left: 10px solid {{SECONDARY_COLOR}};\ncolor: white;\ndisplay: inline-block;\nbox-shadow: {{BOX_SHADOW}};\nopacity: 0;\ntransform: {{ANIMATION_IN_TRANSFORM}};\ntransition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .title {\nmargin: 0;\nfont-size: {{TITLE_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\nletter-spacing: -1px;\n}\n",
+  "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const container = root.querySelector('.plate'); root.__slt_show = () => { const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}}); const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}}); if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        } return tl; }; root.__slt_hide = () => { const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}}); const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}}); if (textTl) {\n            if ({{{TEXT_ANIM_OUT_SYNC}}}) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        } return tl; }; })();",
+  "defaultFields": {
+    "title": "VinciFlow Title",
+    "primaryColor": "#2563eb",
+    "secondaryColor": "#facc15",
+    "TITLE": "",
+    "SUBTITLE": ""
+  },
+  "defaultLayout": {
+    "x": 0,
+    "y": 0
+  },
+  "ocgInputs": [
+    {
+      "id": "TITLE",
+      "label": "Tytuł / Imię Nazwisko",
+      "default": "",
+      "type": "text"
+    },
+    {
+      "id": "SUBTITLE",
+      "label": "Podtytuł / Funkcja",
+      "default": "",
+      "type": "text"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "tpl-ocg-tag_specjalne_v7",
+  "name": "OCG: TAG: WYDANIE SPECJALNE",
+  "type": "LOWER_THIRD",
+  "version": 1,
+  "html_template": "<div id=\"tag-spec-wrap\"><div class=\"live-tag\"><span class=\"live-text\" id=\"f-tag-spec\">{{{TITLE}}}</span></div></div>",
+  "css_template": "#tag-spec-wrap { position: relative;   width: var(--v-width, 380px); height: 40px; transform: translateX(-100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, bottom 0.5s cubic-bezier(0.25, 1, 0.5, 1); z-index: 9999; } .active #tag-spec-wrap { transform: translateX(0); opacity: 1; } #tag-spec-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: var(--v-width, 100%); height: 100%; background: linear-gradient(-45deg, #e91e63, #f44336, #e91e63); background-size: 200% 200%; animation: specGrad 3s ease infinite; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; } #tag-spec-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 24px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin- } @keyframes specGrad { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }",
+  "js_template": "(() => { \n                const root = {{DOM_CONTEXT}}; \n                if (!root) return;\n                const wrap = root.querySelector('#tag-spec-wrap'); \n                if (!wrap) return;\n                const container = root.parentElement || document.body;\n                \n                setInterval(() => {\n                    let lifted = false;\n                    if (container.querySelector('.lt-container')) {\n                        lifted = true;\n                    }\n                    wrap.style.bottom = lifted ? '285px' : '115px'; \n                }, 100);\n            })();",
+  "defaultFields": {
+    "title": "WYDANIE SPECJALNE"
+  },
+  "ocgInputs": []
+}

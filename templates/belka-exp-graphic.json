@@ -1,0 +1,32 @@
+{
+  "id": "belka-exp-graphic",
+  "name": "Belka EXP z Grafiką",
+  "type": "LOWER_THIRD",
+  "version": 1,
+  "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-main-content\">\n        <div class=\"rep-title\">{{{TITLE}}}</div>\n    </div>\n    {{#if SIDE_IMAGE}}\n        <div class=\"rep-right-image\">\n            <img src=\"{{SIDE_IMAGE}}\" alt=\"Graphic\" />\n        </div>\n    {{/if}}\n</div>",
+  "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-main-content {\n    flex: 1;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-right-image {\n    margin-left: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    height: 100%;\n}\n#{{ID}} .rep-right-image img {\n    max-height: 80px;\n    max-width: 150px;\n    object-fit: contain;\n}",
+  "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+  "defaultFields": {
+    "title": "Tytuł z grafiką",
+    "primaryColor": "#ffffff",
+    "primaryBg": "#c8102e",
+    "titleColor": "#ffffff",
+    "sideImage": "",
+    "TITLE": "",
+    "SUBTITLE": ""
+  },
+  "ocgInputs": [
+    {
+      "id": "TITLE",
+      "label": "Tytuł / Imię Nazwisko",
+      "default": "",
+      "type": "text"
+    },
+    {
+      "id": "SUBTITLE",
+      "label": "Podtytuł / Funkcja",
+      "default": "",
+      "type": "text"
+    }
+  ]
+}

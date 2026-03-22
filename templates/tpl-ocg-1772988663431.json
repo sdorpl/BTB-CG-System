@@ -1,0 +1,29 @@
+{
+  "id": "tpl-ocg-1772988663431",
+  "name": "OCG: IMIĘ NAZWISKO",
+  "type": "LOWER_THIRD",
+  "version": 1,
+  "html_template": "<div class=\"lt-container\">\n    <span id=\"f-title-val\" style=\"display:none;\"></span>\n    <span id=\"f-subtitle-val\" style=\"display:none;\"></span>\n    <canvas class=\"lower-third-canvas\"></canvas>\n</div>",
+  "css_template": ".lt-container {\n    position: relative;\n    \n    \n    width: 1920px;\n    height: 1080px;\n    pointer-events: none;\n}\n.lower-third-canvas {\n    display: block;\n    width: var(--v-width, 100%);\n    height: 100%;\n}",
+  "js_template": "(() => {\n    'use strict';\n    const container = {{DOM_CONTEXT}};\n    if (!container) return;\n    \n    let animationId;\n    const canvas = container.querySelector('.lower-third-canvas');\n    const ctx = canvas ? canvas.getContext('2d') : null;\n\n    if (canvas) {\n        canvas.width = 1920;\n        canvas.height = 1080;\n    }\n\n    const config = { font: \"Bahnschrift\", black: \"#000000\", white: \"#FFFFFF\" };\n    const BAR_W = 1575, BAR_H = 110, SUB_W = 1575, SUB_H = 60, OUTER_MARGIN = 30;\n    const x = OUTER_MARGIN; \n    const y = 1080 - BAR_H - SUB_H - 115; \n\n    let progress = 0, state = 'IN';\n    const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;\n\n    function animate() {\n        if (!ctx || state === 'HIDDEN') return;\n        ctx.clearRect(0, 0, 1920, 1080);\n\n        if (state === 'IN') {\n            progress += 0.025;\n            if (progress >= 1) { progress = 1; state = 'STAY'; }\n        } else if (state === 'OUT') {\n            progress -= 0.035;\n            if (progress <= 0) { progress = 0; state = 'HIDDEN'; return; }\n        }\n\n        const p = ease(progress);\n\n        // 1. BELKA PODTYTUŁU\n        if (p > 0.2) {\n            const sp = Math.min((progress - 0.2) * 1.5, 1);\n            ctx.save();\n            ctx.globalAlpha = 0.9;\n            const subGrad = ctx.createLinearGradient(x, y + BAR_H, x + SUB_W, y + BAR_H);\n            subGrad.addColorStop(0, \"#d1d1d1\"); subGrad.addColorStop(1, \"#f0f0f0\");\n            \n            ctx.fillStyle = subGrad;\n            ctx.fillRect(x, y + BAR_H, SUB_W * ease(sp), SUB_H);\n\n            if (sp > 0.5) {\n                ctx.globalAlpha = sp;\n                ctx.fillStyle = config.black;\n                ctx.font = `400 32px \"${config.font}\"`;\n                ctx.textBaseline = \"middle\";\n                const subEl = container.querySelector('#f-subtitle-val');\n                const subText = subEl ? subEl.textContent : '';\n                ctx.fillText(subText, x + 30, y + BAR_H + (SUB_H / 2));\n            }\n            ctx.restore();\n        }\n\n        // 2. BELKA GŁÓWNA\n        const curW = BAR_W * p;\n        if (curW > 0) {\n            ctx.save();\n            const mainGrad = ctx.createLinearGradient(x, y, x + BAR_W, y);\n            mainGrad.addColorStop(0, \"#ffffff\"); mainGrad.addColorStop(0.5, \"#e0e0e0\"); mainGrad.addColorStop(1, \"#ffffff\");\n            \n            ctx.fillStyle = mainGrad;\n            ctx.fillRect(x, y, curW, BAR_H);\n            ctx.fillStyle = config.black;\n            ctx.globalAlpha = 0.1;\n            ctx.fillRect(x, y + BAR_H - 4, curW, 4);\n            ctx.restore();\n        }\n\n        // 3. TYTUŁ\n        if (p > 0.4) {\n            const tp = Math.min((progress - 0.4) * 2, 1);\n            ctx.save();\n            ctx.globalAlpha = tp;\n            ctx.fillStyle = config.black;\n            ctx.font = `bold 80px \"${config.font}\"`; \n            ctx.textBaseline = \"middle\";\n            const titleEl = container.querySelector('#f-title-val');\n            const titleText = titleEl ? titleEl.textContent : '';\n            ctx.fillText(titleText, x + 30, y + (BAR_H / 2));\n            ctx.restore();\n        }\n\n        animationId = requestAnimationFrame(animate);\n    }\n\n    animate();\n\n    // Wykrywanie kliknięcia \"Zdejmij z Wizji\" (usunięcie klasy .active)\n    const observer = new MutationObserver((mutations) => {\n        mutations.forEach((mutation) => {\n            if (mutation.attributeName === 'class' && !container.classList.contains('active')) {\n                state = 'OUT';\n            }\n        });\n    });\n    observer.observe(container, { attributes: true });\n})();",
+  "defaultFields": {
+    "f-title-val": "WIELKIE OTWARCIE",
+    "f-subtitle-val": "Zapraszamy na transmisję na żywo",
+    "TITLE": "",
+    "SUBTITLE": ""
+  },
+  "ocgInputs": [
+    {
+      "id": "TITLE",
+      "label": "Tytuł / Imię Nazwisko",
+      "default": "",
+      "type": "text"
+    },
+    {
+      "id": "SUBTITLE",
+      "label": "Podtytuł / Funkcja",
+      "default": "",
+      "type": "text"
+    }
+  ]
+}

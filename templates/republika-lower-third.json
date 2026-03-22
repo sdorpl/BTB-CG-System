@@ -1,0 +1,28 @@
+{
+  "id": "republika-lower-third",
+  "name": "Republika Lower Third",
+  "type": "LOWER_THIRD",
+  "version": 1,
+  "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
+  "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
+  "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        \n        \n        if (textTl) {\n            if ({{{TEXT_ANIM_OUT_SYNC}}}) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+  "defaultFields": {
+    "title": "MECHANIZM WARUNKOWOŚCI",
+    "TITLE": "",
+    "SUBTITLE": ""
+  },
+  "ocgInputs": [
+    {
+      "id": "TITLE",
+      "label": "Tytuł / Imię Nazwisko",
+      "default": "",
+      "type": "text"
+    },
+    {
+      "id": "SUBTITLE",
+      "label": "Podtytuł / Funkcja",
+      "default": "",
+      "type": "text"
+    }
+  ]
+}

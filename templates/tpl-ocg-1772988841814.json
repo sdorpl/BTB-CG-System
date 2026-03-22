@@ -1,0 +1,28 @@
+{
+  "id": "tpl-ocg-1772988841814",
+  "name": "OCG: BELKA WS",
+  "type": "LOWER_THIRD",
+  "version": 1,
+  "html_template": "<div class=\"lt-container\">\n    <span id=\"f-special-title\" style=\"display:none;\"></span>\n    <canvas class=\"lower-third-canvas\"></canvas>\n</div>",
+  "css_template": ".lt-container { position: relative;   width: 1920px; height: 1080px; pointer-events: none; opacity: 0; transition: opacity 0.5s; } .lt-container.active { opacity: 1; } .lower-third-canvas { display: block; width: var(--v-width, 100%); height: 100%; }",
+  "js_template": "(() => {\n    const container = {{DOM_CONTEXT}};\n    const canvas = container.querySelector('.lower-third-canvas');\n    const ctx = canvas.getContext('2d');\n    canvas.width = 1920; canvas.height = 1080;\n\n    const BAR_W = 1575, BAR_H = 170, TAG_W = 380, TAG_H = 40, OUTER_MARGIN = 30;\n    const x = OUTER_MARGIN, y = 1080 - BAR_H - 115;\n    let progress = 0, state = 'IN', animationId;\n    const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;\n\n    function animate() {\n        if (!ctx || state === 'HIDDEN') return;\n        ctx.clearRect(0, 0, 1920, 1080);\n        if (state === 'IN') { progress += 0.025; if (progress >= 1) state = 'STAY'; }\n        else if (state === 'OUT') { progress -= 0.04; if (progress <= 0) { state = 'HIDDEN'; return; } }\n\n        const p = ease(progress);\n        if (p > 0.4) {\n            ctx.save();\n            const tagGrad = ctx.createLinearGradient(x, y - TAG_H, x + TAG_W, y - TAG_H);\n            tagGrad.addColorStop(0, \"#e91e63\"); tagGrad.addColorStop(1, \"#f44336\");\n            ctx.fillStyle = tagGrad; ctx.globalAlpha = Math.min((p - 0.4) * 2, 1);\n            ctx.fillRect(x, y - TAG_H, TAG_W, TAG_H);\n            ctx.fillStyle = \"#fff\"; ctx.font = \"bold 24px Bahnschrift\"; ctx.textAlign = \"center\";\n            ctx.fillText(\"WYDANIE SPECJALNE\", x + (TAG_W / 2), y - (TAG_H / 2) + 8);\n            ctx.restore();\n        }\n        ctx.save();\n        const mainGrad = ctx.createLinearGradient(x, y, x + BAR_W, y);\n        mainGrad.addColorStop(0, \"#4a0404\"); mainGrad.addColorStop(0.5, \"#8b0000\"); mainGrad.addColorStop(1, \"#ff0000\");\n        ctx.fillStyle = mainGrad; ctx.fillRect(x, y, BAR_W * p, BAR_H);\n        ctx.restore();\n\n        if (p > 0.8) {\n            ctx.save(); ctx.globalAlpha = Math.min((progress - 0.8) * 5, 1);\n            ctx.fillStyle = \"#fff\"; ctx.font = \"bold 80px Bahnschrift\"; ctx.textBaseline = \"middle\";\n            ctx.fillText(container.querySelector('#f-special-title').textContent, x + 20, y + (BAR_H / 2) + 5);\n            ctx.restore();\n        }\n        animationId = requestAnimationFrame(animate);\n    }\n    animate();\n    new MutationObserver(() => { if(!container.classList.contains('active')) state = 'OUT'; }).observe(container, {attributes:true});\n})();",
+  "defaultFields": {
+    "f-special-title": "",
+    "TITLE": "",
+    "SUBTITLE": ""
+  },
+  "ocgInputs": [
+    {
+      "id": "TITLE",
+      "label": "Tytuł / Imię Nazwisko",
+      "default": "",
+      "type": "text"
+    },
+    {
+      "id": "SUBTITLE",
+      "label": "Podtytuł / Funkcja",
+      "default": "",
+      "type": "text"
+    }
+  ]
+}
