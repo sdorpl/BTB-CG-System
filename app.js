@@ -1951,6 +1951,8 @@ let _wmGraphicId = null;
 let _wmTargetField = null;
 let _wmRo = null;
 let _wmSavedHtml = null;
+let _wmInitialDraft = null;
+let _wmDebounceTimer = null;
 
 function openWysiwygModal(graphicId) {
     const g = window._draftGraphics[graphicId] || state.graphics.find(g => g.id === graphicId);
@@ -1970,6 +1972,9 @@ function openWysiwygModal(graphicId) {
         _wmSavedHtml = g.titleHtml || (g.titleLines && g.titleLines.length > 0 ? g.titleLines.map(l => `<div style="font-size:${l.fontSize || 48}px;font-weight:${l.fontWeight || '800'};color:${l.color || '#fff'};font-family:'${l.fontFamily || 'Inter'}',sans-serif;text-transform:${l.textTransform || 'uppercase'}" > ${l.text}</div> `).join('') : (g.title || tpl?.defaultFields?.title || ''));
     }
 
+    // Backup current draft to allow revert on cancel
+    _wmInitialDraft = JSON.parse(JSON.stringify(window._draftGraphics[graphicId] || state.graphics.find(gx => gx.id === graphicId)));
+
     _wmOpenModal(g);
 }
 
@@ -1985,79 +1990,55 @@ function openWysiwygModalForField(graphicId, fieldId, currentHtml) {
     _wmTargetField = fieldId;
     _wmSavedHtml = currentHtml || '';
 
+    // Backup current draft to allow revert on cancel
+    _wmInitialDraft = JSON.parse(JSON.stringify(window._draftGraphics[graphicId] || state.graphics.find(gx => gx.id === graphicId)));
+
     _wmOpenModal(g);
 }
 
+
+
 function _wmOpenModal(g) {
     const modal = document.getElementById('modal-wysiwyg');
-    const editor = document.getElementById('wm-editor');
     const bgInput = document.getElementById('wm-bg');
     const titleEl = document.getElementById('wysiwyg-modal-title');
 
     modal.classList.remove('hidden');
     if (titleEl) titleEl.textContent = g.name;
-    editor.innerHTML = _wmSavedHtml;
-
-    // Set editor base font from graphic's typography settings so new typing uses the right font
-    const defaultFont = g.style?.typography?.fontFamily || 'Bahnschrift';
-    const defaultFontSize = (g.style?.typography?.fontSize || 48) + 'px';
-    const defaultLineHeight = g.style?.typography?.lineHeight || '1.1';
-
-    editor.style.fontFamily = defaultFont;
-    editor.style.fontSize = defaultFontSize;
-    editor.style.lineHeight = defaultLineHeight;
-    editor.style.textTransform = g.style?.typography?.textTransform || 'none';
-
-    // Sync toolbar state
-    const _syncToolbar = () => {
-        const fontSel = document.getElementById('wm-font');
-        const weightSel = document.getElementById('wm-weight');
-        const sizeSel = document.getElementById('wm-size');
-        const trackSel = document.getElementById('wm-tracking');
-        const lhSel = document.getElementById('wm-line-height');
-        const padInput = document.getElementById('wm-padding');
-        const radInput = document.getElementById('wm-radius');
-
-        if (!fontSel || !sizeSel) return;
-
-        // Reset to base editor style if no specific span is selected
-        fontSel.value = defaultFont;
-        sizeSel.value = parseInt(defaultFontSize) || 48;
-        if (weightSel) weightSel.value = g.style?.typography?.fontWeight || '400';
-        if (lhSel) lhSel.value = defaultLineHeight;
-
-        const styledEl = editor.querySelector('span[style]');
-        if (styledEl) {
-            if (styledEl.style.fontFamily && fontSel) {
-                const ff = styledEl.style.fontFamily.replace(/['",]/g, '').trim();
-                const matchOpt = [...fontSel.options].find(o => o.value.toLowerCase() === ff.toLowerCase() || o.text.toLowerCase() === ff.toLowerCase());
-                if (matchOpt) fontSel.value = matchOpt.value;
-            }
-            if (styledEl.style.fontWeight && weightSel) {
-                weightSel.value = styledEl.style.fontWeight;
-            }
-            if (styledEl.style.fontSize && sizeSel) {
-                sizeSel.value = parseInt(styledEl.style.fontSize);
-            }
-            if (styledEl.style.letterSpacing && trackSel) {
-                trackSel.value = styledEl.style.letterSpacing;
-            }
-            if (styledEl.style.padding && padInput) {
-                padInput.value = parseInt(styledEl.style.padding) || 0;
-            }
-            if (styledEl.style.borderRadius && radInput) {
-                radInput.value = parseInt(styledEl.style.borderRadius) || 0;
-            }
+    
+    // TipTap set content (with retry for initialization)
+    const setContentWithRetry = () => {
+        if (_wmEditor) {
+            _wmEditor.commands.setContent(_wmSavedHtml);
+            _wmEditor.commands.focus();
+            _wmRefreshPreview();
+        } else {
+            setTimeout(setContentWithRetry, 50);
         }
     };
-    setTimeout(_syncToolbar, 50);
+    setContentWithRetry();
+
+    // Set editor base font from graphic's typography settings
+    const editorEl = document.getElementById('wm-editor');
+    if (editorEl) {
+        editorEl.style.fontFamily = g.style?.typography?.fontFamily || 'Bahnschrift';
+        editorEl.style.fontSize = (g.style?.typography?.fontSize || 48) + 'px';
+        editorEl.style.lineHeight = g.style?.typography?.lineHeight || '1.1';
+        editorEl.style.textTransform = g.style?.typography?.textTransform || 'none';
+    }
 
     const bgColor = g.style?.background?.color || '#0047ab';
     if (bgInput) bgInput.value = bgColor;
     const previewCanvas = document.getElementById('wm-preview-canvas');
-    if (previewCanvas) previewCanvas.style.background = bgColor;
+    if (previewCanvas) {
+        previewCanvas.style.backgroundColor = bgColor;
+        previewCanvas.innerHTML = ''; // Clear previous content
+        previewCanvas.style.opacity = '1';
+        previewCanvas.classList.remove('opacity-0');
+        previewCanvas.style.display = 'block';
+    }
 
-    // Scale modal preview — wrap is absolutely centred inside outer (overflow:hidden)
+    // Scale modal preview 
     const outer = document.getElementById('wm-preview-outer');
     const wrap = document.getElementById('wm-preview-wrap');
     if (outer && wrap && previewCanvas) {
@@ -2079,142 +2060,286 @@ function _wmOpenModal(g) {
         if (_wmRo) _wmRo.disconnect();
         _wmRo = new ResizeObserver(doScale);
         _wmRo.observe(outer);
-        setTimeout(doScale, 80);
+        
+        // Multiple attempts at initial scaling
+        doScale();
+        setTimeout(doScale, 100);
+        setTimeout(doScale, 300);
+        setTimeout(doScale, 600);
     }
-    setTimeout(() => { editor.focus(); _wmRefreshPreview(); }, 80);
+    // Instant refresh
+    setTimeout(() => { _wmRefreshPreview(); }, 150);
+}
+// 8. WYSIWYG MODAL (TipTap Refactor)
+// ===========================================================
+
+let _wmEditor = null;
+
+function _initTipTap() {
+    if (_wmEditor || !window.TipTap) return;
+
+    const { Editor, StarterKit, Paragraph, TextStyle, Color, Highlight, Underline, TextAlign, FontFamily } = window.TipTap;
+
+    // Custom Extension: Paragraph with style/line-height support
+    const CustomParagraph = Paragraph.extend({
+        addAttributes() {
+            return {
+                style: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('style'),
+                    renderHTML: attributes => {
+                        if (!attributes.style) return {};
+                        return { style: attributes.style };
+                    },
+                },
+            };
+        },
+    });
+
+    // Custom Extension: FontSize (px)
+    const FontSize = window.TipTap.TextStyle.extend({
+        addAttributes() {
+            return {
+                fontSize: {
+                    default: null,
+                    parseHTML: element => element.style.fontSize,
+                    renderHTML: attributes => {
+                        if (!attributes.fontSize) return {};
+                        return { style: `font-size: ${attributes.fontSize}` };
+                    },
+                },
+            };
+        },
+        addCommands() {
+            return {
+                setFontSize: fontSize => ({ chain }) => {
+                    return chain().setMark('textStyle', { fontSize }).run();
+                },
+            };
+        },
+    });
+
+    // Custom Extension: LetterSpacing
+    const LetterSpacing = window.TipTap.TextStyle.extend({
+        addAttributes() {
+            return {
+                letterSpacing: {
+                    default: null,
+                    parseHTML: element => element.style.letterSpacing,
+                    renderHTML: attributes => {
+                        if (!attributes.letterSpacing) return {};
+                        return { style: `letter-spacing: ${attributes.letterSpacing}` };
+                    },
+                },
+            };
+        },
+        addCommands() {
+            return {
+                setLetterSpacing: letterSpacing => ({ chain }) => {
+                    return chain().setMark('textStyle', { letterSpacing }).run();
+                },
+            };
+        },
+    });
+
+     // Custom Extension: Padding & Radius (for Highlights)
+     const Decoration = window.TipTap.TextStyle.extend({
+        addAttributes() {
+            return {
+                padding: {
+                    default: null,
+                    parseHTML: element => element.style.padding,
+                    renderHTML: attributes => {
+                        if (!attributes.padding) return {};
+                        return { style: `padding: ${attributes.padding}` };
+                    },
+                },
+                borderRadius: {
+                    default: null,
+                    parseHTML: element => element.style.borderRadius,
+                    renderHTML: attributes => {
+                        if (!attributes.borderRadius) return {};
+                        return { style: `border-radius: ${attributes.borderRadius}` };
+                    },
+                },
+                display: {
+                    default: null,
+                    parseHTML: element => element.style.display,
+                    renderHTML: attributes => {
+                        if (!attributes.display) return {};
+                        return { style: `display: ${attributes.display}` };
+                    },
+                }
+            };
+        },
+        addCommands() {
+            return {
+                setDecoration: attrs => ({ chain }) => {
+                    return chain().setMark('textStyle', attrs).run();
+                },
+            };
+        },
+    });
+
+    _wmEditor = new Editor({
+        element: document.getElementById('wm-editor'),
+        extensions: [
+            StarterKit.configure({
+                paragraph: false,
+                heading: false,
+                codeBlock: false,
+                // Underline and TextStyle might be included or conflict
+            }),
+            CustomParagraph,
+            FontSize,
+            FontFamily,
+            Color,
+            Highlight.configure({ multicolor: true }),
+            TextAlign.configure({ types: ['paragraph'] }),
+            LetterSpacing,
+            Decoration
+        ],
+        content: '',
+        onUpdate: ({ editor }) => {
+             _wmRefreshPreview();
+             
+             // Debounce draft sync to avoid input lag
+             clearTimeout(window._wysiwygDraftTimer);
+             window._wysiwygDraftTimer = setTimeout(() => {
+                _syncTipTapToDraft(editor.getHTML());
+             }, 300);
+        },
+        onSelectionUpdate: () => {
+             _syncToolbarToTipTap();
+        }
+    });
+
+    window.wmEditor = _wmEditor; 
 }
 
-let _wmDebounceTimer = null;
-function _wmRefreshPreview(instant = true) {
-    clearTimeout(_wmDebounceTimer);
-    _wmDebounceTimer = setTimeout(() => {
-        if (!_wmGraphicId) return;
-        const canvas = document.getElementById('wm-preview-canvas');
-        const editor = document.getElementById('wm-editor');
-        if (!canvas || !editor || !window.__cgRenderer) return;
-        const g = window._draftGraphics[_wmGraphicId] || state.graphics.find(g => g.id === _wmGraphicId);
-        if (!g) return;
-        const tempG = JSON.parse(JSON.stringify(g));
-
+function _syncTipTapToDraft(html) {
+    if (_wmGraphicId && previewGraphic && previewGraphic.id === _wmGraphicId) {
+        const g = previewGraphic;
         if (_wmTargetField) {
-            if (!tempG.fields) tempG.fields = {};
-            tempG.fields[_wmTargetField] = editor.innerHTML;
+            if (!g.fields) g.fields = {};
+            g.fields[_wmTargetField] = html;
             if (_wmTargetField === 'TITLE') {
-                tempG.titleHtml = editor.innerHTML;
-                tempG.title = editor.textContent;
+                g.titleHtml = html;
+                g.title = html.replace(/<[^>]+>/g, '');
             } else if (_wmTargetField === 'SUBTITLE') {
-                tempG.subtitle = editor.textContent;
+                g.subtitle = html.replace(/<[^>]+>/g, '');
             }
         } else {
-            if (tempG.type === 'TICKER') {
-                const rawItems = editor.innerHTML.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
-                tempG.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
+            if (g.type === 'TICKER') {
+                const rawItems = html.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
+                g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
             } else {
-                tempG.titleHtml = editor.innerHTML;
-                tempG.title = editor.textContent;
+                g.titleHtml = html;
+                g.title = html.replace(/<[^>]+>/g, '');
             }
         }
-
-        tempG.visible = true;
-        window.__cgRenderer.renderPreview(canvas, [tempG], state.templates, state.settings, { instant: instant });
-    }, 150); // fast 150ms debounce
+        // Store in draft
+        window._draftGraphics[g.id] = JSON.parse(JSON.stringify(g));
+        renderShotbox();
+    }
 }
 
-function _wmClose(save) {
-    const editor = document.getElementById('wm-editor');
-    const modal = document.getElementById('modal-wysiwyg');
-    if (!editor) return;
-    if (save && _wmGraphicId) {
-        saveWysiwyg(editor, _wmGraphicId);
-    } else if (!save && _wmGraphicId) {
-        // If they cancel, we just leave the draft as it was (from autosave drafting)
-    }
-    modal.classList.add('hidden');
-    if (_wmRo) { _wmRo.disconnect(); _wmRo = null; }
-    _wmGraphicId = null;
-    _wmTargetField = null;
+function _syncToolbarToTipTap() {
+    if (!_wmEditor) return;
+    const attrs = _wmEditor.getAttributes('textStyle');
+    const nodeAttrs = _wmEditor.getAttributes('paragraph');
     
-    // Refresh inspector correctly to show new html in richtext boxes
-    if (save && selectedGraphicId) {
-        openInspector(selectedGraphicId);
+    const fontSel = document.getElementById('wm-font');
+    const sizeSel = document.getElementById('wm-size');
+    const weightSel = document.getElementById('wm-weight');
+    const trackSel = document.getElementById('wm-tracking');
+    const padInput = document.getElementById('wm-padding');
+    const radInput = document.getElementById('wm-radius');
+    const lhSel = document.getElementById('wm-line-height');
+
+    if (attrs.fontFamily && fontSel) {
+         const ff = attrs.fontFamily.replace(/['",]/g, '').trim();
+         const matchOpt = [...fontSel.options].find(o => o.value.toLowerCase() === ff.toLowerCase());
+         if (matchOpt) fontSel.value = matchOpt.value;
+    }
+    if (attrs.fontSize && sizeSel) sizeSel.value = parseInt(attrs.fontSize);
+    if (attrs.fontWeight && weightSel) weightSel.value = attrs.fontWeight;
+    if (attrs.letterSpacing && trackSel) trackSel.value = attrs.letterSpacing;
+    if (attrs.padding && padInput) padInput.value = parseInt(attrs.padding);
+    if (attrs.borderRadius && radInput) radInput.value = parseInt(attrs.borderRadius);
+
+    if (nodeAttrs.style && lhSel) {
+        const match = nodeAttrs.style.match(/line-height:\s*([\d.]+)/);
+        if (match) lhSel.value = match[1];
     }
 }
 
 function bindWysiwygModalEvents() {
-    const editor = document.getElementById('wm-editor');
+    // Ensure TipTap is initialized
+    if (!window.TipTap) {
+        setTimeout(bindWysiwygModalEvents, 100);
+        return;
+    }
+    _initTipTap();
+
+    const editor = _wmEditor;
     if (!editor) return;
 
+    // Toolbar Buttons
     document.querySelectorAll('#wm-toolbar [data-cmd]').forEach(btn => {
-        btn.addEventListener('mousedown', e => {
-            e.preventDefault();
-            editor.focus();
-            document.execCommand(btn.getAttribute('data-cmd'), false, null);
-            _wmRefreshPreview();
-        });
+        btn.onclick = () => {
+            const cmd = btn.getAttribute('data-cmd');
+            if (cmd === 'bold') editor.chain().focus().toggleBold().run();
+            if (cmd === 'italic') editor.chain().focus().toggleItalic().run();
+            if (cmd === 'underline') editor.chain().focus().toggleUnderline().run();
+            if (cmd === 'justifyleft') editor.chain().focus().setTextAlign('left').run();
+            if (cmd === 'justifycenter') editor.chain().focus().setTextAlign('center').run();
+            if (cmd === 'justifyright') editor.chain().focus().setTextAlign('right').run();
+        };
     });
 
     document.getElementById('wm-font')?.addEventListener('change', e => {
-        editor.focus();
-        _wmApplyStyleToSelection('fontFamily', e.target.value);
-        _wmRefreshPreview();
+        editor.chain().focus().setFontFamily(e.target.value).run();
     });
 
     document.getElementById('wm-weight')?.addEventListener('change', e => {
-        editor.focus();
-        _wmApplyStyleToSelection('fontWeight', e.target.value);
-        _wmRefreshPreview();
+        editor.chain().focus().setMark('textStyle', { fontWeight: e.target.value }).run();
     });
 
     document.getElementById('wm-size')?.addEventListener('change', e => {
-        editor.focus();
-        _wmApplyStyleToSelection('fontSize', e.target.value + 'px');
-        _wmRefreshPreview();
+        editor.chain().focus().setFontSize(e.target.value + 'px').run();
     });
 
     document.getElementById('wm-tracking')?.addEventListener('change', e => {
-        editor.focus();
-        _wmApplyStyleToSelection('letterSpacing', e.target.value);
-        _wmRefreshPreview();
+        editor.chain().focus().setLetterSpacing(e.target.value).run();
     });
 
     document.querySelectorAll('#wm-toolbar [data-transform]').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.preventDefault();
-            editor.focus();
-            _wmApplyStyleToSelection('textTransform', btn.getAttribute('data-transform'));
-            _wmRefreshPreview();
-        });
+        btn.onclick = () => {
+            editor.chain().focus().setMark('textStyle', { textTransform: btn.getAttribute('data-transform') }).run();
+        };
     });
 
     document.getElementById('wm-padding')?.addEventListener('input', e => {
-        editor.focus();
-        _wmApplyStyleToSelection('padding', `0 ${e.target.value}px`);
-        _wmRefreshPreview();
+        editor.chain().focus().setDecoration({ padding: `0 ${e.target.value}px`, display: 'inline-block' }).run();
     });
 
     document.getElementById('wm-radius')?.addEventListener('input', e => {
-        editor.focus();
-        _wmApplyStyleToSelection('borderRadius', `${e.target.value}px`);
-        _wmRefreshPreview();
+        editor.chain().focus().setDecoration({ borderRadius: `${e.target.value}px`, display: 'inline-block' }).run();
     });
 
     document.getElementById('wm-line-height')?.addEventListener('change', e => {
-        editor.focus();
-        _wmApplyLineHeight(e.target.value);
-        _wmRefreshPreview();
+        // Apply line-height to the current paragraph(s)
+        editor.chain().focus().updateAttributes('paragraph', { style: `line-height: ${e.target.value}` }).run();
     });
 
     document.getElementById('wm-color')?.addEventListener('input', e => {
-        editor.focus();
-        document.execCommand('foreColor', false, e.target.value);
-        _wmRefreshPreview();
+        editor.chain().focus().setColor(e.target.value).run();
     });
 
     document.getElementById('wm-highlight')?.addEventListener('input', e => {
-        editor.focus();
-        _wmApplyStyleToSelection('backgroundColor', e.target.value);
-        _wmApplyStyleToSelection('display', 'inline-block');
-        _wmRefreshPreview();
+        editor.chain().focus().setHighlight({ color: e.target.value }).run();
+        editor.chain().focus().setDecoration({ display: 'inline-block' }).run();
     });
 
     document.getElementById('wm-bg')?.addEventListener('input', e => {
@@ -2224,71 +2349,21 @@ function bindWysiwygModalEvents() {
 
     document.getElementById('wm-clear-all')?.addEventListener('click', () => {
         if (confirm('Czy na pewno chcesz wyczyścić całe formatowanie tekstu?')) {
-            editor.focus();
-            _wmClearAllFormatting();
-            _wmRefreshPreview();
+            editor.chain().focus().unsetAllMarks().run();
         }
     });
 
     document.getElementById('toggle-html-view')?.addEventListener('click', () => {
         const src = document.getElementById('wm-html-source');
         const btn = document.getElementById('toggle-html-view');
-        if (src.style.display === 'none') { src.value = editor.innerHTML; src.style.display = 'block'; btn.textContent = '▼ Ukryj źródło HTML'; }
-        else { editor.innerHTML = src.value; src.style.display = 'none'; btn.textContent = '▶ Pokaż źródło HTML'; _wmRefreshPreview(); }
-    });
-
-    editor.addEventListener('input', () => {
-        _wmRefreshPreview();
-        // Save to DRAFT ONLY — never touch state.graphics directly
-        if (_wmGraphicId && previewGraphic && previewGraphic.id === _wmGraphicId) {
-            const g = previewGraphic;
-            if (_wmTargetField) {
-                if (!g.fields) g.fields = {};
-                g.fields[_wmTargetField] = editor.innerHTML;
-                if (_wmTargetField === 'TITLE') {
-                    g.titleHtml = editor.innerHTML;
-                    g.title = editor.innerHTML.replace(/<[^>]+>/g, '');
-                } else if (_wmTargetField === 'SUBTITLE') {
-                    g.subtitle = editor.innerHTML.replace(/<[^>]+>/g, '');
-                }
-            } else {
-                if (g.type === 'TICKER') {
-                    const rawItems = editor.innerHTML.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
-                    g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
-                } else {
-                    g.titleHtml = editor.innerHTML;
-                    g.title = editor.innerHTML.replace(/<[^>]+>/g, '');
-                }
-            }
-            // Store in draft — debounced so we're not thrashing
-            clearTimeout(window._wysiwygDraftTimer);
-            window._wysiwygDraftTimer = setTimeout(() => {
-                window._draftGraphics[g.id] = JSON.parse(JSON.stringify(g));
-                renderShotbox();
-            }, 600);
-        }
-    });
-
-    editor.addEventListener('keyup', () => {
-        const src = document.getElementById('wm-html-source');
-        if (src?.style.display !== 'none') src.value = editor.innerHTML;
-    });
-    // Intercept Enter key: insert <br> instead of letting browser create <div>/<p> blocks
-    editor.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const sel = window.getSelection();
-            if (!sel.rangeCount) return;
-            const range = sel.getRangeAt(0);
-            range.deleteContents();
-            const br = document.createElement('br');
-            range.insertNode(br);
-            // Move cursor after the <br>
-            range.setStartAfter(br);
-            range.setEndAfter(br);
-            sel.removeAllRanges();
-            sel.addRange(range);
-            _wmRefreshPreview();
+        if (src.style.display === 'none') {
+            src.value = editor.getHTML();
+            src.style.display = 'block';
+            btn.textContent = '▼ Ukryj źródło HTML';
+        } else {
+            editor.commands.setContent(src.value);
+            src.style.display = 'none';
+            btn.textContent = '▶ Pokaż źródło HTML';
         }
     });
 
@@ -2297,137 +2372,111 @@ function bindWysiwygModalEvents() {
     document.getElementById('wysiwyg-modal-close')?.addEventListener('click', () => _wmClose(false));
 }
 
-function _wmApplyLineHeight(lh) {
-    const editor = document.getElementById('wm-editor');
-    if (!editor) return;
-
-    editor.style.lineHeight = lh;
-
-    // Persist to graphic style immediately so it survives refresh/save
-    if (_wmGraphicId) {
-        const g = state.graphics.find(g => g.id === _wmGraphicId);
-        if (g) {
-            if (!g.style) g.style = {};
-            if (!g.style.typography) g.style.typography = {};
-            g.style.typography.lineHeight = lh;
-        }
-    }
-
-    // Also apply to any existing block-level children (if any)
-    editor.querySelectorAll('div, p').forEach(el => {
-        el.style.lineHeight = lh;
-    });
-}
-
-function _wmApplyStyleToSelection(property, value) {
-    const editor = document.getElementById('wm-editor');
-    const selection = window.getSelection();
-
-    // Helper: get the camelCase property name for a CSS property
-    const toCamel = p => p.replace(/-([a-z])/g, (_, l) => l.toUpperCase());
-    const propCamel = toCamel(property);
-
-    const range = selection.getRangeAt(0);
-
-    // If selection is collapsed, only apply to whole content if it's completely empty
-    if (range.collapsed) {
-        if (editor.textContent.trim() === '') {
-            editor.style[propCamel] = value;
-            return;
-        }
-        // Otherwise do nothing - user should select text
-        return;
-    }
-
-    // Check if the selection exactly matches an existing span ancestor
-    let ancestor = range.commonAncestorContainer;
-    if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentNode;
-
-    let existingSpan = null;
-    let el = ancestor;
-    while (el && el !== editor) {
-        if (el.tagName === 'SPAN' && el.style[propCamel]) {
-            // Check if this span's content is exactly what is selected
-            const spanRange = document.createRange();
-            spanRange.selectNodeContents(el);
-            if (range.compareBoundaryPoints(Range.START_TO_START, spanRange) === 0 &&
-                range.compareBoundaryPoints(Range.END_TO_END, spanRange) === 0) {
-                existingSpan = el;
-                break;
-            }
-        }
-        el = el.parentNode;
-    }
-
-    if (existingSpan) {
-        existingSpan.style[propCamel] = value;
-        existingSpan.querySelectorAll('span').forEach(child => {
-            child.style[propCamel] = value;
-        });
-        return;
-    }
-
-    // Wrap selection in a new span with the style
-    const span = document.createElement('span');
-    span.style[propCamel] = value;
-
-    try {
-        range.surroundContents(span);
-    } catch (e) {
-        // Range crosses element boundaries — extract and re-wrap
-        const fragment = range.extractContents();
-        // If the fragment only contains one span child, update it instead of nesting
-        if (fragment.childNodes.length === 1 && fragment.firstChild.tagName === 'SPAN') {
-            fragment.firstChild.style[propCamel] = value;
-            range.insertNode(fragment);
-        } else {
-            span.appendChild(fragment);
-            range.insertNode(span);
-        }
-    }
-
-    selection.removeAllRanges();
-}
-
-function _wmClearAllFormatting() {
-    const editor = document.getElementById('wm-editor');
-    if (!editor) return;
-
-    // 1. execCommand removeFormat clears bold/italic/etc
-    document.execCommand('removeFormat', false, null);
-
-    // 2. Custom clear: recursively strip all <span> and <font> tags while keeping text
-    const stripTags = (root) => {
-        const children = [...root.childNodes];
-        children.forEach(node => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-                if (node.tagName === 'SPAN' || node.tagName === 'FONT') {
-                    // Extract text contents and replace the tag
-                    const frag = document.createDocumentFragment();
-                    while (node.firstChild) frag.appendChild(node.firstChild);
-                    node.replaceWith(frag);
-                    // Continue stripping on the new children
-                    stripTags(root);
-                } else if (node.hasChildNodes()) {
-                    stripTags(node);
+function _wmRefreshPreview(instant = true) {
+    if (!_wmGraphicId || !_wmEditor) return;
+    
+    // Throttle preview updates
+    clearTimeout(_wmDebounceTimer);
+    _wmDebounceTimer = setTimeout(() => {
+        const html = _wmEditor.getHTML();
+        
+        // 1. Update previewGraphic object (used by both previews)
+        if (previewGraphic) {
+            if (_wmTargetField) {
+                 if (!previewGraphic.fields) previewGraphic.fields = {};
+                 previewGraphic.fields[_wmTargetField] = html;
+                 
+                 // Legacy fallbacks for main fields
+                 if (_wmTargetField === 'TITLE') {
+                    previewGraphic.titleHtml = html;
+                    previewGraphic.title = html.replace(/<[^>]+>/g, '');
+                 } else if (_wmTargetField === 'SUBTITLE') {
+                    previewGraphic.subtitle = html.replace(/<[^>]+>/g, '');
+                 }
+            } else if (previewGraphic.type === 'TICKER') {
+                const rawItems = html.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
+                previewGraphic.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
+            } else {
+                previewGraphic.titleHtml = html;
+                previewGraphic.title = html.replace(/<[^>]+>/g, '');
+                
+                // OCG field sync for legacy mode
+                if (previewGraphic.fields) {
+                    const titleKey = Object.keys(previewGraphic.fields).find(k => /title|tytul|nazwa/i.test(k) && !/sub/i.test(k));
+                    if (titleKey) previewGraphic.fields[titleKey] = html;
                 }
             }
-        });
-    };
+        }
 
-    stripTags(editor);
+        // 2. Update the BIG previewMonitor in Main Dashboard
+        refreshPreviewMonitor();
 
-    // 3. Reset editor base styles to defaults
-    editor.style.fontWeight = 'normal';
-    editor.style.fontStyle = 'normal';
-    editor.style.textDecoration = 'none';
-    editor.style.backgroundColor = 'transparent';
-    editor.style.letterSpacing = 'normal';
-    editor.style.textTransform = 'none';
-    editor.style.padding = '0';
-    editor.style.borderRadius = '0';
-    editor.style.display = 'block';
+        // 3. Update the SMALL previewCanvas inside the Modal
+        const canvas = document.getElementById('wm-preview-canvas');
+        if (canvas && window.__cgRenderer && previewGraphic) {
+            const tempG = JSON.parse(JSON.stringify(previewGraphic));
+            tempG.visible = true; // Force visible in modal
+            window.__cgRenderer.renderPreview(canvas, [tempG], state.templates, state.settings, { instant: true });
+        }
+    }, 150);
 }
+
+function _wmClose(save) {
+    const modal = document.getElementById('modal-wysiwyg');
+    if (save && _wmGraphicId && _wmEditor) {
+        saveWysiwyg(_wmEditor, _wmGraphicId);
+    } else if (!save && _wmGraphicId && _wmInitialDraft) {
+        // Revert to initial draft if canceled
+        window._draftGraphics[_wmGraphicId] = _wmInitialDraft;
+        renderShotbox();
+        if (selectedGraphicId === _wmGraphicId) openInspector(_wmGraphicId);
+    }
+    
+    modal.classList.add('hidden');
+    if (_wmRo) { _wmRo.disconnect(); _wmRo = null; }
+    _wmGraphicId = null;
+    _wmTargetField = null;
+    _wmInitialDraft = null;
+    
+    if (save && selectedGraphicId) {
+        openInspector(selectedGraphicId);
+    }
+}
+
+function saveWysiwyg(editor, graphicId) {
+    const html = editor.getHTML();
+    const g = state.graphics.find(gx => gx.id === graphicId);
+    if (!g) return;
+
+    if (_wmTargetField) {
+        if (!g.fields) g.fields = {};
+        g.fields[_wmTargetField] = html;
+        if (_wmTargetField === 'TITLE') {
+            g.titleHtml = html;
+            g.title = html.replace(/<[^>]+>/g, '');
+        } else if (_wmTargetField === 'SUBTITLE') {
+            g.subtitle = html.replace(/<[^>]+>/g, '');
+        }
+    } else if (g.type === 'TICKER') {
+         const rawItems = html.split(/<br\s*\/?>|<\/?div>|<\/?p>/i);
+         g.items = rawItems.filter(s => s.replace(/&nbsp;/g, '').trim() !== '');
+    } else {
+        g.titleHtml = html;
+        g.title = html.replace(/<[^>]+>/g, '');
+
+        // OCG field sync for legacy mode
+        if (g.fields) {
+            const titleKey = Object.keys(g.fields).find(k => /title|tytul|nazwa/i.test(k) && !/sub/i.test(k));
+            if (titleKey) g.fields[titleKey] = html;
+        }
+    }
+
+    delete window._draftGraphics[graphicId];
+    saveState();
+    renderShotbox();
+    updateProgramMonitor();
+}
+
 
 // ===========================================================
 // 9. TEMPLATE EDITOR

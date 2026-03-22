@@ -848,7 +848,9 @@
             <div style="display:flex;gap:4px;align-items:center;">
               <select id="wm-line-height" title="Interlinia (line-height)"
                 style="height:26px;width:55px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#a78bfa;font-size:10px;padding:0 4px;cursor:pointer;">
-                <option value="1">× 1.0</option>
+                <option value="0.8">× 0.8</option>
+                <option value="0.9">× 0.9</option>
+                <option value="1.0">× 1.0</option>
                 <option value="1.1">× 1.1</option>
                 <option value="1.2">× 1.2</option>
                 <option value="1.3">× 1.3</option>
@@ -880,10 +882,10 @@
             </div>
           </div>
 
-          <!-- Editor Area (compact, 18px font, no visual font-size) -->
+          <!-- Editor Area (TipTap) -->
           <div class="overflow-y-auto" style="padding:8px 12px;background:#0f172a;max-height:160px;min-height:60px;">
-            <div id="wm-editor" contenteditable="true" spellcheck="false"
-              style="color:#fff;font-size:18px;font-family:Roboto Condensed,sans-serif;line-height:1.4;outline:none;white-space:pre-wrap;word-break:break-word;">
+            <div id="wm-editor"
+              style="color:#fff;font-size:18px;font-family:Roboto Condensed,sans-serif;line-height:1.4;outline:none;word-break:break-word;">
             </div>
           </div>
 
@@ -908,10 +910,10 @@
           <div class="flex-1 flex items-center justify-center bg-black" id="wm-preview-outer"
             style="overflow:hidden;position:relative;">
             <!-- wrap is sized to the scaled dimensions by JS -->
-            <div id="wm-preview-wrap" style="position:relative;overflow:hidden;flex-shrink:0;">
-              <!-- actual preview container -->
-              <div id="wm-preview-canvas"
-                style="width:1920px;height:1080px;position:absolute;top:0;left:0;background:#000;"></div>
+            <div id="wm-preview-wrap" class="origin-top-left">
+              <!-- Preview Monitor (VinciFlow) - CHANGED FROM CANVAS TO DIV because renderer.js appends DOM elements -->
+              <div id="wm-preview-canvas" style="width:1920px; height:1080px; background:#0047ab; position:relative; overflow:hidden;"
+                class="shadow-2xl opacity-0 transition-opacity duration-700"></div>
             </div>
           </div>
           <div class="px-4 py-1 border-t border-gray-800 text-[9px] text-gray-500 shrink-0">
@@ -984,6 +986,51 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+  
+  <!-- TipTap Core and Extensions (ESM) -->
+  <script type="module">
+    import { Editor } from 'https://esm.sh/@tiptap/core';
+    import { StarterKit } from 'https://esm.sh/@tiptap/starter-kit';
+    import { Paragraph } from 'https://esm.sh/@tiptap/extension-paragraph';
+    import { Color } from 'https://esm.sh/@tiptap/extension-color';
+    import { TextStyle } from 'https://esm.sh/@tiptap/extension-text-style';
+    import { Highlight } from 'https://esm.sh/@tiptap/extension-highlight';
+    import { Underline } from 'https://esm.sh/@tiptap/extension-underline';
+    import { TextAlign } from 'https://esm.sh/@tiptap/extension-text-align';
+    import { FontFamily } from 'https://esm.sh/@tiptap/extension-font-family';
+
+    window.TipTap = {
+      Editor,
+      StarterKit,
+      Paragraph,
+      Color,
+      TextStyle,
+      Highlight: Highlight.configure({ multicolor: true }),
+      Underline,
+      TextAlign: TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      FontFamily
+    };
+  </script>
+
+  <style>
+    /* TipTap Editor Styles */
+    .ProseMirror {
+      outline: none !important;
+      min-height: 40px;
+      white-space: pre-wrap !important;
+    }
+    .ProseMirror p {
+      margin: 0 !important;
+      padding: 0 !important;
+      min-height: 1.2em;
+    }
+    #wm-editor {
+        user-select: text !important;
+    }
+  </style>
+
   <script src="gsap-fx.js"></script>
   <script src="renderer.js"></script>
   <script src="app.js"></script>

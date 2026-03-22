@@ -285,6 +285,7 @@
                 cssStr += `\n/* Side Layout */`;
                 cssStr += `\n#${instanceId} { display: flex; width: 100%; height: 100%; box-sizing: border-box; pointer-events: none; }`;
                 cssStr += `\n#${instanceId} > * { pointer-events: auto; position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; }`;
+                cssStr += `\n#${instanceId} p, #${instanceId} div { margin: 0; padding: 0; }`;
                 
                 if (yS === 'top') cssStr += `\n#${instanceId} { align-items: flex-start; padding-top: ${my}px; }`;
                 else if (yS === 'bottom') cssStr += `\n#${instanceId} { align-items: flex-end; padding-bottom: ${my}px; }`;
@@ -294,6 +295,9 @@
                 else if (xS === 'right') cssStr += `\n#${instanceId} { justify-content: flex-end; padding-right: ${mx}px; }`;
                 else if (xS === 'center') cssStr += `\n#${instanceId} { justify-content: center; }`;
             }
+
+            // Apply line-height from context
+            cssStr += `\n#${instanceId} { line-height: ${ctx.LINE_HEIGHT || 1.4}; }`;
 
             const style = document.createElement('style');
             style.textContent = cssStr;
@@ -351,7 +355,7 @@
                         rootEl.style.display = 'block';
                     }
                     // Apply global text squashing after initial render/animation trigger
-                    applyGlobalSquashing(rootEl);
+                    requestAnimationFrame(() => applyGlobalSquashing(rootEl));
                 }, 30);
             } catch (e) {
                 console.error("Vinci JS error", e);
@@ -594,6 +598,7 @@
                     cssStr += `\n/* Side Layout */`;
                     cssStr += `\n#${instanceId} { display: flex; width: 100%; height: 100%; box-sizing: border-box; pointer-events: none; }`;
                     cssStr += `\n#${instanceId} > * { pointer-events: auto; position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; }`;
+                    cssStr += `\n#${instanceId} p, #${instanceId} div { margin: 0; padding: 0; }`;
                     
                     if (yS === 'top') cssStr += `\n#${instanceId} { align-items: flex-start; padding-top: ${my}px; }`;
                     else if (yS === 'bottom') cssStr += `\n#${instanceId} { align-items: flex-end; padding-bottom: ${my}px; }`;
@@ -609,6 +614,9 @@
                     // Also kill all transitions and animations globally
                     styleEl.textContent += `\n#${instanceId}, #${instanceId} * { transition: none !important; transition-delay: 0s !important; animation: none !important; }`;
                 }
+                // Apply line-height from context
+                cssStr += `\n#${instanceId} { line-height: ${context.LINE_HEIGHT || 1.4}; }`;
+
                 innerContainer.appendChild(styleEl);
 
                 // Inject HTML scoped with ID, matching showGraphic wrapping
@@ -684,7 +692,7 @@
                 }
 
                 // Apply global text squashing to preview instances
-                applyGlobalSquashing(rootEl);
+                requestAnimationFrame(() => applyGlobalSquashing(rootEl));
             });
         }
     };
