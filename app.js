@@ -1469,14 +1469,18 @@ function renderInspectorBody(graphic) {
                                     <input type="number" data-field="wiper.gleamDuration" value="${graphic.wiper?.gleamDuration || 2}" step="0.1" min="0.5" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <div>
-                                    ${ctrlLabel('Wysokość (px)')}
+                                    ${ctrlLabel('Wys. (px)')}
                                     <input type="number" data-field="wiper.gleamHeight" value="${graphic.wiper?.gleamHeight || 100}" min="1" max="500" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
                                 </div>
                                 <div>
-                                    ${ctrlLabel('Częstotliwość (s)')}
+                                    ${ctrlLabel('Częstotl. (s)')}
                                     <input type="number" data-field="wiper.gleamFrequency" value="${graphic.wiper?.gleamFrequency || 3}" step="0.1" min="0" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white" title="Przerwa między błyskami">
+                                </div>
+                                <div>
+                                    ${ctrlLabel('Szer. (%)')}
+                                    <input type="number" data-field="wiper.gleamWidth" value="${graphic.wiper?.gleamWidth || 150}" min="10" max="1000" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white" title="Szerokość błysku">
                                 </div>
                             </div>
                             <div>

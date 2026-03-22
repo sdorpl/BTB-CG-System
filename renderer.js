@@ -182,15 +182,36 @@
         // Inject Custom CSS (scoped to instanceId)
         if (tpl.css_template) {
             let cssStr = prepareStr(tpl.css_template);
-            // Clean out any self-injected #ids if the template author put them there natively
+            // Clean out any self-injected #ids if the template author put them there natively.
+            // NOTE: We strip the *compiled* #instanceId that came from {{ID}} in the template.
+            // The scoping regex below will then re-add it properly for all known class prefixes.
             cssStr = cssStr.replace(new RegExp(`#${instanceId}\\s+`, 'g'), '');
 
             // Advanced Scoping:
-            // By prefixing common generic classes with the parent instance ID, we sandbox the CSS.
-            cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+            // By prefixing common generic classes with #instanceId, we sandbox the CSS.
+            // IMPORTANT: 'utk-' must be here so that .utk-wiper, .utk-container etc. get scoped.
+            // Without it, those rules would be global after the strip above.
+            cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-|utk-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+
+            // @keyframes scoping: rename all @keyframes to include instanceId so that
+            // multiple instances of the same template do NOT overwrite each other's animations.
+            const keyframeNames = [];
+            cssStr = cssStr.replace(/@keyframes\s+([\w-]+)/g, (match, name) => {
+                const scopedName = `${name}_${instanceId}`;
+                keyframeNames.push({ original: name, scoped: scopedName });
+                return `@keyframes ${scopedName}`;
+            });
+            // Replace animation references to use the scoped keyframe names
+            keyframeNames.forEach(({ original, scoped }) => {
+                // Match animation property values that reference the original name
+                cssStr = cssStr.replace(
+                    new RegExp(`(animation:[^;]*?)\\b${original}\\b`, 'g'),
+                    (match, prefix) => `${prefix}${scoped}`
+                );
+            });
 
             // Gradient override: if the graphic uses a gradient background, force it onto
-            // all elements that only have background-color set (which doesn't support gradients).
+            // container elements specifically (but NOT wiper, ticker-track, msg-box which have their own colors).
             const bgData = data.style?.background || {};
             const globalRadiusGraphics = settings?.globalRadiusGraphics || [];
             const isGlobalRadius = globalRadiusGraphics.includes(data.id);
@@ -201,14 +222,15 @@
                 const c1 = bgData.color || '#1e3a8a';
                 const c2 = bgData.color2 || '#3b82f6';
                 const gradientVal = `linear-gradient(${angle}deg, ${c1}, ${c2})`;
-                // Target container/bar elements specifically, not child decorative elements
+                // Target container/bar elements specifically, but EXCLUDE wiper/ticker elements
+                // that have their own distinct background colors (wiper, msg-box, track, etc.)
                 cssStr += `\n/* gradient override */`;
-                cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { background: ${gradientVal} !important; background-color: transparent !important; }`;
+                cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]):not([class*="msg"]):not([class*="track"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { background: ${gradientVal} !important; background-color: transparent !important; }`;
             }
 
             if (isGlobalRadius || bgData.borderRadius > 0) {
                 cssStr += `\n/* border radius override */`;
-                cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { border-radius: ${borderRadius}px !important; overflow: hidden !important; }`;
+                cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { border-radius: ${borderRadius}px !important; overflow: hidden !important; }`;
             }
 
             // Layout side override
@@ -240,6 +262,7 @@
             style.textContent = cssStr;
             layoutStyleWrapper.appendChild(style);
         }
+
 
         container.appendChild(layoutStyleWrapper);
 
@@ -457,7 +480,7 @@
                 let cssStr = prepareStr(tpl.css_template);
 
                 cssStr = cssStr.replace(new RegExp(`#${instanceId}\\s+`, 'g'), '');
-                cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+                cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-|utk-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
                 cssStr = cssStr.replace(/#\{\{ID\}\}|#GRAPHIC_ID/g, `#${instanceId}`);
 
                 const layoutStyleWrapper = document.createElement('div');
@@ -505,15 +528,16 @@
                     const c1_2 = bgData2.color || '#1e3a8a';
                     const c2_2 = bgData2.color2 || '#3b82f6';
                     const gradientVal2 = `linear-gradient(${angle2}deg, ${c1_2}, ${c2_2})`;
-                    // Target container/bar elements specifically, not child decorative elements
+                    // Target container/bar elements but exclude utk-* ticker/wiper elements with their own colors
                     cssStr += `\n/* gradient override */`;
-                    cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { background: ${gradientVal2} !important; background-color: transparent !important; }`;
+                    cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]):not([class*="msg"]):not([class*="track"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { background: ${gradientVal2} !important; background-color: transparent !important; }`;
                 }
 
                 if (isGlobalRadiusPrev || bgData2.borderRadius > 0) {
                     cssStr += `\n/* border radius override */`;
-                    cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { border-radius: ${borderRadiusPrev}px !important; overflow: hidden !important; }`;
+                    cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { border-radius: ${borderRadiusPrev}px !important; overflow: hidden !important; }`;
                 }
+
 
                 // Layout side override
                 if (graphic.layout?.side && graphic.layout.side !== 'custom') {
@@ -764,6 +788,7 @@
             WIPER_GLEAM_BG: wiperGleamBg,
             WIPER_GLEAM_DURATION: wiperSettings.gleamDuration || 2,
             WIPER_GLEAM_HEIGHT: wiperSettings.gleamHeight || 100,
+            WIPER_GLEAM_WIDTH: wiperSettings.gleamWidth || 150,
             WIPER_GLEAM_FREQUENCY: wiperSettings.gleamFrequency || 3,
             WIPER_GLEAM_OPACITY: wiperSettings.gleamOpacity ?? 0.4,
             ITEMS: itemsStrings,
