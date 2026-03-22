@@ -1324,11 +1324,23 @@ function renderInspectorBody(graphic) {
                                 <div class="text-[10px] text-gray-500 mb-1">Przytrzymaj Ctrl, aby wybrać wiele elementów</div>
                                 <select multiple data-field="layout.attachedToGraphicId" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-[10px] focus:border-blue-500 focus:outline-none text-white h-24">
                                     <option value="" ${(!graphic.layout?.attachedToGraphicId || (Array.isArray(graphic.layout.attachedToGraphicId) && graphic.layout.attachedToGraphicId.length === 0)) ? 'selected' : ''}>Brak (Niezależna pozycja Y)</option>
+                                    ${state.groups.map(grp => `<option value="group:${grp.id}" ${(Array.isArray(graphic.layout?.attachedToGraphicId) ? graphic.layout.attachedToGraphicId.includes('group:'+grp.id) : graphic.layout?.attachedToGraphicId === 'group:'+grp.id) ? 'selected' : ''} class="text-blue-400 font-bold">GRUPA: ${grp.name}</option>`).join('')}
                                     ${state.graphics.filter(g => g.id !== graphic.id).map(g => `<option value="${g.id}" ${(Array.isArray(graphic.layout?.attachedToGraphicId) ? graphic.layout.attachedToGraphicId.includes(g.id) : graphic.layout?.attachedToGraphicId === g.id) ? 'selected' : ''}>[${g.name}] ${g.title || 'Bez tytułu'}</option>`).join('')}
                                 </select>
-                                <div class="mt-2">
-                                    ${ctrlLabel('Przesunięcie Y gdy Cel jest na żywo (px)')}
-                                    <input type="number" data-field="layout.attachOffsetY" value="${graphic.layout?.attachOffsetY ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                <div class="mt-2 grid grid-cols-2 gap-2">
+                                    <div>
+                                        ${ctrlLabel('Krawędź dokowania (Y)')}
+                                        <select data-field="layout.attachToEdgeY" class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
+                                            <option value="auto" ${(!graphic.layout?.attachToEdgeY || graphic.layout.attachToEdgeY === 'auto') ? 'selected' : ''}>Auto (Inteligentna)</option>
+                                            <option value="top" ${graphic.layout?.attachToEdgeY === 'top' ? 'selected' : ''}>Góra Celu</option>
+                                            <option value="bottom" ${graphic.layout?.attachToEdgeY === 'bottom' ? 'selected' : ''}>Dół Celu</option>
+                                            <option value="manual" ${graphic.layout?.attachToEdgeY === 'manual' ? 'selected' : ''}>Manual (Relatywny)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        ${ctrlLabel('Odstęp Y (px)')}
+                                        <input type="number" data-field="layout.attachOffsetY" value="${graphic.layout?.attachOffsetY ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                    </div>
                                 </div>
                             </div>
                             
@@ -1337,15 +1349,27 @@ function renderInspectorBody(graphic) {
                                 <div class="text-[10px] text-gray-500 mb-1">Przytrzymaj Ctrl, aby wybrać wiele elementów</div>
                                 <select multiple data-field="layout.attachedToGraphicIdX" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-[10px] focus:border-blue-500 focus:outline-none text-white h-24">
                                     <option value="" ${(!graphic.layout?.attachedToGraphicIdX || (Array.isArray(graphic.layout.attachedToGraphicIdX) && graphic.layout.attachedToGraphicIdX.length === 0)) ? 'selected' : ''}>Brak (Niezależna pozycja X)</option>
+                                    ${state.groups.map(grp => `<option value="group:${grp.id}" ${(Array.isArray(graphic.layout?.attachedToGraphicIdX) ? graphic.layout.attachedToGraphicIdX.includes('group:'+grp.id) : graphic.layout?.attachedToGraphicIdX === 'group:'+grp.id) ? 'selected' : ''} class="text-blue-400 font-bold">GRUPA: ${grp.name}</option>`).join('')}
                                     ${state.graphics.filter(g => g.id !== graphic.id).map(g => `<option value="${g.id}" ${(Array.isArray(graphic.layout?.attachedToGraphicIdX) ? graphic.layout.attachedToGraphicIdX.includes(g.id) : graphic.layout?.attachedToGraphicIdX === g.id) ? 'selected' : ''}>[${g.name}] ${g.title || 'Bez tytułu'}</option>`).join('')}
                                 </select>
-                                <div class="mt-2">
-                                    ${ctrlLabel('Przesunięcie X gdy Cel jest na żywo (px)')}
-                                    <input type="number" data-field="layout.attachOffsetX" value="${graphic.layout?.attachOffsetX ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                <div class="mt-2 grid grid-cols-2 gap-2">
+                                    <div>
+                                        ${ctrlLabel('Krawędź dokowania (X)')}
+                                        <select data-field="layout.attachToEdgeX" class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
+                                            <option value="auto" ${(!graphic.layout?.attachToEdgeX || graphic.layout.attachToEdgeX === 'auto') ? 'selected' : ''}>Auto (Inteligentna)</option>
+                                            <option value="left" ${graphic.layout?.attachToEdgeX === 'left' ? 'selected' : ''}>Lewo Celu</option>
+                                            <option value="right" ${graphic.layout?.attachToEdgeX === 'right' ? 'selected' : ''}>Prawo Celu</option>
+                                            <option value="manual" ${graphic.layout?.attachToEdgeX === 'manual' ? 'selected' : ''}>Manual (Relatywny)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        ${ctrlLabel('Odstęp X (px)')}
+                                        <input type="number" data-field="layout.attachOffsetX" value="${graphic.layout?.attachOffsetX ?? 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white">
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="text-[10px] text-gray-500 mt-1">Przykład: -100px u góry podniesie element do góry. -100px na dole przesunie go w lewo. Element gładko wyląduje z powrotem na swojej bazowej pozycji, kiedy wszystkie docelowe grafiki (cele) znikną z ekranu.</div>
+                            <div class="text-[10px] text-gray-500 mt-1">System automatycznie wykrywa wymiary celu. Wpisz odstęp w px (np. 10), aby odsunąć element od krawędzi celu. Wartości ujemne zbliżą elementy. Element powróci na swoją pozycję, gdy cele znikną.</div>
                         </div>
                     </div>
                 </div>
