@@ -1,6 +1,43 @@
 ; (function () {
     'use strict';
 
+    // Injection of global styles for automatic text squashing (scaleX)
+    const style = document.createElement('style');
+    style.textContent = `
+        .slt-squash {
+            display: inline-block !important;
+            transform-origin: left center !important;
+            white-space: nowrap !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    function applyGlobalSquashing(root) {
+        if (!root) return;
+        const enabled = root.getAttribute('data-squash-enabled') !== 'false';
+        if (!enabled) {
+            // If disabled, reset any existing transforms on squashing targets
+            root.querySelectorAll('.slt-squash').forEach(t => t.style.transform = 'none');
+            return;
+        }
+        const targets = root.querySelectorAll('.slt-squash');
+        targets.forEach(target => {
+            const container = target.parentElement;
+            if (!container) return;
+            
+            // Reset scale to measure natural width
+            target.style.transform = 'none';
+            
+            const containerWidth = container.clientWidth;
+            const textWidth = target.scrollWidth;
+            
+            if (textWidth > containerWidth && containerWidth > 0) {
+                const scale = containerWidth / textWidth;
+                target.style.transform = `scaleX(${scale})`;
+            }
+        });
+    }
+
     const container = document.getElementById('render-container');
     // Socket only needed in output.html (where container exists)
     const socket = (typeof io !== 'undefined' && container) ? io() : null;
@@ -306,12 +343,15 @@
                         rootEl.classList.add('active');
                         // Legacy support: also add .active to the first child (often .lt-container)
                         if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
+                        rootEl.setAttribute('data-squash-enabled', data.style?.typography?.squatEnabled !== false);
                     }
                     if (rootEl.__slt_show) {
                         rootEl.__slt_show();
                     } else {
                         rootEl.style.display = 'block';
                     }
+                    // Apply global text squashing after initial render/animation trigger
+                    applyGlobalSquashing(rootEl);
                 }, 30);
             } catch (e) {
                 console.error("Vinci JS error", e);
@@ -575,6 +615,7 @@
                 const wrapperDiv = document.createElement('div');
                 wrapperDiv.id = instanceId;
                 wrapperDiv.className = 'lt-root';
+                wrapperDiv.setAttribute('data-squash-enabled', graphic.style?.typography?.squatEnabled !== false);
                 wrapperDiv.innerHTML = htmlStr;
                 innerContainer.appendChild(wrapperDiv);
 
@@ -641,6 +682,9 @@
                 } else if (!rootEl.__slt_show) {
                     rootEl.style.display = 'block';
                 }
+
+                // Apply global text squashing to preview instances
+                applyGlobalSquashing(rootEl);
             });
         }
     };
@@ -876,6 +920,12 @@
         if (isStandardSub) {
             const subKey = Object.keys(customFields).find(k => /sub|opis|funkcja/i.test(k));
             if (subKey) ctx.SUBTITLE = customFields[subKey];
+        }
+
+        // Handle LOGO_URL / IMAGE prioritisation: if standard/empty, use graphic.url (Alpha upload)
+        const isStandardLogo = (!ctx.LOGO_URL || ctx.LOGO_URL === tpl.defaultFields?.LOGO_URL || ctx.LOGO_URL === tpl.defaultFields?.logoUrl);
+        if (isStandardLogo && graphic.url) {
+            ctx.LOGO_URL = graphic.url;
         }
 
         console.log("RENDERER CONTEXT FOR:", graphic.id, tpl.id, ctx);

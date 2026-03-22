@@ -1,17 +1,17 @@
-# Dokumentacja Systemu BTB-CG
+# Dokumentacja Systemu CG Control Pro
 
-Witaj w dokumentacji systemu **BTB-CG** (Broadcast Text Builder - Character Generator). Poniżej znajdziesz spis treści, który pomoże Ci w nawigacji po kluczowych obszarach systemu.
+Witaj w dokumentacji systemu **CG Master Alpha**. Poniżej znajdziesz spis treści ułatwiający nawigację.
 
 ## Spis Treści
 
-1.  ### [Architektura Systemu](architektura.md)
-    Szczegółowy opis technologii, bazy danych i sposobu komunikacji komponentów.
-2.  ### [Funkcje Aplikacji](funkcje.md)
-    Opis możliwości panelu sterowania, banku grafik, grup oraz edytora tekstu.
-3.  ### [Poradnik Tworzenia Szablonów](szablony.md)
-    Instrukcja krok po kroku jak tworzyć własne, dynamiczne szablony graficzne (HTML/CSS/JS).
-4.  ### [Dokumentacja Techniczna API](api_techniczna.md)
-    Opis kluczowych funkcji w kodzie serwera i klienta oraz procedury synchronizacji.
+1.  ### [Instrukcja Obsługi Operatora](funkcje.md)
+    Opis panelu sterowania, banku grafik, pracy z tickerem i workflow emisji.
+2.  ### [Przewodnik Twórcy Szablonów](szablony.md)
+    Szczegółowa instrukcja budowania szablonów (Handlebars, CSS Scoping, GSAPFX).
+3.  ### [Architektura Systemu](architektura.md)
+    Opis technologii (Vite, Socket.io, SQLite) oraz struktury danych.
+4.  ### [API i Dokumentacja Techniczna](api_techniczna.md)
+    Opis kluczowych funkcji silnika renderującego i synchronizacji.
 
 ---
-*Dokumentacja wygenerowana na podstawie analizy kodu źródłowego aplikacji.*
+*Ostatnia aktualizacja: Marzec 2026*

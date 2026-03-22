@@ -1211,6 +1211,14 @@ function renderInspectorBody(graphic) {
 
                     <div class="border-t border-gray-800 pt-3 mt-2">
                         <div class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Typografia</div>
+                        
+                        <div class="flex items-center gap-2 mb-3">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" data-field="style.typography.squatEnabled" ${graphic.style?.typography?.squatEnabled !== false ? 'checked' : ''} class="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-0 focus:ring-offset-0">
+                                <span class="text-[10px] text-gray-400">Automatyczne ściskanie tekstu</span>
+                            </label>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-2 mb-2">
                             <div>
                                 ${ctrlLabel('Kolor Tytułu')}

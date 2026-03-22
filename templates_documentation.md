@@ -162,20 +162,33 @@ if (b64) {
 
 ---
 
-## 6. Automatyczne Skalowanie Fontu
+## 6. Automatyczne Skalowanie (Squashing) Tekstu
 
-Aby uniknąć wychodzenia tekstu poza belkę, zaleca się stosowanie funkcji `adjustFont` w JavaScripcie:
+System posiada wbudowany mechanizm "ściskania" tekstu w poziomie (`scaleX`), aby zmieścić długie treści bez zmiany rozmiaru fontu czy łamania linii. Jest to obsługiwane **globalnie** przez renderer.
 
-```javascript
-function adjustFont(el, maxW) {
-    const base = 40; // bazowy rozmiar w px
-    el.style.fontSize = base + 'px';
-    if (el.scrollWidth > maxW) {
-        const newSize = (maxW / el.scrollWidth) * base;
-        el.style.fontSize = Math.floor(newSize) + 'px';
-    }
-}
+### Jak użyć (Metoda Globalna)
+
+Aby włączyć automatyczne ściskanie dla dowolnego elementu tekstowego:
+
+1. **HTML**: Dodaj klasę `slt-squash` do elementu, który ma być ściskany. Element ten **musi** znajdować się wewnątrz kontenera o określonej szerokości (np. `width` lub `max-width`).
+
+```html
+<div class="my-container" style="width: 400px; overflow: hidden;">
+    <span class="slt-squash">{{{TITLE}}}</span>
+</div>
 ```
+
+2. **Działanie**: Renderer automatycznie wykryje wszystkie elementy z klasą `slt-squash` po wyrenderowaniu grafiki i obliczy wymaganą skalę `scaleX`, jeśli tekst jest szerszy niż jego rodzic (kontener).
+
+### Zalety Metody Globalnej
+- Nie wymaga pisania własnego JavaScriptu w szablonie.
+- Działa automatycznie zarówno w emisji (Output), jak i w podglądzie (Preview).
+- Zachowuje stałą wysokość tekstu i linię bazową.
+- Punkt zakotwiczenia (`transform-origin`) jest ustawiony domyślnie na `left center` (wyrównanie do lewej).
+
+> [!TIP]
+> Jeśli potrzebujesz wyrównania do środka lub do prawej przy ściskaniu, nadpisz `transform-origin` w CSS szablonu dla klasy `.slt-squash`.
+
 
 ---
 
