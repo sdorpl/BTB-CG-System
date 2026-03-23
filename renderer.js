@@ -96,6 +96,15 @@
             }
         });
 
+        // 1.5. Pre-measure NEW graphics in hidden renderer (for docking).
+        //       This gives us FINAL bounds before any animation starts,
+        //       so docked children can be placed correctly from frame 0.
+        newActiveGraphics.forEach(graphic => {
+            if (!activeGraphics[graphic.id] && !_premeasured.has(graphic.id)) {
+                premeasureBounds(graphic, settings);
+            }
+        });
+
         // 2. Add or Update visible graphics
         newActiveGraphics.forEach(graphic => {
             if (!activeGraphics[graphic.id]) {
@@ -139,10 +148,7 @@
             }
         });
         
-        recalculateAttachments(graphics, null, 0);
-        // And again after short delays to account for animations settling
-        recalculateAttachments(graphics, null, 150);
-        recalculateAttachments(graphics, null, 500);
+        recalculateAttachments(graphics, settings);
     }
 
     function showGraphic(data, settings = {}, allGraphics = []) {
@@ -167,28 +173,74 @@
         
         let initialOffsetY = 0;
         let initialOffsetX = 0;
-        
-        if (data.layout?.attachedToGraphicId) {
-            const parentIds = Array.isArray(data.layout.attachedToGraphicId) ? data.layout.attachedToGraphicId : (data.layout.attachedToGraphicId ? [data.layout.attachedToGraphicId] : []);
-            const parentVisible = parentIds.some(pid => {
-                const p = allGraphics.find(g => g.id === pid);
-                return p && p.visible;
-            });
-            if (parentVisible) {
-                initialOffsetY = data.layout.attachOffsetY || 0;
+
+        // Compute initial offset using PREMEASURED parent bounds (hidden renderer).
+        // Falls back to declared layout dimensions if premeasured data not available.
+        // This ensures child is placed at the correct final position from frame 0.
+        function calcInitialOffset(attachField, offsetField, edgeField, axis) {
+            if (!data.layout?.[attachField]) return 0;
+            const ids = Array.isArray(data.layout[attachField])
+                ? data.layout[attachField]
+                : [data.layout[attachField]];
+
+            const visibleParents = ids
+                .map(pid => {
+                    if (typeof pid === 'string' && pid.startsWith('group:')) {
+                        const gid = pid.replace('group:', '');
+                        return allGraphics.filter(vg => vg.groupId === gid && vg.visible);
+                    }
+                    const p = allGraphics.find(g => g.id === pid);
+                    return (p && p.visible) ? [p] : [];
+                })
+                .flat();
+
+            if (visibleParents.length === 0) return 0;
+
+            const gap  = data.layout[offsetField] || 0;
+            const edge = data.layout[edgeField]   || 'auto';
+
+            if (axis === 'y') {
+                let minT = Infinity, maxB = -Infinity;
+                visibleParents.forEach(p => {
+                    // Use premeasured bounds if available (accurate final-state dims)
+                    const pm = _premeasured.get(p.id);
+                    const pT = pm ? pm.top : (p.layout?.y || 0);
+                    const pB = pm ? pm.bottom : (pT + (p.layout?.height || 60));
+                    if (pT < minT) minT = pT;
+                    if (pB > maxB) maxB = pB;
+                });
+                // Own premeasured bounds for natural position
+                const myPm = _premeasured.get(data.id);
+                const myY  = myPm ? myPm.top : (data.layout?.y || 0);
+                const myH  = myPm ? myPm.height : (data.layout?.height || 60);
+                const onBottom = data.layout?.side?.startsWith('bottom') ||
+                                ((!data.layout?.side || data.layout.side === 'custom') && myY > 540);
+                if (edge === 'manual') return gap;
+                if (edge === 'top')    return minT - gap - myH - myY;
+                if (edge === 'bottom') return maxB + gap - myY;
+                return onBottom ? (minT - gap - myH - myY) : (maxB + gap - myY);
+            } else {
+                let minL = Infinity, maxR = -Infinity;
+                visibleParents.forEach(p => {
+                    const pm = _premeasured.get(p.id);
+                    const pL = pm ? pm.left : (p.layout?.x || 0);
+                    const pR = pm ? pm.right : (pL + (p.layout?.width || 1920));
+                    if (pL < minL) minL = pL;
+                    if (pR > maxR) maxR = pR;
+                });
+                const myPm = _premeasured.get(data.id);
+                const myX  = myPm ? myPm.left : (data.layout?.x || 0);
+                const myW  = myPm ? myPm.width : (data.layout?.width || 1920);
+                const onRight = data.layout?.side?.endsWith('right');
+                if (edge === 'manual') return gap;
+                if (edge === 'left')   return minL - gap - myW - myX;
+                if (edge === 'right')  return maxR + gap - myX;
+                return onRight ? (minL - gap - myW - myX) : (maxR + gap - myX);
             }
         }
 
-        if (data.layout?.attachedToGraphicIdX) {
-            const parentIdsX = Array.isArray(data.layout.attachedToGraphicIdX) ? data.layout.attachedToGraphicIdX : (data.layout.attachedToGraphicIdX ? [data.layout.attachedToGraphicIdX] : []);
-            const parentVisibleX = parentIdsX.some(pid => {
-                const p = allGraphics.find(g => g.id === pid);
-                return p && p.visible;
-            });
-            if (parentVisibleX) {
-                initialOffsetX = data.layout.attachOffsetX || 0;
-            }
-        }
+        initialOffsetY = calcInitialOffset('attachedToGraphicId',  'attachOffsetY', 'attachToEdgeY', 'y');
+        initialOffsetX = calcInitialOffset('attachedToGraphicIdX', 'attachOffsetX', 'attachToEdgeX', 'x');
 
         // Apply layout transform to outer wrapper
         layoutStyleWrapper.id = 'layout-wrapper-' + instanceId;
@@ -325,7 +377,9 @@
                 fields: data.fields,
                 activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(data.id)) ? settings.globalFontFamily : null
             }),
-            isHiding: false
+            isHiding: false,
+            _dockOffY: initialOffsetY,
+            _dockOffX: initialOffsetX,
         };
 
         // Execute internal JS & Animation wrapper
@@ -420,271 +474,506 @@
         }
     }
 
-    function getElementContentBounds(meta, subtractOffset = false) {
-        if (!meta) return null;
-        const root = document.getElementById(meta.instanceId);
-        if (!root) return null;
-        
-        const renderContainer = document.getElementById('render-container');
-        if (!renderContainer) return null;
-        const containerRect = renderContainer.getBoundingClientRect();
+    // ============================================================
+    // DOCKING / ATTACHMENT SYSTEM
+    // ============================================================
+    //
+    // Architecture:
+    //   1. premeasureBounds     — renders graphic in a hidden 1920×1080 container with
+    //                             all animations forced to final state, measures the
+    //                             FINAL content bounds (before any real animation starts)
+    //   2. _runDockingCalc      — uses premeasured natural positions + multi-pass offset
+    //                             propagation for chains (A→B→C)
+    //   3. recalculateAttachments — entry: premeasures parents, runs calc, sets up
+    //                               ResizeObserver for steady-state
+    //   4. measureLiveBounds    — reads real DOM bounds (for ResizeObserver / steady state)
+    // ============================================================
 
-        const findTightBounds = (el) => {
-            const rect = el.getBoundingClientRect();
-            // Wrap tolerance for full screen (up to 5% of screen)
-            const isFullScreen = rect.width > (containerRect.width * 0.95) && 
-                               rect.height > (containerRect.height * 0.95);
+    const _premeasured    = new Map();   // graphicId → bounds in 1920×1080 (final state)
+    const _dockObservers  = new Map();   // parentId  → ResizeObserver
+    let   _measureEl      = null;        // hidden off-screen container (lazy init)
 
-            const style = window.getComputedStyle(el);
-            const hasBackground = (style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent') || 
-                                (style.backgroundImage !== 'none' && style.backgroundImage !== '');
-            const hasBorder = parseInt(style.borderTopWidth) > 0 || parseInt(style.borderBottomWidth) > 0 ||
-                             parseInt(style.borderLeftWidth) > 0 || parseInt(style.borderRightWidth) > 0;
-            const isMedia = ['IMG', 'VIDEO', 'SVG', 'CANVAS'].includes(el.tagName);
-            
-            const hasVisual = hasBackground || hasBorder || isMedia;
-            
-            // Check for text content directly in this element
-            const hasText = Array.from(el.childNodes).some(node => node.nodeType === 3 && node.textContent.trim().length > 0);
+    /**
+     * Returns (or creates) a hidden 1920×1080 container for off-screen measurement.
+     */
+    function _getMeasureContainer() {
+        if (!_measureEl) {
+            _measureEl = document.createElement('div');
+            _measureEl.id = '__cg-premeasure';
+            _measureEl.style.cssText =
+                'position:fixed;left:-9999px;top:-9999px;' +
+                'width:1920px;height:1080px;overflow:hidden;' +
+                'visibility:hidden;pointer-events:none;z-index:-1;';
+            document.body.appendChild(_measureEl);
+        }
+        return _measureEl;
+    }
 
-            // If it has visual cues (or text) AND it's not a full-screen background, we stop here (this is our "bryła")
-            if ((hasVisual || hasText) && !isFullScreen) {
-                if (rect.width === 0 || rect.height === 0) return null;
-                return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
+    /**
+     * Renders a graphic off-screen with animations forced to final state,
+     * measures its content bounds, and caches the result in _premeasured.
+     *
+     * Returns { top, bottom, left, right, width, height } in 1920×1080 px, or null.
+     */
+    function premeasureBounds(graphic, settings = {}) {
+        const tpl = templates.find(t => t.id === graphic.templateId);
+        if (!tpl) return null;
+
+        const mc = _getMeasureContainer();
+        const instanceId = `__pm_${graphic.id.replace(/-/g, '')}`;
+        const ctx = buildPreviewContext(graphic, tpl, instanceId, settings);
+
+        const compile = (str) => {
+            if (!str) return '';
+            try { return Handlebars.compile(str)(ctx); }
+            catch (e) { return str; }
+        };
+
+        const htmlStr = compile(tpl.html_template);
+        let cssStr = tpl.css_template ? compile(tpl.css_template) : '';
+
+        // ── CSS scoping (mirrors showGraphic) ──────────────────────
+        cssStr = cssStr.replace(new RegExp(`#${instanceId}\\s+`, 'g'), '');
+        cssStr = cssStr.replace(
+            /\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-|utk-)[a-zA-Z0-9_-]*/g,
+            `#${instanceId} $&`);
+        // Scope keyframes
+        const kfNames = [];
+        cssStr = cssStr.replace(/@keyframes\s+([\w-]+)/g, (_, name) => {
+            const scoped = `${name}_${instanceId}`;
+            kfNames.push({ original: name, scoped });
+            return `@keyframes ${scoped}`;
+        });
+        kfNames.forEach(({ original, scoped }) => {
+            cssStr = cssStr.replace(
+                new RegExp(`(animation:[^;]*?)\\b${original}\\b`, 'g'),
+                (m, prefix) => `${prefix}${scoped}`);
+        });
+
+        // Gradient & border-radius overrides
+        const bgData = graphic.style?.background || {};
+        const globalRadiusGraphics = settings?.globalRadiusGraphics || [];
+        const isGlobalRadius = globalRadiusGraphics.includes(graphic.id);
+        const borderRadius = isGlobalRadius
+            ? (settings.globalBorderRadius || 0)
+            : (bgData.borderRadius || 0);
+
+        if (bgData.type === 'gradient') {
+            const gv = `linear-gradient(${bgData.gradientAngle||135}deg, ${bgData.color||'#1e3a8a'}, ${bgData.color2||'#3b82f6'})`;
+            cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]):not([class*="msg"]):not([class*="track"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { background:${gv}!important; background-color:transparent!important; }`;
+        }
+        if (isGlobalRadius || bgData.borderRadius > 0) {
+            cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { border-radius:${borderRadius}px!important; overflow:hidden!important; }`;
+        }
+
+        // Side layout
+        if (graphic.layout?.side && graphic.layout.side !== 'custom') {
+            const parts = graphic.layout.side.split('-');
+            const yS = (graphic.layout.side === 'center') ? 'center' : parts[0];
+            const xS = (graphic.layout.side === 'center') ? 'center' : (parts[1] || 'center');
+            const mx = graphic.layout?.marginX || 0;
+            const my = graphic.layout?.marginY || 0;
+            cssStr += `\n#${instanceId} { display:flex;width:100%;height:100%;box-sizing:border-box; }`;
+            cssStr += `\n#${instanceId} > * { position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;margin:0!important; }`;
+            if (yS === 'top')         cssStr += `\n#${instanceId} { align-items:flex-start;padding-top:${my}px; }`;
+            else if (yS === 'bottom') cssStr += `\n#${instanceId} { align-items:flex-end;padding-bottom:${my}px; }`;
+            else                      cssStr += `\n#${instanceId} { align-items:center; }`;
+            if (xS === 'left')        cssStr += `\n#${instanceId} { justify-content:flex-start;padding-left:${mx}px; }`;
+            else if (xS === 'right')  cssStr += `\n#${instanceId} { justify-content:flex-end;padding-right:${mx}px; }`;
+            else                      cssStr += `\n#${instanceId} { justify-content:center; }`;
+        }
+
+        // Force FINAL visibility state — kill all animations / transitions / hidden states
+        cssStr += `\n#${instanceId}, #${instanceId} * { transition:none!important; animation:none!important; }`;
+        cssStr = cssStr.replace(/opacity\s*:\s*0\b/g, 'opacity:1');
+        cssStr = cssStr.replace(
+            /transform\s*:\s*(translateX\([^)]+\)|translateY\([^)]+\)|scale\([^)]+\)|scaleX\([^)]+\))/g,
+            'transform:none');
+
+        cssStr += `\n#${instanceId} { line-height:${ctx.LINE_HEIGHT || 1.4}; }`;
+
+        // ── Build DOM ──────────────────────────────────────────────
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText =
+            'position:absolute;top:0;left:0;width:1920px;height:1080px;' +
+            'pointer-events:none;transform-origin:0 0;';
+        wrapper.style.transform = getLayoutTransform(graphic.layout, 1, 0, 0);
+        wrapper.style.setProperty('--v-width',  formatDimension(graphic.layout?.width, '90%'));
+        wrapper.style.setProperty('--v-height', formatDimension(graphic.layout?.height, 'auto'));
+
+        const styleEl = document.createElement('style');
+        styleEl.textContent = cssStr;
+        wrapper.appendChild(styleEl);
+
+        const root = document.createElement('div');
+        root.id = instanceId;
+        root.className = 'lt-root';
+        root.innerHTML = htmlStr;
+        wrapper.appendChild(root);
+
+        mc.appendChild(wrapper);
+        void wrapper.offsetHeight; // force layout
+
+        // ── Measure ────────────────────────────────────────────────
+        const mcRect  = mc.getBoundingClientRect();
+        const maxArea = 1920 * 1080 * 0.85;
+        let bounds = null;
+
+        // Fast path: firstElementChild
+        const primary = root.firstElementChild;
+        if (primary) {
+            const r = primary.getBoundingClientRect();
+            if (r.width >= 1 && r.height >= 1 && r.width * r.height < maxArea) {
+                bounds = {
+                    top:    r.top    - mcRect.top,
+                    bottom: r.bottom - mcRect.top,
+                    left:   r.left   - mcRect.left,
+                    right:  r.right  - mcRect.left,
+                    width:  r.width,
+                    height: r.height,
+                };
             }
+        }
 
-            // Otherwise, look at children to find the contents
-            let minT = 9999, maxB = -9999, minL = 9999, maxR = -9999;
+        // Deep scan fallback
+        if (!bounds) {
+            let minT = Infinity, maxB = -Infinity, minL = Infinity, maxR = -Infinity;
             let found = false;
-            Array.from(el.children).forEach(child => {
-                const tag = child.tagName;
-                if (tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'SCRIPT' || child.classList.contains('gsap-marker')) return;
-                
-                const res = findTightBounds(child);
-                if (res) {
-                    minT = Math.min(minT, res.top);
-                    maxB = Math.max(maxB, res.bottom);
-                    minL = Math.min(minL, res.left);
-                    maxR = Math.max(maxR, res.right);
-                    found = true;
-                }
-            });
-
+            for (const el of root.querySelectorAll('*')) {
+                const st = window.getComputedStyle(el);
+                if (st.display === 'none' || st.visibility === 'hidden') continue;
+                const rect = el.getBoundingClientRect();
+                if (rect.width < 1 || rect.height < 1) continue;
+                if (rect.width * rect.height > maxArea) continue;
+                const hasBg = (st.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+                               st.backgroundColor !== 'transparent') ||
+                              st.backgroundImage !== 'none';
+                const hasBorder = parseInt(st.borderTopWidth)  > 0 ||
+                                  parseInt(st.borderBottomWidth) > 0 ||
+                                  parseInt(st.borderLeftWidth)   > 0 ||
+                                  parseInt(st.borderRightWidth)  > 0;
+                const isMedia = el.tagName === 'IMG' || el.tagName === 'SVG' || el.tagName === 'VIDEO';
+                if (!hasBg && !hasBorder && !isMedia) continue;
+                const rT = rect.top - mcRect.top, rB = rect.bottom - mcRect.top;
+                const rL = rect.left - mcRect.left, rR = rect.right - mcRect.left;
+                if (rT < minT) minT = rT; if (rB > maxB) maxB = rB;
+                if (rL < minL) minL = rL; if (rR > maxR) maxR = rR;
+                found = true;
+            }
             if (found) {
-                return { top: minT, bottom: maxB, left: minL, right: maxR };
+                bounds = {
+                    top: minT, bottom: maxB, left: minL, right: maxR,
+                    width: maxR - minL, height: maxB - minT,
+                };
             }
+        }
 
-            // Fallback 1: If this element itself is a visual full-screen (like a bg layer)
-            if (hasVisual) {
-                return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
-            }
+        // ── Cleanup ────────────────────────────────────────────────
+        mc.removeChild(wrapper);
 
-            // Fallback 2: If no visual children, but the element itself is not full-screen and has dimensions (likely text container)
-            if (!isFullScreen && rect.width > 0 && rect.height > 0) {
-                return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
-            }
-
-            return null;
-        };
-
-        const result = findTightBounds(root);
-        if (!result) return null;
-
-        const { top: minT, bottom: maxB, left: minL, right: maxR } = result;
-        const scale = containerRect.width / 1920;
-        
-        // Optionally subtract currently applied offsets to get the 'natural' un-docked position
-        // The offset is now applied to the layout-wrapper, but it still shows up in getBoundingClientRect
-        const currentOffsetY = subtractOffset ? (meta.appliedAttachOffsetY || 0) : 0;
-        const currentOffsetX = subtractOffset ? (meta.appliedAttachOffsetX || 0) : 0;
-
-        return {
-            top: ((minT - containerRect.top) / scale) - currentOffsetY,
-            left: ((minL - containerRect.left) / scale) - currentOffsetX,
-            bottom: ((maxB - containerRect.top) / scale) - currentOffsetY,
-            right: ((maxR - containerRect.left) / scale) - currentOffsetX,
-            width: (maxR - minL) / scale,
-            height: (maxB - minT) / scale
-        };
+        if (bounds) _premeasured.set(graphic.id, bounds);
+        return bounds;
     }
-    function recalculateAttachments(graphics, customMetaMap = null, delay = 100) {
-        const metaMap = customMetaMap || activeGraphics;
-        const run = () => {
-            const visibleGraphics = graphics.filter(g => g.visible && metaMap[g.id] && !metaMap[g.id].isHiding);
-            if (visibleGraphics.length === 0) return;
 
-            // 1. Measure natural bounds for everyone once (WITHOUT resetting transforms)
-            // We use subtractOffset = true to get the "pre-docking" position while keeping scale/layout.
-            const naturalData = {};
-            visibleGraphics.forEach(g => {
-                const meta = metaMap[g.id];
-                const bounds = getElementContentBounds(meta, true); // subtract current applied offsets
-                if (bounds) {
-                    naturalData[g.id] = {
-                        bounds: bounds,
-                        layout: g.layout,
-                        side: g.layout?.side || 'custom'
+    /**
+     * Measures live DOM bounds of a graphic in 1920×1080 space.
+     * Used by ResizeObserver callbacks (steady-state, after animations are done).
+     */
+    function measureLiveBounds(graphicId, containerRect) {
+        const meta = activeGraphics[graphicId];
+        if (!meta) return null;
+        const rootEl = document.getElementById(meta.instanceId);
+        if (!rootEl) return null;
+
+        const scale   = containerRect.width / 1920;
+        const maxArea = containerRect.width * containerRect.height * 0.85;
+
+        const primary = rootEl.firstElementChild;
+        if (primary) {
+            const r = primary.getBoundingClientRect();
+            if (r.width >= 1 && r.height >= 1 && r.width * r.height < maxArea) {
+                return {
+                    top:    (r.top    - containerRect.top)  / scale,
+                    bottom: (r.bottom - containerRect.top)  / scale,
+                    left:   (r.left   - containerRect.left) / scale,
+                    right:  (r.right  - containerRect.left) / scale,
+                    width:  r.width  / scale,
+                    height: r.height / scale,
+                };
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolves attachment target IDs (may include "group:xxx") into
+     * an array of resolved graphic IDs that are currently visible.
+     */
+    function resolveTargetIds(rawIds, graphics) {
+        const out = [];
+        (Array.isArray(rawIds) ? rawIds : [rawIds]).forEach(pid => {
+            if (!pid) return;
+            if (typeof pid === 'string' && pid.startsWith('group:')) {
+                const gid = pid.replace('group:', '');
+                graphics.forEach(g => { if (g.groupId === gid && g.visible) out.push(g.id); });
+            } else {
+                const pg = graphics.find(g => g.id === pid);
+                if (pg && pg.visible) out.push(pid);
+            }
+        });
+        return out;
+    }
+
+    /**
+     * Core docking calculation.
+     *
+     * Uses NATURAL positions (from premeasured or live-minus-offset) and
+     * multi-pass offset propagation for chains (A→B→C).
+     *
+     * @param {Array}   graphics  — full graphics list
+     * @param {boolean} smooth    — true → CSS transition, false → instant
+     */
+    function _runDockingCalc(graphics, smooth) {
+        const visible = graphics.filter(g =>
+            g.visible && activeGraphics[g.id] && !activeGraphics[g.id].isHiding);
+        if (visible.length === 0) return;
+
+        // ── Phase A: resolve natural positions ───────────────────────
+        // Natural = where the graphic would be WITHOUT any docking offset.
+        // Source priority: premeasured (final state) > live DOM − offset > layout declaration
+        const natPos = {};
+        const rc = document.getElementById('render-container');
+        const cRect = rc ? rc.getBoundingClientRect() : null;
+
+        visible.forEach(g => {
+            const meta = activeGraphics[g.id];
+            const pm = _premeasured.get(g.id);
+            if (pm) {
+                natPos[g.id] = { top: pm.top, left: pm.left, height: pm.height, width: pm.width };
+                return;
+            }
+            // Fallback: live DOM − current offset
+            if (cRect && cRect.width > 1) {
+                const live = measureLiveBounds(g.id, cRect);
+                if (live) {
+                    natPos[g.id] = {
+                        top:    live.top  - (meta._dockOffY || 0),
+                        left:   live.left - (meta._dockOffX || 0),
+                        height: live.height,
+                        width:  live.width,
                     };
-                } else {
-                    // Fallback to layout data if DOM not available/measured yet
-                    naturalData[g.id] = {
-                        bounds: {
-                            top: g.layout?.y || 0,
-                            left: g.layout?.x || 0,
-                            bottom: (g.layout?.y || 0) + (g.layout?.height || 60),
-                            right: (g.layout?.x || 0) + (g.layout?.width || 1920),
-                            width: g.layout?.width || 1920,
-                            height: g.layout?.height || 60
-                        },
-                        layout: g.layout,
-                        side: g.layout?.side || 'custom'
-                    };
+                    return;
+                }
+            }
+            // Last resort: layout declaration
+            const isCustom = !g.layout?.side || g.layout.side === 'custom';
+            natPos[g.id] = {
+                top:    isCustom ? (g.layout?.y || 0) : 0,
+                left:   isCustom ? (g.layout?.x || 0) : 0,
+                height: g.layout?.height || 60,
+                width:  g.layout?.width || 1920,
+            };
+        });
+
+        // ── Phase B: multi-pass offset propagation ───────────────────
+        const offsets = {};
+        visible.forEach(g => offsets[g.id] = { y: 0, x: 0 });
+
+        for (let pass = 0; pass < 5; pass++) {
+            let changed = false;
+
+            visible.forEach(g => {
+                if (!g.layout) return;
+                let newY = 0, newX = 0;
+
+                // ── Y-axis ──
+                if (g.layout.attachedToGraphicId) {
+                    const targets = resolveTargetIds(g.layout.attachedToGraphicId, graphics);
+                    let minT = Infinity, maxB = -Infinity;
+                    let found = false;
+
+                    targets.forEach(tid => {
+                        const nat = natPos[tid];
+                        if (!nat) return;
+                        const adjTop = nat.top + (offsets[tid]?.y || 0);
+                        const adjBot = adjTop + nat.height;
+                        if (adjTop < minT) minT = adjTop;
+                        if (adjBot > maxB) maxB = adjBot;
+                        found = true;
+                    });
+
+                    if (found) {
+                        const me   = natPos[g.id];
+                        const gap  = g.layout.attachOffsetY || 0;
+                        const edge = g.layout.attachToEdgeY || 'auto';
+
+                        if (edge === 'manual')      newY = gap;
+                        else if (edge === 'top')    newY = (minT - gap - me.height) - me.top;
+                        else if (edge === 'bottom') newY = (maxB + gap) - me.top;
+                        else /* auto */ newY = minT > 540
+                            ? (minT - gap - me.height) - me.top
+                            : (maxB + gap) - me.top;
+                    }
+                }
+
+                // ── X-axis ──
+                if (g.layout.attachedToGraphicIdX) {
+                    const targets = resolveTargetIds(g.layout.attachedToGraphicIdX, graphics);
+                    let minL = Infinity, maxR = -Infinity;
+                    let found = false;
+
+                    targets.forEach(tid => {
+                        const nat = natPos[tid];
+                        if (!nat) return;
+                        const adjLeft  = nat.left + (offsets[tid]?.x || 0);
+                        const adjRight = adjLeft + nat.width;
+                        if (adjLeft  < minL) minL = adjLeft;
+                        if (adjRight > maxR) maxR = adjRight;
+                        found = true;
+                    });
+
+                    if (found) {
+                        const me   = natPos[g.id];
+                        const gap  = g.layout.attachOffsetX || 0;
+                        const edge = g.layout.attachToEdgeX || 'auto';
+
+                        if (edge === 'manual')     newX = gap;
+                        else if (edge === 'left')  newX = (minL - gap - me.width) - me.left;
+                        else if (edge === 'right') newX = (maxR + gap) - me.left;
+                        else /* auto */ newX = minL > 960
+                            ? (minL - gap - me.width) - me.left
+                            : (maxR + gap) - me.left;
+                    }
+                }
+
+                if (Math.abs(offsets[g.id].y - newY) > 0.3 ||
+                    Math.abs(offsets[g.id].x - newX) > 0.3) {
+                    offsets[g.id] = { y: newY, x: newX };
+                    changed = true;
                 }
             });
 
-            // 2. Propagate offsets mathematically (multi-pass for chained docking)
-            const offsets = {};
-            visibleGraphics.forEach(g => offsets[g.id] = { x: 0, y: 0 });
+            if (!changed) break;
+        }
 
-            for (let i = 0; i < 5; i++) {
-                let changed = false;
-                visibleGraphics.forEach(g => {
-                    const data = naturalData[g.id];
-                    if (!data) return;
+        // ── Phase C: apply transforms ────────────────────────────────
+        visible.forEach(g => {
+            const off  = offsets[g.id];
+            const meta = activeGraphics[g.id];
+            if (!meta?.el) return;
 
-                    let newY = 0;
-                    let newX = 0;
+            const dY = Math.abs(off.y - (meta._dockOffY || 0));
+            const dX = Math.abs(off.x - (meta._dockOffX || 0));
+            if (dY < 0.3 && dX < 0.3) return;
 
-                    // --- Y AXIS DOCKING ---
-                    if (data.layout?.attachedToGraphicId) {
-                        const targets = Array.isArray(data.layout.attachedToGraphicId) ? data.layout.attachedToGraphicId : [data.layout.attachedToGraphicId];
-                        let minT = 9999, maxB = -9999;
-                        let foundTarget = false;
-                        
-                        targets.forEach(tid => {
-                            if (!tid) return;
-                            const tids = (typeof tid === 'string' && tid.startsWith('group:')) 
-                                ? visibleGraphics.filter(vg => vg.groupId === tid.replace('group:', '')).map(vg => vg.id)
-                                : [tid];
-                            
-                            tids.forEach(id => {
-                                const tData = naturalData[id];
-                                if (tData) {
-                                    const tOff = offsets[id] || { x: 0, y: 0 };
-                                    minT = Math.min(minT, tData.bounds.top + tOff.y);
-                                    maxB = Math.max(maxB, tData.bounds.bottom + tOff.y);
-                                    foundTarget = true;
-                                }
-                            });
-                        });
+            meta._dockOffY = off.y;
+            meta._dockOffX = off.x;
 
-                        if (foundTarget && maxB !== -9999) {
-                            const userGap = data.layout.attachOffsetY || 0;
-                            const edgeY = data.layout?.attachToEdgeY || 'auto';
-                            const myNaturalY = data.bounds.top;
-                            const myHeight = data.bounds.height;
+            const transform = getLayoutTransform(
+                g.layout, meta.autoScale || 1, off.y, off.x);
 
-                            let pushY = 0;
-                            if (edgeY === 'manual') {
-                                pushY = userGap;
-                            } else if (edgeY === 'top') {
-                                // Must be ABOVE target: bottom < minT - gap
-                                pushY = minT - userGap - myHeight - myNaturalY;
-                            } else if (edgeY === 'bottom') {
-                                // Must be BELOW target: top > maxB + gap
-                                pushY = maxB + userGap - myNaturalY;
-                            } else {
-                                // Auto logic based on side or screen position
-                                if (data.side.startsWith('bottom') || (data.side === 'custom' && minT > 540)) {
-                                    // Dock above (rise)
-                                    pushY = minT - userGap - myHeight - myNaturalY;
-                                } else {
-                                    // Dock below
-                                    pushY = maxB + userGap - myNaturalY;
-                                }
-                            }
-                            newY = pushY;
-                        }
-                    }
+            // Always animate docking moves — use GSAP for buttery-smooth easing.
+            // Duration scales with distance: small nudges are fast, large moves are slower.
+            const distance = Math.sqrt(dY * dY + dX * dX);
+            const duration = Math.min(Math.max(distance / 600, 0.3), 0.8);
 
-                    // --- X AXIS DOCKING ---
-                    if (data.layout?.attachedToGraphicIdX) {
-                        const targetsX = Array.isArray(data.layout.attachedToGraphicIdX) ? data.layout.attachedToGraphicIdX : [data.layout.attachedToGraphicIdX];
-                        let minL = 9999, maxR = -9999;
-                        let foundTargetX = false;
-
-                        targetsX.forEach(tid => {
-                            if (!tid) return;
-                            const tids = (typeof tid === 'string' && tid.startsWith('group:')) 
-                                ? visibleGraphics.filter(vg => vg.groupId === tid.replace('group:', '')).map(vg => vg.id)
-                                : [tid];
-
-                            tids.forEach(id => {
-                                const tData = naturalData[id];
-                                if (tData) {
-                                    const tOff = offsets[id] || { x: 0, y: 0 };
-                                    minL = Math.min(minL, tData.bounds.left + tOff.x);
-                                    maxR = Math.max(maxR, tData.bounds.right + tOff.x);
-                                    foundTargetX = true;
-                                }
-                            });
-                        });
-
-                        if (foundTargetX && maxR !== -9999) {
-                            const userGapX = data.layout.attachOffsetX || 0;
-                            const edgeX = data.layout?.attachToEdgeX || 'auto';
-                            const myNaturalX = data.bounds.left;
-                            const myWidth = data.bounds.width;
-
-                            let pushX = 0;
-                            if (edgeX === 'manual') {
-                                pushX = userGapX;
-                            } else if (edgeX === 'left') {
-                                // Must be LEFT of target: right < minL - gap
-                                pushX = minL - userGapX - myWidth - myNaturalX;
-                            } else if (edgeX === 'right') {
-                                // Must be RIGHT of target: left > maxR + gap
-                                pushX = maxR + userGapX - myNaturalX;
-                            } else {
-                                // Auto logic
-                                if (data.side.endsWith('right')) {
-                                    // Dock left
-                                    pushX = minL - userGapX - myWidth - myNaturalX;
-                                } else {
-                                    // Dock right
-                                    pushX = maxR + userGapX - myNaturalX;
-                                }
-                            }
-                            newX = pushX;
-                        }
-                    }
-
-                    if (Math.abs(offsets[g.id].y - newY) > 0.01 || Math.abs(offsets[g.id].x - newX) > 0.01) {
-                        offsets[g.id].y = newY;
-                        offsets[g.id].x = newX;
-                        changed = true;
-                    }
+            if (window.gsap) {
+                window.gsap.to(meta.el, {
+                    transform: transform,
+                    duration: duration,
+                    ease: 'power2.out',
+                    overwrite: 'auto',
                 });
-                if (!changed) break;
+            } else {
+                meta.el.style.transition =
+                    `transform ${duration}s cubic-bezier(0.22, 1, 0.36, 1)`;
+                meta.el.style.transform = transform;
             }
-
-            // 3. Apply final transforms all at once
-            visibleGraphics.forEach(g => {
-                const off = offsets[g.id];
-                const meta = metaMap[g.id];
-                const wrapper = document.getElementById('layout-wrapper-' + meta.instanceId);
-                if (wrapper) {
-                    wrapper.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
-                    wrapper.style.transform = getLayoutTransform(g.layout, meta.autoScale || 1, off.y, off.x);
-                    meta.appliedAttachOffsetY = off.y;
-                    meta.appliedAttachOffsetX = off.x;
-                }
-            });
-        };
-
-        if (delay > 0) setTimeout(run, delay);
-        else run();
+        });
     }
+
+    // ── Steady-state ResizeObserver ──────────────────────────────────────
+    function _setupDockObservers(graphics) {
+        _dockObservers.forEach(ro => ro.disconnect());
+        _dockObservers.clear();
+
+        const parentIds = new Set();
+        graphics.forEach(g => {
+            if (!g.visible) return;
+            [g.layout?.attachedToGraphicId, g.layout?.attachedToGraphicIdX].forEach(field => {
+                if (!field) return;
+                (Array.isArray(field) ? field : [field]).forEach(id => {
+                    if (id && !id.startsWith('group:')) parentIds.add(id);
+                });
+            });
+        });
+
+        parentIds.forEach(pid => {
+            const meta = activeGraphics[pid];
+            if (!meta) return;
+            const rootEl = document.getElementById(meta.instanceId);
+            if (!rootEl?.firstElementChild) return;
+
+            const ro = new ResizeObserver(() => {
+                // Steady-state: re-premeasure parent with live content,
+                // then recalculate smoothly
+                const g = graphics.find(pg => pg.id === pid);
+                if (g) {
+                    // Update premeasured cache from live DOM
+                    const rc2 = document.getElementById('render-container');
+                    if (rc2) {
+                        const cr = rc2.getBoundingClientRect();
+                        const live = measureLiveBounds(pid, cr);
+                        if (live) {
+                            // Store live bounds minus current offset → natural pos
+                            _premeasured.set(pid, {
+                                top:    live.top  - (meta._dockOffY || 0),
+                                bottom: live.bottom - (meta._dockOffY || 0),
+                                left:   live.left - (meta._dockOffX || 0),
+                                right:  live.right - (meta._dockOffX || 0),
+                                width:  live.width,
+                                height: live.height,
+                            });
+                        }
+                    }
+                }
+                _runDockingCalc(graphics, true);
+            });
+            ro.observe(rootEl.firstElementChild);
+            _dockObservers.set(pid, ro);
+        });
+    }
+
+    /**
+     * Main entry point for docking.
+     *
+     * 1. Pre-measures all newly visible graphics in hidden renderer (final state)
+     * 2. Runs docking calc instantly (child placed correctly from frame 0)
+     * 3. Sets up ResizeObserver for content-change tracking
+     */
+    function recalculateAttachments(graphics, settings) {
+        // Evict cache for hidden graphics
+        _premeasured.forEach((_, id) => {
+            const g = graphics.find(p => p.id === id);
+            if (!g || !g.visible) _premeasured.delete(id);
+        });
+
+        // Pre-measure all visible graphics that aren't cached yet
+        const visibleGraphics = graphics.filter(g => g.visible);
+        visibleGraphics.forEach(g => {
+            if (!_premeasured.has(g.id)) {
+                premeasureBounds(g, settings || {});
+            }
+        });
+
+        // Run docking calc instantly (no rAF loop needed — premeasured = final)
+        _runDockingCalc(graphics, false);
+
+        // Set up ResizeObserver for steady-state content changes
+        _setupDockObservers(graphics);
+    }
+
+
 
 
     function removeElement(id, meta) {
@@ -929,8 +1218,8 @@
                 requestAnimationFrame(() => applyGlobalSquashing(rootEl));
             });
 
-            // Trigger docking instantly in preview
-            recalculateAttachments(visibleGraphics, instances, 0);
+            // Trigger docking in preview
+            recalculateAttachments(visibleGraphics, settings);
         }
     };
 
