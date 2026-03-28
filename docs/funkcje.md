@@ -54,17 +54,47 @@ Jeśli używasz szablonu typu **TICKER**:
 
 ---
 
-## 4. Dodatkowe Funkcje
+## 4. Skróty Klawiszowe
+
+System obsługuje skróty klawiszowe pozwalające na szybką pracę operatorską bez użycia myszy. Skróty są aktywne tylko wtedy, gdy kursor nie znajduje się w polu tekstowym (input, textarea, edytor kodu).
+
+Aby wyświetlić pomoc ze skrótami w aplikacji, naciśnij klawisz **?** lub kliknij ikonę znaku zapytania w nagłówku.
+
+| Klawisz | Akcja | Opis |
+|---------|-------|------|
+| **F1** / **Spacja** | TAKE | Wejdź na antenę / Ściągnij z anteny wybraną grafikę z Preview |
+| **F2** | Synchronizuj | Aktualizuj aktywną grafikę na antenie danymi z Preview (odpowiednik przycisku SYNCHR.) |
+| **Escape** | Wyczyść Program | Natychmiast ściąga wszystkie grafiki z anteny (Kill All) |
+| **Delete** | Usuń grafikę | Usuwa aktualnie wybraną grafikę z banku (z potwierdzeniem) |
+| **↑** / **↓** | Nawigacja | Przechodzi do poprzedniej / następnej grafiki w banku (Shotbox) |
+| **Tab** | Zmiana strony | Przełącza widok między Dashboard a Szablon |
+| **B** | Ustaw tło | Ustawia tło na stronie Output na aktualnie wybrany kolor z color pickera (domyślnie czarne) |
+| **T** | Tło OBS | Ustawia przezroczyste tło na stronie Output (domyślne dla OBS/vMix Browser Source) |
+| **?** | Pomoc | Wyświetla/ukrywa okno ze skrótami klawiszowymi |
+
+### Tło Output (Color Picker / B / T)
+
+W nagłówku panelu znajduje się **color picker** z polem hex oraz przyciski **Ustaw Tło** i **Tło OBS**, które sterują kolorem tła strony `output.html` — czyli strony, którą podaje się jako Browser Source do miksera (OBS, vMix, Tricaster).
+
+*   **Color Picker** — pozwala wybrać dowolny kolor tła (np. zielony chroma key `#00ff00`, niebieski `#0000ff`, czarny itp.). Kolor aktualizuje się w czasie rzeczywistym podczas przesuwania suwaka.
+*   **Ustaw Tło** (`B`) — wysyła aktualnie wybrany kolor z color pickera na stronę Output.
+*   **Tło OBS** (`T`) — przywraca przezroczyste tło (domyślne). W OBS/vMix Browser Source transparentne piksele przepuszczają warstwę poniżej, co pozwala nakładać grafiki CG na obraz z kamery bez potrzeby chroma key.
+*   **Szachownica** — gdy tło jest ustawione na przezroczyste, monitory Preview i Program wyświetlają wzór szachownicy (jak w programach graficznych), co wizualnie potwierdza transparentność.
+*   **Zapamiętywanie** — wybór tła jest zapisywany w `localStorage` strony Output, dzięki czemu przetrwa odświeżenie przeglądarki.
+
+---
+
+## 5. Dodatkowe Funkcje
 
 ### Skalowanie tekstu (Squashing)
-System posiada wbudowany mechanizm automatycznego "ściskania" tekstu w poziomie (`scaleX`), aby zmieścić długie treści bez zmiany rozmiaru fontu czy łamania linii. 
+System posiada wbudowany mechanizm automatycznego "ściskania" tekstu w poziomie (`scaleX`), aby zmieścić długie treści bez zmiany rozmiaru fontu czy łamania linii.
 
 ### Edytor WYSIWYG
 Moduł edycji tekstu pozwalający na zaawansowane formatowanie (pogrubienia, kolory, czcionki) w obrębie jednego pola tekstowego.
 
 ---
 
-## 5. Rozwiązywanie problemów
+## 6. Rozwiązywanie problemów
 
 1. **Brak sygnału w Programie**: Sprawdź, czy okno Output.html jest otwarte.
 2. **Grafika nie odświeża się**: Kliknij ikonę "Reset Database" w prawym górnym rogu.

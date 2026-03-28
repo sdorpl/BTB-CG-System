@@ -1,29 +1,166 @@
 {
-  "id": "528dc35a-546a-4e7f-8da7-a0c365f81680",
-  "name": "belka exp",
-  "type": "LOWER_THIRD",
-  "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
-  "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
-  "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
-  "defaultFields": {
-    "title": "Sample Title",
-    "primaryColor": "#ffffff",
-    "TITLE": "",
-    "SUBTITLE": ""
+  "_exportVersion": 2,
+  "template": {
+    "id": "528dc35a-546a-4e7f-8da7-a0c365f81680",
+    "name": "belka exp",
+    "type": "LOWER_THIRD",
+    "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
+    "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+    "defaultFields": {
+      "title": "Sample Title",
+      "primaryColor": "#ffffff",
+      "TITLE": "",
+      "SUBTITLE": ""
+    },
+    "version": 1,
+    "ocgInputs": [
+      {
+        "id": "TITLE",
+        "label": "Tytuł / Imię Nazwisko",
+        "default": "",
+        "type": "text"
+      },
+      {
+        "id": "SUBTITLE",
+        "label": "Podtytuł / Funkcja",
+        "default": "",
+        "type": "text"
+      }
+    ]
   },
-  "version": 1,
-  "ocgInputs": [
+  "graphics": [
     {
-      "id": "TITLE",
-      "label": "Tytuł / Imię Nazwisko",
-      "default": "",
-      "type": "text"
+      "id": "5e751639-404d-479b-ba06-eb9dbb2712bc",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "belka exp (18:26:40)",
+      "title": "Sample Title",
+      "titleHtml": "<div style=\"line-height: 1.4;\"><span style=\"font-size: 64px;\">Sample Title</span></div>",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "528dc35a-546a-4e7f-8da7-a0c365f81680",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "bottom",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "cubic-bezier(0.2, 0.8, 0.2, 1)"
+        },
+        "out": {
+          "type": "zoom",
+          "direction": "top",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "cubic-bezier(0.2, 0.8, 0.2, 1)"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#7e3e3e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 180,
+        "y": 855,
+        "scale": 1,
+        "layer": 1
+      }
     },
     {
-      "id": "SUBTITLE",
-      "label": "Podtytuł / Funkcja",
-      "default": "",
-      "type": "text"
+      "id": "29199870-d2fc-4415-a454-87e642d1543d",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "belka exp (20:48:54)",
+      "title": "Sample Title",
+      "titleHtml": "Sample Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "528dc35a-546a-4e7f-8da7-a0c365f81680",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
     }
   ]
 }

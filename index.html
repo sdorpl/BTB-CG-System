@@ -122,6 +122,15 @@
       color: #4ade80;
     }
 
+    /* Ace Editor — dopasowanie do tła aplikacji */
+    #tpl-code-editor .ace_editor,
+    #tpl-code-editor .ace_gutter {
+      background: #1a1a2e !important;
+    }
+    #tpl-code-editor .ace_scrollbar-v::-webkit-scrollbar { width: 6px; }
+    #tpl-code-editor .ace_scrollbar-v::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    #tpl-code-editor .ace_scrollbar-v::-webkit-scrollbar-track { background: transparent; }
+
     .accordion-content {
       display: none;
     }
@@ -135,7 +144,7 @@
 <body class="bg-gray-950 text-gray-200 h-screen font-sans overflow-hidden flex flex-col">
 
   <!-- ============================================================ HEADER == -->
-  <header class="h-12 bg-black border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
+  <header class="h-14 bg-black border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
     <div class="flex items-center gap-2">
       <div
         class="w-7 h-7 bg-red-600 rounded flex items-center justify-center font-bold text-base shadow-lg shadow-red-900/50">
@@ -144,50 +153,95 @@
           class="text-red-500 text-xs font-black not-italic ml-1">ALPHA</span></h1>
     </div>
     <nav class="flex items-center gap-2 text-xs">
-      <div id="cloud-status" class="px-2 py-1 rounded bg-red-900/20 text-red-500 border border-red-900/50 text-[10px] font-bold uppercase tracking-widest">ŁĄCZENIE...</div>
+      <div id="cloud-status" class="w-2.5 h-2.5 rounded-full bg-red-500 border border-red-400/50 shadow-sm shadow-red-900/60" title="Status połączenia: łączenie..."></div>
       
-      <div class="h-4 w-px bg-gray-700 mx-2"></div>
+      <div class="h-7 w-px bg-gray-700 mx-2"></div>
       
-      <button id="nav-dashboard"
-        class="nav-tab px-4 py-1.5 rounded font-black uppercase tracking-wider text-blue-400 bg-blue-600/10 border border-blue-600/20 text-[10px]">Panel Główny</button>
-      <button id="nav-templates"
-        class="nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]">Edytor Szablonów</button>
-      <button id="nav-settings"
-        class="nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]">Ustawienia</button>
-      <a href="/output.html" target="_blank"
-        class="px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px] flex items-center gap-1">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-        Wyjście (Output)
+      <button id="nav-dashboard" title="Panel Główny"
+        class="nav-tab p-1.5 rounded text-blue-400 bg-blue-600/10 border border-blue-600/20 transition-colors flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <button id="nav-templates" title="Edytor Szablonów"
+        class="nav-tab p-1.5 rounded text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
+      <button id="nav-settings" title="Ustawienia"
+        class="nav-tab p-1.5 rounded text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <a href="/output.html" target="_blank" title="Wyjście (Output)"
+        class="px-2 py-1.5 rounded font-bold text-gray-400 hover:text-white transition-colors flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
       </a>
 
-      <div class="h-4 w-px bg-gray-700 mx-2"></div>
+      <div class="h-7 w-px bg-gray-700 mx-2"></div>
 
-      <a href="/index.html?panel=bank" target="_blank"
-        class="px-3 py-1.5 rounded font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 bg-orange-900/20 border border-orange-900/50 transition-colors text-[10px] flex items-center gap-1" title="Otwórz Bank Grafik w nowym oknie">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-        Bank
+      <a href="/index.html?panel=bank" target="_blank" title="Bank Grafik"
+        class="p-1.5 rounded text-orange-400 hover:text-orange-300 bg-orange-900/20 border border-orange-900/50 transition-colors flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
       </a>
-      <a href="/index.html?panel=inspector" target="_blank"
-        class="px-3 py-1.5 rounded font-bold uppercase tracking-wider text-green-400 hover:text-green-300 bg-green-900/20 border border-green-900/50 transition-colors text-[10px] flex items-center gap-1" title="Otwórz Inspektora w nowym oknie">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        Inspektor
+      <a href="/index.html?panel=inspector" target="_blank" title="Inspektor"
+        class="p-1.5 rounded text-green-400 hover:text-green-300 bg-green-900/20 border border-green-900/50 transition-colors flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       </a>
       
-      <div class="h-4 w-px bg-gray-700 mx-2"></div>
+      <div class="h-7 w-px bg-gray-700 mx-2"></div>
 
       <div class="flex items-center gap-1">
-        <button id="btn-bg-black" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-[9px] font-bold uppercase rounded">Tło Czarne</button>
-        <button id="btn-bg-trans" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-[9px] font-bold uppercase rounded">Tło OBS</button>
+        <input type="color" id="hex-bg-picker" value="#000000" style="width:20px;height:20px;padding:0;border:none;background:transparent;cursor:pointer;" title="Wybierz kolor tła">
+        <input type="text" id="hex-bg" value="#000000" class="w-[68px] px-1.5 py-0.5 bg-gray-900 text-white border border-gray-700 text-[10px] text-center font-bold font-mono rounded" placeholder="#000000">
+        <button id="btn-bg-set" aria-label="Ustaw kolor tła" title="Ustaw kolor tła" class="p-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10"/></svg>
+        </button>
+        <button id="btn-bg-trans" aria-label="Ustaw przezroczyste tło OBS" title="Tło OBS (przezroczyste)" class="p-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+        </button>
       </div>
 
-      <div class="h-4 w-px bg-gray-700 mx-1"></div>
+      <div class="h-7 w-px bg-gray-700 mx-1"></div>
 
-      <button id="btn-kill-all" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white border border-red-400 rounded text-[10px] font-black uppercase shadow-lg shadow-red-900/40 transition-all active:scale-95">Wyczyść Program</button>
+      <!-- PRESET SELECTOR -->
+      <div class="flex items-center gap-1" id="preset-bar">
+<select id="preset-select" class="bg-gray-900 border border-gray-700 text-white text-[10px] font-bold rounded px-2 py-1 max-w-[130px] cursor-pointer" title="Wybierz preset grafik">
+          <option value="">— brak —</option>
+        </select>
+        <button id="btn-preset-load" title="Załaduj wybrany preset" class="p-1.5 bg-green-700 hover:bg-green-600 text-white border border-green-500 rounded transition-all active:scale-95 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <button id="btn-preset-save" title="Zapisz bieżące grafiki jako preset" class="p-1.5 bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 rounded transition-all active:scale-95 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        </button>
+        <button id="btn-preset-delete" title="Usuń wybrany preset" class="p-1.5 bg-gray-700 hover:bg-red-700 text-gray-300 hover:text-white border border-gray-600 hover:border-red-500 rounded transition-all active:scale-95 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+        <button id="btn-preset-export" title="Eksportuj preset do pliku JSON" class="p-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600 rounded transition-all active:scale-95 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </button>
+        <label id="btn-preset-import" title="Importuj preset z pliku JSON" class="p-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600 rounded transition-all active:scale-95 cursor-pointer flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <input type="file" id="preset-import-file" accept=".json" class="hidden">
+        </label>
+      </div>
 
-      <div class="h-4 w-px bg-gray-700 mx-1"></div>
+      <div class="h-7 w-px bg-gray-700 mx-1"></div>
 
-      <button id="reset-db-btn" class="text-gray-500 hover:text-red-400 p-1 transition-colors" title="Reset Database">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+      <button id="btn-kill-all" aria-label="Wyczyść program - ukryj wszystkie grafiki" title="Wyczyść Program (ukryj wszystkie grafiki)" class="p-1.5 bg-red-600 hover:bg-red-500 text-white border border-red-400 rounded shadow-lg shadow-red-900/40 transition-all active:scale-95 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div class="h-7 w-px bg-gray-700 mx-1"></div>
+
+      <button onclick="document.dispatchEvent(new KeyboardEvent('keydown',{key:'?',shiftKey:true}))" aria-label="Skróty klawiszowe" class="text-gray-500 hover:text-blue-400 p-1 transition-colors" title="Skróty klawiszowe (?)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </button>
+
+      <button id="reset-db-btn" aria-label="Resetuj bazę danych" class="text-gray-500 hover:text-red-400 p-1 transition-colors" title="Reset Database">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <path d="M3 3v5h5" />
@@ -211,7 +265,7 @@
           <div class="h-7 bg-[#222] border-x border-gray-800 border-t-4 border-t-[#fbc02d] flex items-center justify-between px-3 shrink-0" style="height: 28px;">
             <div class="flex items-center gap-2">
                 <span class="text-[10px] font-black tracking-widest text-[#fbc02d] uppercase">PREVIEW (PODGLĄD)</span>
-                <button id="btn-toggle-safe-area" class="text-[8px] uppercase font-bold text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 rounded px-1.5 py-0.5 transition-colors border border-gray-800">BEZPIECZNY OBSZAR</button>
+                <button id="btn-toggle-safe-area" aria-label="Przełącz bezpieczny obszar EBU" class="text-[8px] uppercase font-bold text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 rounded px-1.5 py-0.5 transition-colors border border-gray-800">BEZPIECZNY OBSZAR</button>
             </div>
             <span id="preview-name" class="text-[9px] text-gray-500 font-mono tracking-tighter truncate max-w-[160px]">---</span>
           </div>
@@ -311,7 +365,7 @@
     </div>
 
     <!-- ====== RIGHT COLUMN: INSPECTOR PANEL == -->
-    <aside id="inspector-panel" class="hidden w-72 flex flex-col bg-gray-900 border-l border-gray-800 shrink-0">
+    <aside id="inspector-panel" class="w-72 flex-col bg-gray-900 border-l border-gray-800 shrink-0" style="display:none">
       <!-- Inspector Empty State -->
       <div id="inspector-empty" class="flex-1 flex flex-col items-center justify-center text-gray-600 p-8 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
@@ -328,8 +382,8 @@
         <!-- Header -->
         <div class="p-2 bg-black/20 border-b border-gray-800 flex justify-between items-center text-xs text-gray-500 shrink-0">
           <div class="flex items-center gap-2">
-            <button id="btn-close-inspector" class="text-gray-500 hover:text-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <button id="btn-close-inspector" aria-label="Zamknij inspektor" class="text-gray-500 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <span class="font-bold uppercase text-gray-300">Inspektor</span>
           </div>
@@ -356,7 +410,7 @@
         <div class="p-3 border-t border-gray-800 bg-gray-850 shrink-0 flex flex-col gap-2">
           <button id="btn-save-graphic"
             class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-bold shadow-lg transition-all hover:scale-[1.02] text-xs">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
@@ -371,6 +425,11 @@
               <span>ZAPISZ JAKO</span>
               <span>SZABLON</span>
             </button>
+            <button id="btn-ins-edit-code"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-purple-900/40 hover:bg-purple-600 text-purple-400 hover:text-white py-1.5 rounded font-bold border border-purple-900/50 transition-all hover:scale-[1.02] text-[9px] text-center leading-tight">
+              <span>EDYTUJ</span>
+              <span>KOD</span>
+            </button>
             <button id="btn-ins-export-json"
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-gray-800 hover:bg-gray-600 text-gray-300 hover:text-white py-1.5 rounded font-bold border border-gray-700 transition-all hover:scale-[1.02] text-[9px] text-center leading-tight">
               <span>EKSPORTUJ</span>
@@ -380,7 +439,7 @@
 
           <button id="btn-delete-graphic-ins"
             class="w-full flex items-center justify-center gap-2 bg-red-900/40 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded font-bold border border-red-900/50 transition-all hover:scale-[1.02] text-xs">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
@@ -401,14 +460,14 @@
       <div class="p-3 border-b border-gray-700 flex justify-between items-center">
         <h2 class="font-bold text-sm">Szablony</h2>
         <div class="flex gap-1">
-          <button id="btn-new-template" class="p-1 hover:bg-gray-700 rounded text-green-400" title="Nowy">
+          <button id="btn-new-template" class="p-1 hover:bg-gray-700 rounded text-green-400" title="Nowy" aria-label="Utwórz nowy szablon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
           </button>
-          <button id="btn-import-template" class="p-1 hover:bg-gray-700 rounded text-blue-400" title="Import JSON">
+          <button id="btn-import-template" class="p-1 hover:bg-gray-700 rounded text-blue-400" title="Import JSON" aria-label="Importuj szablon JSON">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -416,7 +475,7 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </button>
-          <button id="btn-import-ocg-template" class="p-1 hover:bg-gray-700 rounded text-orange-400" title="Import OCG (.json)">
+          <button id="btn-import-ocg-template" class="p-1 hover:bg-gray-700 rounded text-orange-400" title="Import OCG (.json)" aria-label="Importuj szablon OCG">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -446,7 +505,7 @@
           <div class="flex gap-2">
             <button id="btn-delete-template"
               class="flex items-center gap-2 px-3 py-1.5 text-red-400 hover:bg-gray-700 rounded text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
@@ -455,7 +514,7 @@
             </button>
             <button id="btn-export-template"
               class="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white rounded font-medium text-sm shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
@@ -465,7 +524,7 @@
             </button>
             <button id="btn-export-ocg-template"
               class="flex items-center gap-2 px-3 py-1.5 bg-orange-700/50 hover:bg-orange-600 border border-orange-600 text-white rounded font-medium text-sm shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
@@ -475,7 +534,7 @@
             </button>
             <button id="btn-save-template"
               class="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                 <polyline points="17 21 17 13 7 13 7 21" />
@@ -484,6 +543,21 @@
               Zapisz
             </button>
           </div>
+        </div>
+        <!-- Graphic code override bar (hidden by default, shown when editing graphic code) -->
+        <div id="tpl-graphic-mode-bar" class="hidden bg-yellow-900/30 border-b border-yellow-700/50 px-6 py-2 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3">
+            <span class="text-yellow-400 text-xs font-black uppercase tracking-wider">Edycja kodu grafiki:</span>
+            <span id="tpl-graphic-mode-name" class="text-white text-sm font-bold"></span>
+            <label class="flex items-center gap-1.5 ml-4 cursor-pointer">
+              <input type="checkbox" id="tpl-graphic-override-toggle" class="w-3.5 h-3.5 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-0 cursor-pointer">
+              <span class="text-[10px] font-bold text-yellow-300 uppercase">Nadpisz kod szablonu</span>
+            </label>
+          </div>
+          <button id="btn-exit-graphic-code" class="flex items-center gap-1.5 px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded text-xs font-bold transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Wróć do szablonu
+          </button>
         </div>
         <!-- Tabs -->
         <div class="bg-gray-800 border-b border-gray-700 px-6 flex gap-4 shrink-0">
@@ -497,11 +571,9 @@
           <button data-tab="vars"
             class="tpl-tab tab-vars py-3 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-200">Zmienne</button>
         </div>
-        <!-- Code Editor -->
+        <!-- Code Editor (Ace) -->
         <div class="flex-1 relative">
-          <textarea id="tpl-code-editor"
-            class="w-full h-full bg-[#1a1a2e] text-gray-300 font-mono text-xs p-4 resize-none outline-none custom-scrollbar"
-            spellcheck="false"></textarea>
+          <div id="tpl-code-editor" class="w-full h-full" style="font-size:13px;"></div>
           <!-- Fields Builder (Zmienne tab) -->
           <div id="fields-builder-wrapper" class="hidden w-full h-full bg-[#0d1117] overflow-y-auto custom-scrollbar flex flex-col" style="position:absolute;top:0;left:0;">
             <div class="p-4 border-b border-gray-800 flex items-center justify-between shrink-0">
@@ -526,6 +598,17 @@
             <div id="fields-builder-container" class="flex flex-col gap-1.5 px-4 pb-4 flex-1"></div>
             <div id="fields-builder-empty" class="hidden flex-1 flex items-center justify-center text-gray-600 text-xs font-medium py-10">
               Brak zmiennych — kliknij <span class="text-green-400 mx-1 font-bold">+ Dodaj Zmienną</span> aby zdefiniować pierwsze pole.
+            </div>
+
+            <!-- Default Values Editor -->
+            <div class="border-t border-gray-800 mt-2">
+              <div class="p-4 border-b border-gray-800 shrink-0">
+                <h3 class="text-xs font-black uppercase tracking-widest text-white">Wartości domyślne szablonu</h3>
+                <p class="text-[10px] text-gray-500 mt-0.5">Domyślne ustawienia stosowane przy tworzeniu nowych grafik z tego szablonu.</p>
+              </div>
+              <div id="tpl-defaults-editor" class="p-4 space-y-4">
+                <!-- Rendered dynamically by app.js -->
+              </div>
             </div>
           </div>
         </div>
@@ -671,7 +754,7 @@
           <div class="grid grid-cols-2 gap-4">
             <button id="btn-export-db"
               class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-green-400 border border-gray-700 py-2 rounded font-bold text-xs transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
@@ -683,7 +766,7 @@
               <input type="file" id="db-file-input" accept=".json" class="hidden">
               <button id="btn-import-db-trigger"
                 class="w-full flex items-center justify-center gap-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/30 py-2 rounded font-bold text-xs transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
@@ -1031,6 +1114,7 @@
     }
   </style>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.35.5/ace.js" crossorigin="anonymous"></script>
   <script src="gsap-fx.js"></script>
   <script src="renderer.js"></script>
   <script src="app.js"></script>

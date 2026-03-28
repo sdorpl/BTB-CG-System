@@ -62,6 +62,7 @@ function ensureDatabaseInitialized() {
         db.run(`CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
         db.run(`CREATE TABLE IF NOT EXISTS groups (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
         db.run(`CREATE TABLE IF NOT EXISTS graphics (id TEXT PRIMARY KEY, templateId TEXT, name TEXT, groupId TEXT, visible INTEGER DEFAULT 0, data TEXT NOT NULL)`);
+        db.run(`CREATE TABLE IF NOT EXISTS presets (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at INTEGER NOT NULL, data TEXT NOT NULL)`);
 
         console.log("[DB] Schema ensured.");
 
@@ -153,17 +154,34 @@ function syncTemplateFilesToDB(callback) {
 
     console.log(`[DB] Syncing ${files.length} template files from templates/ ...`);
     db.serialize(() => {
-        const stmt = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
+        const stmtTpl = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
+        const stmtGfx = db.prepare('INSERT OR REPLACE INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
         for (const fn of files) {
             try {
-                const tpl = JSON.parse(fs.readFileSync(path.join(tplDir, fn), 'utf8'));
-                if (!tpl.id) continue;
-                stmt.run(tpl.id, JSON.stringify(tpl));
+                const raw = JSON.parse(fs.readFileSync(path.join(tplDir, fn), 'utf8'));
+
+                // Support v2 bundled format (template + graphics)
+                if (raw._exportVersion === 2 && raw.template) {
+                    const tpl = raw.template;
+                    if (!tpl.id) continue;
+                    stmtTpl.run(tpl.id, JSON.stringify(tpl));
+                    if (Array.isArray(raw.graphics)) {
+                        for (const g of raw.graphics) {
+                            if (!g.id) continue;
+                            stmtGfx.run(g.id, g.templateId || null, g.name || '', g.groupId || null, g.visible ? 1 : 0, JSON.stringify(g));
+                        }
+                    }
+                } else {
+                    // Legacy format — plain template object
+                    if (!raw.id) continue;
+                    stmtTpl.run(raw.id, JSON.stringify(raw));
+                }
             } catch (e) {
                 console.warn(`[DB] Skipping ${fn}: ${e.message}`);
             }
         }
-        stmt.finalize(() => {
+        stmtTpl.finalize();
+        stmtGfx.finalize(() => {
             console.log(`[DB] Template files synced.`);
             // Reload state to pick up updated templates
             loadStateFromDB(callback);
@@ -171,11 +189,13 @@ function syncTemplateFilesToDB(callback) {
     });
 }
 
-let appState = { settings: {}, templates: [], graphics: [], groups: [] };
+let appState = { settings: {}, templates: [], graphics: [], groups: [], presets: [] };
 
 // Funkcja ładująca stan z bazy SQLite do RAM (Promise.all pattern)
 function loadStateFromDB(callback) {
     console.log("[DB] Loading state from SQLite...");
+    // Ensure presets table exists (migration for existing databases)
+    db.run(`CREATE TABLE IF NOT EXISTS presets (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at INTEGER NOT NULL, data TEXT NOT NULL)`);
 
     const q = (fn) => new Promise((resolve) => fn(resolve));
 
@@ -210,9 +230,16 @@ function loadStateFromDB(callback) {
         resolve(graphics);
     }));
 
-    Promise.all([pSettings, pTemplates, pGroups, pGraphics]).then(([settings, templates, groups, graphics]) => {
-        appState = { settings, templates, groups, graphics };
-        console.log(`[DB] State fully loaded. Graphics: ${graphics.length}, Templates: ${templates.length}`);
+    const pPresets = q(resolve => db.all("SELECT id, name, created_at, data FROM presets ORDER BY created_at ASC", (err, rows) => {
+        const presets = (!err && rows)
+            ? rows.map(r => { try { const d = JSON.parse(r.data); return { id: r.id, name: r.name, created_at: r.created_at, ...d }; } catch(e) { return null; } }).filter(Boolean)
+            : [];
+        resolve(presets);
+    }));
+
+    Promise.all([pSettings, pTemplates, pGroups, pGraphics, pPresets]).then(([settings, templates, groups, graphics, presets]) => {
+        appState = { settings, templates, groups, graphics, presets };
+        console.log(`[DB] State fully loaded. Graphics: ${graphics.length}, Templates: ${templates.length}, Presets: ${presets.length}`);
         if (callback) callback();
     });
 }
@@ -304,13 +331,64 @@ io.on('connection', (socket) => {
         }
 
         console.log(`[u] Received updateState from ${socket.id}. Graphics: ${newState.graphics?.length || 0}, Templates: ${newState.templates?.length || 0}`);
-        appState = newState;
+        // Preserve server-managed presets — clients don't own this list
+        appState = { ...newState, presets: appState.presets || [] };
         // Broadcast the updated state to ALL connected clients
         io.emit('stateUpdated', appState);
         
         // Persist to disk — zawsze synchronizuj grafiki (nawet gdy pusta tablica)
         syncGraphicsToDB(newState.graphics || []);
         syncStateToDB(newState);
+    });
+
+    // ── PRESET MANAGEMENT ──────────────────────────────────────
+    socket.on('savePreset', ({ id, name, graphics, groups }) => {
+        if (!id || !name) { console.error('[preset] savePreset: missing id or name'); return; }
+        const existing = appState.presets.find(p => p.id === id);
+        const created_at = existing ? existing.created_at : Date.now();
+        const data = JSON.stringify({ graphics, groups });
+        db.run('INSERT OR REPLACE INTO presets (id, name, created_at, data) VALUES (?, ?, ?, ?)',
+            [id, name, created_at, data], (err) => {
+            if (err) { console.error('[preset] Save error:', err); return; }
+            console.log(`[preset] Saved: "${name}" (${id})`);
+            // Update in-memory presets list without full DB reload
+            const presetObj = { id, name, created_at, graphics, groups };
+            const idx = appState.presets.findIndex(p => p.id === id);
+            if (idx >= 0) {
+                appState.presets[idx] = presetObj;
+            } else {
+                appState.presets.push(presetObj);
+            }
+            io.emit('stateUpdated', appState);
+        });
+    });
+
+    socket.on('deletePreset', (presetId) => {
+        db.run('DELETE FROM presets WHERE id = ?', [presetId], (err) => {
+            if (err) { console.error('[preset] Delete error:', err); return; }
+            console.log(`[preset] Deleted: ${presetId}`);
+            appState.presets = appState.presets.filter(p => p.id !== presetId);
+            io.emit('stateUpdated', appState);
+        });
+    });
+
+    socket.on('loadPreset', (presetId) => {
+        const preset = appState.presets.find(p => p.id === presetId);
+        if (!preset) { console.warn(`[preset] Not found: ${presetId}`); return; }
+        console.log(`[preset] Loading: "${preset.name}"`);
+        // Turn off all currently visible graphics before switching
+        const newGraphics = (preset.graphics || []).map(g => ({ ...g, visible: false }));
+        const newGroups = preset.groups || [];
+        const newState = { ...appState, graphics: newGraphics, groups: newGroups };
+        appState = newState;
+        io.emit('stateUpdated', appState);
+        syncGraphicsToDB(newGraphics);
+        syncStateToDB(newState);
+    });
+
+    socket.on('set_background', (color) => {
+        console.log(`[bg] Background set to: ${color}`);
+        io.emit('set_background', color);
     });
 
     socket.on('disconnect', () => {

@@ -1,63 +1,246 @@
 {
-  "id": "6d848586-affa-461e-b1db-c8c4adfbe14b",
-  "name": "Ticker Unified V3 (Eksport)",
-  "type": "TICKER",
-  "version": 2,
-  "features": {
-    "wiper": true,
-    "ticker_mode": true,
-    "separator": true
-  },
-  "html_template": "<div class=\"utk-container v2\">\n    <div class=\"utk-wiper {{#unless WIPER_SHOW}}utk-hidden{{/unless}}\">\n        <div class=\"utk-wiper-gleam\"></div>\n        <span class=\"utk-wiper-text\">{{WIPER_TEXT}}</span>\n    </div>\n    \n    \n    <div class=\"utk-panel-horizontal\" style=\"display:none;\">\n        <div class=\"utk-track\">\n            {{#if ITEMS}}\n                {{#each ITEMS}}\n                <div class=\"utk-item\">{{{this}}}</div>\n                <div class=\"utk-sep\"></div>\n                {{/each}}\n            {{else}}\n                <div class=\"utk-item\">ŁADOWANIE...</div>\n                <div class=\"utk-sep\"></div>\n            {{/if}}\n        </div>\n    </div>\n\n    \n    <div class=\"utk-panel-single\" style=\"display:none;\">\n        <div class=\"utk-msg-box\"></div>\n    </div>\n\n    <div id=\"f-news-list\" style=\"display:none;\" data-b64=\"{{ITEMS_B64}}\"></div>\n</div>",
-  "css_template": "#{{ID}} .utk-container.v2 {\n    position: absolute; bottom: 0; left: 0; width: var(--v-width, 100%); min-height: var(--v-height, 60px);\n    background: {{PRIMARY_BG}}; display: flex; align-items: stretch; overflow: hidden;\n    border: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}}; border-radius: {{BORDER_RADIUS}}px; box-sizing: border-box;\n    font-family: '{{FONT_FAMILY}}', sans-serif; opacity: 0; transform: {{ANIMATION_TRANSFORM}}; transform-origin: center; box-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .utk-wiper {\n    position: absolute; left: 0; top: 0; bottom: 0; width: var(--wiper-w, 150px); min-width: var(--wiper-w, 150px); padding: 0 40px;\n    background: {{WIPER_BG}}; display: flex; align-items: center; justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5); border-radius: {{BORDER_RADIUS}}px; z-index: 100; box-sizing: border-box; flex-shrink: 0; overflow: hidden;\n    transition: width 0.4s ease-in-out, min-width 0.4s ease-in-out, padding 0.4s ease-in-out, opacity 0.4s ease-in-out;\n    opacity: 1;\n}\n#{{ID}} .utk-wiper.utk-hidden {\n    width: 0 !important; min-width: 0 !important; padding-left: 0 !important; padding-right: 0 !important; opacity: 0; pointer-events: none;\n}\n#{{ID}} .utk-wiper-gleam {\n    position: absolute; top: 50%; left: -100%; width: {{WIPER_GLEAM_WIDTH}}%; height: {{WIPER_GLEAM_HEIGHT}}px; display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{WIPER_GLEAM_BG}}; transform: translateY(-50%) skewX(-20deg); pointer-events: none;\n    animation: utk-gleam-v2 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .utk-wiper-text {\n    font-weight: {{WIPER_FONT_WEIGHT}}; font-size: {{WIPER_FONT_SIZE}}px; font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{WIPER_TEXT_COLOR}}; letter-spacing: {{WIPER_LETTER_SPACING}}px; position: relative; z-index: 101; white-space: nowrap;\n}\n#{{ID}} .utk-panel-horizontal, #{{ID}} .utk-panel-single {\n    flex: 1; position: relative; overflow: hidden;\n}\n#{{ID}} .utk-track {\n    display: flex; align-items: center; white-space: nowrap; padding-left: 100%; flex: 1; height: 100%;\n}\n#{{ID}} .utk-item {\n    color: {{TITLE_COLOR}}; font-size: {{TITLE_SIZE}}px; font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}}; padding-left: 20px; padding-right: 20px; padding-top: {{PADDING_Y}}px; padding-bottom: {{PADDING_Y}}px; white-space: nowrap; display: block; box-sizing: border-box; line-height: 1;\n}\n#{{ID}} .utk-sep { {{SEPARATOR_CSS}} align-self: center; }\n#{{ID}} .utk-msg-box {\n    width: auto; position: absolute; left: 0; top: 50%; transform: translateY(-50%); display: block;\n    padding-left: 20px; padding-right: 20px; padding-top: {{PADDING_Y}}px; padding-bottom: {{PADDING_Y}}px; box-sizing: border-box; color: {{TITLE_COLOR}}; font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}}; text-transform: {{TITLE_TRANSFORM}}; white-space: nowrap; font-family: '{{FONT_FAMILY}}', sans-serif;\n    opacity: 0; transition: opacity 0.4s ease-in-out, padding-left 0.4s ease-in-out, font-size 0.4s ease-in-out; line-height: 1; z-index: 1;\n}\n#{{ID}} .utk-msg-box.visible { opacity: 1; }\n#{{ID}} .utk-wiper.mode-whip-right { animation: utk-slide-right-v2 1s linear forwards; }\n#{{ID}} .utk-wiper.mode-whip-back { animation: utk-slide-back-v2 0.5s ease-in-out forwards; }\n@keyframes utk-slide-right-v2 { 0% { left: 0%; } 100% { left: calc(100% - var(--wiper-w, 150px)); } }\n@keyframes utk-slide-back-v2 { 0% { left: calc(100% - var(--wiper-w, 150px)); } 100% { left: 0%; } }\n@keyframes utk-gleam-v2 { 0% { left: -{{WIPER_GLEAM_WIDTH}}%; } 100% { left: 200%; } }",
-  "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container   = root.querySelector('.utk-container');\n    const wiper       = root.querySelector('.utk-wiper');\n    const wiperText   = root.querySelector('.utk-wiper-text');\n    const panelHoriz  = root.querySelector('.utk-panel-horizontal');\n    const panelSingle = root.querySelector('.utk-panel-single');\n    const msgBox      = root.querySelector('.utk-msg-box');\n    const track       = root.querySelector('.utk-track');\n    const dataEl      = root.querySelector('#f-news-list');\n\n    if (!container || !dataEl) return;\n\n    const MODE = (\"{{TICKER_MODE}}\" || \"whip\").trim();\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n    const WIPER_SHOW = \"{{WIPER_SHOW}}\" !== \"false\";\n    const TICKER_SPEED_VAL = parseFloat(\"{{TICKER_SPEED}}\") || 5;\n\n    let items = [];\n    const b64 = dataEl.getAttribute('data-b64');\n    if (b64) {\n        try { items = JSON.parse(decodeURIComponent(escape(atob(b64 + \"=\".repeat((4 - b64.length % 4) % 4))))); } \n        catch(e) { try { items = JSON.parse(dataEl.textContent || '[]'); } catch(err) { items = []; } }\n    }\n    if (!items.length) items = ['BRAK WIADOMOŚCI'];\n\n    const getText = (item) => (typeof item === 'object') ? (item.text || '') : String(item);\n    const getCat  = (item) => (typeof item === 'object') ? (item.category || '') : '';\n\n    let currentIndex = 0;\n    let cycleRunning = false;\n    let activeTimeouts = [];\n\n    function updateWiperUI(labelText) {\n        const label = labelText || DEFAULT_WIPER;\n        let targetW = 0;\n        \n        if (WIPER_SHOW && label && label.trim()) {\n            const oldText = wiperText ? wiperText.innerText : '';\n            if (wiperText) wiperText.innerText = label;\n            targetW = Math.max(150, (wiperText ? wiperText.offsetWidth : 0) + 80);\n            if (wiperText) wiperText.innerText = oldText;\n        }\n\n        if (wiper) {\n            if (wiperText) wiperText.innerText = label;\n            if (targetW > 0) {\n                wiper.classList.remove('utk-hidden');\n            } else {\n                wiper.classList.add('utk-hidden');\n            }\n        }\n        container.style.setProperty('--wiper-w', targetW + 'px');\n        return targetW;\n    }\n\n    function adjustFont(el, wiperW) {\n        const base = parseFloat(\"{{TITLE_SIZE}}\") || 40;\n        const pl = wiperW > 0 ? (wiperW + 20) : 20;\n        \n        const oldTransition = el.style.transition;\n        el.style.transition = 'none';\n        el.style.fontSize = base + 'px';\n        el.style.paddingLeft = pl + 'px';\n        \n        const maxW = container.offsetWidth - pl - 20;\n        const contentW = el.scrollWidth - pl - 20;\n        \n        if (maxW > 10 && contentW > maxW) {\n            const newSize = (maxW / contentW) * base;\n            el.style.fontSize = Math.min(newSize, base) + 'px';\n        }\n        \n        void el.offsetHeight;\n        el.style.transition = oldTransition;\n    }\n\n    // WHIP / VERTICAL\n    function runSingle() {\n        if (!cycleRunning) return;\n        msgBox.classList.remove('visible');\n\n        const item = items[currentIndex];\n        const wW = updateWiperUI(getCat(item));\n        msgBox.innerHTML = getText(item);\n        adjustFont(msgBox, wW);\n\n        activeTimeouts.push(setTimeout(() => {\n            if (!cycleRunning) return;\n            msgBox.classList.add('visible');\n        }, 100));\n\n        const displayMs = MODE === 'whip' ? 4000 : (TICKER_SPEED_VAL * 1000);\n\n        activeTimeouts.push(setTimeout(() => {\n            if (!cycleRunning) return;\n            msgBox.classList.remove('visible');\n\n            if (MODE === 'whip') {\n                activeTimeouts.push(setTimeout(() => {\n                    if (!cycleRunning) return;\n                    if (wiper && !wiper.classList.contains('utk-hidden')) {\n                        wiper.classList.remove('mode-whip-back');\n                        wiper.classList.add('mode-whip-right');\n                    }\n                    activeTimeouts.push(setTimeout(() => {\n                        if (!cycleRunning) return;\n                        if (wiper && !wiper.classList.contains('utk-hidden')) {\n                            wiper.classList.remove('mode-whip-right');\n                            wiper.classList.add('mode-whip-back');\n                        }\n                        activeTimeouts.push(setTimeout(() => {\n                            if (!cycleRunning) return;\n                            currentIndex = (currentIndex + 1) % items.length;\n                            runSingle();\n                        }, 500));\n                    }, 1000));\n                }, 400));\n            } else {\n                activeTimeouts.push(setTimeout(() => {\n                    if (!cycleRunning) return;\n                    currentIndex = (currentIndex + 1) % items.length;\n                    runSingle();\n                }, 500));\n            }\n        }, displayMs));\n    }\n\n    // HORIZONTAL\n    function runHorizontal() {\n        if (!track) return;\n        const initialCat = getCat(items[0]);\n        updateWiperUI(initialCat);\n        const trackItems = Array.from(track.querySelectorAll('.utk-item'));\n        const itemData = trackItems.map((el, idx) => ({\n            el, \n            offset: el.offsetLeft, \n            category: getCat(items[idx]) || DEFAULT_WIPER\n        }));\n        \n        const fullWidth = track.scrollWidth || 0;\n        const speed = (TICKER_SPEED_VAL > 10) ? TICKER_SPEED_VAL : (TICKER_SPEED_VAL * 50);\n        const duration = fullWidth / speed;\n\n        gsap.to(track, {\n            x: -fullWidth,\n            duration: duration,\n            ease: 'none', \n            repeat: -1,\n            onUpdate: function() {\n                const curX = gsap.getProperty(track, 'x');\n                let activeCat = DEFAULT_WIPER;\n                let currentWiperW = parseFloat(container.style.getPropertyValue('--wiper-w')) || 0;\n                const trigger = currentWiperW > 0 ? currentWiperW : 50;\n                for (let i = 0; i < itemData.length; i++) {\n                    if (curX + itemData[i].offset > trigger) {\n                        activeCat = itemData[i].category;\n                        break;\n                    }\n                }\n                if (wiperText && wiperText.innerText !== activeCat) {\n                    updateWiperUI(activeCat);\n                }\n            }\n        });\n    }\n\n    root.__slt_show = () => {\n        cycleRunning = true;\n        if (MODE === 'horizontal') {\n            panelHoriz.style.display = 'block';\n            panelSingle.style.display = 'none';\n            runHorizontal();\n        } else {\n            panelHoriz.style.display = 'none';\n            panelSingle.style.display = 'block';\n            runSingle();\n        }\n\n        const animInStr = '{{{ANIMATION_IN_JSON}}}';\n        const animIn = (animInStr && animInStr !== '') ? JSON.parse(animInStr) : {};\n        const duration = typeof animIn.duration !== 'undefined' ? parseFloat(animIn.duration) : 0.6;\n        const delay = typeof animIn.delay !== 'undefined' ? parseFloat(animIn.delay) : 0;\n        \n        let ease = 'power2.out';\n        if (animIn.ease === 'linear') ease = 'none';\n        else if (animIn.ease === 'ease-in') ease = 'power2.in';\n        else if (animIn.ease === 'ease-in-out') ease = 'power2.inOut';\n        else if (animIn.ease === 'back') ease = 'back.out(1.7)';\n        else if (animIn.ease === 'elastic') ease = 'elastic.out(1, 0.3)';\n        else if (animIn.ease === 'bounce') ease = 'bounce.out';\n\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 1, x: 0, y: 0, scale: 1, scaleX: 1, scaleY: 1, duration: duration, delay: delay, ease: ease });\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        cycleRunning = false;\n        activeTimeouts.forEach(t => clearTimeout(t));\n        activeTimeouts = [];\n        if (track) gsap.killTweensOf(track);\n        \n        const animOutStr = '{{{ANIMATION_OUT_JSON}}}';\n        const animOut = (animOutStr && animOutStr !== '') ? JSON.parse(animOutStr) : {};\n        const duration = typeof animOut.duration !== 'undefined' ? parseFloat(animOut.duration) : 0.4;\n        const delay = typeof animOut.delay !== 'undefined' ? parseFloat(animOut.delay) : 0;\n        \n        let ease = 'power2.in';\n        if (animOut.ease === 'linear') ease = 'none';\n        else if (animOut.ease === 'ease-out') ease = 'power2.out';\n        else if (animOut.ease === 'ease-in-out') ease = 'power2.inOut';\n        else if (animOut.ease === 'back') ease = 'back.in(1.7)';\n\n        let targetProps = { opacity: 0, duration: duration, delay: delay, ease: ease };\n        if (animOut.type === 'slide') {\n            if (animOut.direction === 'top') targetProps.y = -100;\n            else if (animOut.direction === 'bottom') targetProps.y = 100;\n            else if (animOut.direction === 'left') targetProps.x = -100;\n            else if (animOut.direction === 'right') targetProps.x = 100;\n        } else if (animOut.type === 'scale') {\n            targetProps.scale = 0.5;\n        }\n        \n        const tl = gsap.timeline();\n        tl.to(container, targetProps);\n        return tl;\n    };\n})();",
-  "defaultFields": {
-    "items": [
-      {
-        "text": "PILNE: PREZYDENT K. NAWROCKI WETUJE USTAWĘ WS. PROGRAMU \"SAFE\"",
-        "category": "POLSKA"
-      },
-      {
-        "text": "SZEF ZWIĄZKÓW ZAWODOWYCH POLICJI ALARMUJE: LUDZIE LICZYLI NA ŚRODKI Z \"SAFE\"",
-        "category": "POLSKA"
-      },
-      {
-        "text": "asdadsdfsdfsdfsdfc dssdfsdcsdc dcsc dcsdcsdcdc",
-        "category": "POLSKA"
-      },
-      {
-        "text": "PREMIER D. TUSK OSTRO O WECIE: \"PREZES PIS POPROWADZIŁ GO JAK ZA RĄCZKĘ\"",
-        "category": "ŚWIAT"
-      },
-      {
-        "text": "TEHERAN ZAPOWIADA ODWET. REŻIM WŚCIEKŁY PO DZIAŁANIACH STANÓW ZJEDNOCZONYCH",
-        "category": "ŚWIAT"
-      },
-      {
-        "text": "KONGRESMENI USA ALARMUJĄ: ZAWIESZENIE SANKCJI NA ROSYJSKĄ ROPĘ FINANSUJE MACHINĘ WOJENNĄ PUTINA",
-        "category": "ŚWIAT"
-      },
-      {
-        "text": "RUCH RZĄDU W ODPOWIEDZI NA WETO. JEST NOWA UCHWAŁA I UPOWAŻNIENIA DLA MINISTRÓW",
-        "category": "BIZNES"
-      },
-      {
-        "text": "USA OFERUJĄ GIGANTYCZNĄ NAGRODĘ ZA INFORMACJE O PRZYWÓDCACH IRANU",
-        "category": "BIZNES"
-      },
-      {
-        "text": "PILNE: ZMASOWANY ATAK USA NA IRAŃSKĄ WYSPĘ. \"JEDNO Z NAJSILNIEJSZYCH BOMBARDOWAŃ\"",
-        "category": "BIZNES"
-      }
-    ],
-    "primaryColor": "#730000",
-    "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
-    "titleColor": "#ffffff",
-    "fontFamily": "Bahnschrift",
-    "introText": "",
+  "_exportVersion": 2,
+  "template": {
+    "id": "6d848586-affa-461e-b1db-c8c4adfbe14b",
+    "name": "Ticker Unified V3 (Eksport)",
     "type": "TICKER",
-    "name": "Ticker Unified V3",
-    "animation": {
+    "version": 2,
+    "features": {
+      "wiper": true,
+      "ticker_mode": true,
+      "separator": true
+    },
+    "html_template": "<div class=\"utk-container v2\">\n    <div class=\"utk-wiper\" {{#unless WIPER_SHOW}}style=\"display:none;\"{{/unless}}>\n        <div class=\"utk-wiper-gleam\"></div>\n        <span class=\"utk-wiper-text\">{{WIPER_TEXT}}</span>\n    </div>\n    \n    \n    <div class=\"utk-panel-horizontal\" style=\"display:none;\">\n        <div class=\"utk-track\">\n            {{#if ITEMS}}\n                {{#each ITEMS}}\n                <div class=\"utk-item\">{{{this}}}</div>\n                <div class=\"utk-sep\"></div>\n                {{/each}}\n            {{else}}\n                <div class=\"utk-item\">ŁADOWANIE...</div>\n                <div class=\"utk-sep\"></div>\n            {{/if}}\n        </div>\n    </div>\n\n    \n    <div class=\"utk-panel-single\" style=\"display:none;\">\n        <div class=\"utk-msg-box\"></div>\n    </div>\n\n    <div id=\"f-news-list\" style=\"display:none;\" data-b64=\"{{ITEMS_B64}}\"></div>\n</div>",
+    "css_template": "#{{ID}} .utk-container.v2 {\n    position: absolute; bottom: 0; left: 0; width: var(--v-width, 100%); min-height: var(--v-height, 60px);\n    background: {{PRIMARY_BG}}; display: flex; align-items: stretch; overflow: hidden;\n    border: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}}; border-radius: {{BORDER_RADIUS}}px; box-sizing: border-box;\n    font-family: '{{FONT_FAMILY}}', sans-serif; opacity: 0; transform: {{ANIMATION_TRANSFORM}}; transform-origin: center; box-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .utk-wiper {\n    position: absolute; left: 0; top: 0; bottom: 0; min-width: 150px; padding: 0 40px;\n    background: {{WIPER_BG}}; display: flex; align-items: center; justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5); border-radius: {{BORDER_RADIUS}}px; z-index: 100; box-sizing: border-box; flex-shrink: 0; overflow: hidden;\n}\n\n#{{ID}} .utk-wiper-gleam {\n    position: absolute; top: 50%; left: -100%; width: {{WIPER_GLEAM_WIDTH}}%; height: {{WIPER_GLEAM_HEIGHT}}px; display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{WIPER_GLEAM_BG}}; transform: translateY(-50%) skewX(-20deg); pointer-events: none;\n    animation: utk-gleam-v2 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .utk-wiper-text {\n    font-weight: {{WIPER_FONT_WEIGHT}}; font-size: {{WIPER_FONT_SIZE}}px; font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{WIPER_TEXT_COLOR}}; letter-spacing: {{WIPER_LETTER_SPACING}}px; position: relative; z-index: 101; white-space: nowrap;\n}\n#{{ID}} .utk-panel-horizontal, #{{ID}} .utk-panel-single {\n    flex: 1; position: relative; overflow: hidden;\n}\n#{{ID}} .utk-track {\n    display: flex; align-items: center; white-space: nowrap; padding-left: 100%; flex: 1; height: 100%;\n}\n#{{ID}} .utk-item {\n    color: {{TITLE_COLOR}}; font-size: {{TITLE_SIZE}}px; font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}}; padding-left: 20px; padding-right: 20px; padding-top: {{PADDING_Y}}px; padding-bottom: {{PADDING_Y}}px; white-space: nowrap; display: block; box-sizing: border-box; line-height: 1;\n}\n#{{ID}} .utk-sep { {{SEPARATOR_CSS}} align-self: center; }\n#{{ID}} .utk-msg-box {\n    width: auto; position: absolute; left: 0; top: 50%; transform: translateY(-50%); display: block;\n    padding-left: 20px; padding-right: 20px; padding-top: {{PADDING_Y}}px; padding-bottom: {{PADDING_Y}}px; box-sizing: border-box; color: {{TITLE_COLOR}}; font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}}; text-transform: {{TITLE_TRANSFORM}}; white-space: nowrap; font-family: '{{FONT_FAMILY}}', sans-serif;\n    opacity: 0; transition: opacity 0.4s ease-in-out, padding-left 0.4s ease-in-out, font-size 0.4s ease-in-out; line-height: 1; z-index: 1;\n}\n#{{ID}} .utk-msg-box.visible { opacity: 1; }\n#{{ID}} .utk-wiper.mode-whip-right { animation: utk-slide-right-v2 1s linear forwards; }\n#{{ID}} .utk-wiper.mode-whip-back { animation: utk-slide-back-v2 0.5s ease-in-out forwards; }\n@keyframes utk-slide-right-v2 { 0% { left: 0%; } 100% { left: calc(100% - var(--wiper-w, 150px)); } }\n@keyframes utk-slide-back-v2 { 0% { left: calc(100% - var(--wiper-w, 150px)); } 100% { left: 0%; } }\n@keyframes utk-gleam-v2 { 0% { left: -{{WIPER_GLEAM_WIDTH}}%; } 100% { left: 200%; } }",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container   = root.querySelector('.utk-container');\n    const wiper       = root.querySelector('.utk-wiper');\n    const wiperText   = root.querySelector('.utk-wiper-text');\n    const panelHoriz  = root.querySelector('.utk-panel-horizontal');\n    const panelSingle = root.querySelector('.utk-panel-single');\n    const msgBox      = root.querySelector('.utk-msg-box');\n    const track       = root.querySelector('.utk-track');\n    const dataEl      = root.querySelector('#f-news-list');\n\n    if (!container || !dataEl) return;\n\n    const MODE = (\"{{TICKER_MODE}}\" || \"whip\").trim();\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n    const WIPER_SHOW = \"{{WIPER_SHOW}}\" !== \"false\";\n    if (wiper && !WIPER_SHOW) wiper.style.display = 'none';\n    const TICKER_SPEED_VAL = parseFloat(\"{{TICKER_SPEED}}\") || 5;\n\n    let items = [];\n    const b64 = dataEl.getAttribute('data-b64');\n    if (b64) {\n        try { items = JSON.parse(decodeURIComponent(escape(atob(b64 + \"=\".repeat((4 - b64.length % 4) % 4))))); } \n        catch(e) { try { items = JSON.parse(dataEl.textContent || '[]'); } catch(err) { items = []; } }\n    }\n    if (!items.length) items = ['BRAK WIADOMOŚCI'];\n\n    const getText = (item) => (typeof item === 'object') ? (item.text || '') : String(item);\n    const getCat  = (item) => (typeof item === 'object') ? (item.category || '') : '';\n\n    let currentIndex = 0;\n    let cycleRunning = false;\n    let activeTimeouts = [];\n\n    function updateWiperUI(labelText) {\n        const label = (labelText || DEFAULT_WIPER).trim();\n        const show = WIPER_SHOW && !!label;\n        if (!wiper) return 0;\n        gsap.killTweensOf(wiper);\n        if (!show) {\n            if (wiper.style.display !== 'none') {\n                gsap.to(wiper, {\n                    width: 0, minWidth: 0, opacity: 0, duration: 0.3, ease: 'power2.in',\n                    onUpdate: () => container.style.setProperty('--wiper-w', wiper.offsetWidth + 'px'),\n                    onComplete: () => {\n                        wiper.style.display = 'none';\n                        gsap.set(wiper, { clearProps: 'width,minWidth,opacity' });\n                        container.style.setProperty('--wiper-w', '0px');\n                    }\n                });\n            }\n            return 0;\n        }\n        if (wiperText) wiperText.innerText = label;\n        if (wiper.style.display === 'none') {\n            wiper.style.display = 'flex';\n            const naturalW = wiper.offsetWidth;\n            gsap.fromTo(wiper,\n                { width: 0, minWidth: 0, opacity: 0 },\n                { width: naturalW, minWidth: naturalW, opacity: 1, duration: 0.4, ease: 'power2.out',\n                  onUpdate: () => container.style.setProperty('--wiper-w', wiper.offsetWidth + 'px'),\n                  onComplete: () => { gsap.set(wiper, { clearProps: 'width,minWidth,opacity' }); container.style.setProperty('--wiper-w', wiper.offsetWidth + 'px'); }\n                }\n            );\n            return naturalW;\n        } else {\n            const currentW = wiper.offsetWidth;\n            gsap.fromTo(wiper, { width: currentW }, {\n                width: 'auto', duration: 0.35, ease: 'power2.inOut',\n                onUpdate: () => container.style.setProperty('--wiper-w', wiper.offsetWidth + 'px'),\n                onComplete: () => { gsap.set(wiper, { clearProps: 'width' }); container.style.setProperty('--wiper-w', wiper.offsetWidth + 'px'); }\n            });\n            return currentW;\n        }\n    }\n\n    function adjustFont(el, wiperW) {\n        const base = parseFloat(\"{{TITLE_SIZE}}\") || 40;\n        const pl = wiperW > 0 ? (wiperW + 20) : 20;\n        \n        const oldTransition = el.style.transition;\n        el.style.transition = 'none';\n        el.style.fontSize = base + 'px';\n        el.style.paddingLeft = pl + 'px';\n        \n        const maxW = container.offsetWidth - pl - 20;\n        const contentW = el.scrollWidth - pl - 20;\n        \n        if (maxW > 10 && contentW > maxW) {\n            const newSize = (maxW / contentW) * base;\n            el.style.fontSize = Math.min(newSize, base) + 'px';\n        }\n        \n        void el.offsetHeight;\n        el.style.transition = oldTransition;\n    }\n\n    // WHIP / VERTICAL\n    function runSingle() {\n        if (!cycleRunning) return;\n        msgBox.classList.remove('visible');\n\n        const item = items[currentIndex];\n        const wW = updateWiperUI(getCat(item));\n        msgBox.innerHTML = getText(item);\n        adjustFont(msgBox, wW);\n\n        activeTimeouts.push(setTimeout(() => {\n            if (!cycleRunning) return;\n            msgBox.classList.add('visible');\n        }, 100));\n\n        const displayMs = MODE === 'whip' ? 4000 : (TICKER_SPEED_VAL * 1000);\n\n        activeTimeouts.push(setTimeout(() => {\n            if (!cycleRunning) return;\n            msgBox.classList.remove('visible');\n\n            if (MODE === 'whip') {\n                activeTimeouts.push(setTimeout(() => {\n                    if (!cycleRunning) return;\n                    if (wiper && wiper.style.display !== 'none') {\n                        wiper.classList.remove('mode-whip-back');\n                        wiper.classList.add('mode-whip-right');\n                    }\n                    activeTimeouts.push(setTimeout(() => {\n                        if (!cycleRunning) return;\n                        if (wiper && wiper.style.display !== 'none') {\n                            wiper.classList.remove('mode-whip-right');\n                            wiper.classList.add('mode-whip-back');\n                        }\n                        activeTimeouts.push(setTimeout(() => {\n                            if (!cycleRunning) return;\n                            currentIndex = (currentIndex + 1) % items.length;\n                            runSingle();\n                        }, 500));\n                    }, 1000));\n                }, 400));\n            } else {\n                activeTimeouts.push(setTimeout(() => {\n                    if (!cycleRunning) return;\n                    currentIndex = (currentIndex + 1) % items.length;\n                    runSingle();\n                }, 500));\n            }\n        }, displayMs));\n    }\n\n    // HORIZONTAL\n    function runHorizontal() {\n        if (!track) return;\n        const initialCat = getCat(items[0]);\n        updateWiperUI(initialCat);\n        const trackItems = Array.from(track.querySelectorAll('.utk-item'));\n        const itemData = trackItems.map((el, idx) => ({\n            el, \n            offset: el.offsetLeft, \n            category: getCat(items[idx]) || DEFAULT_WIPER\n        }));\n        \n        const fullWidth = track.scrollWidth || 0;\n        const speed = (TICKER_SPEED_VAL > 10) ? TICKER_SPEED_VAL : (TICKER_SPEED_VAL * 50);\n        const duration = fullWidth / speed;\n\n        gsap.to(track, {\n            x: -fullWidth,\n            duration: duration,\n            ease: 'none', \n            repeat: -1,\n            onUpdate: function() {\n                const curX = gsap.getProperty(track, 'x');\n                let activeCat = DEFAULT_WIPER;\n                let currentWiperW = parseFloat(container.style.getPropertyValue('--wiper-w')) || 0;\n                const trigger = currentWiperW > 0 ? currentWiperW : 50;\n                for (let i = 0; i < itemData.length; i++) {\n                    if (curX + itemData[i].offset > trigger) {\n                        activeCat = itemData[i].category;\n                        break;\n                    }\n                }\n                if (wiperText && wiperText.innerText !== activeCat) {\n                    updateWiperUI(activeCat);\n                }\n            }\n        });\n    }\n\n    root.__slt_show = () => {\n        cycleRunning = true;\n        if (MODE === 'horizontal') {\n            panelHoriz.style.display = 'block';\n            panelSingle.style.display = 'none';\n            runHorizontal();\n        } else {\n            panelHoriz.style.display = 'none';\n            panelSingle.style.display = 'block';\n            runSingle();\n        }\n\n        const animInStr = '{{{ANIMATION_IN_JSON}}}';\n        const animIn = (animInStr && animInStr !== '') ? JSON.parse(animInStr) : {};\n        const duration = typeof animIn.duration !== 'undefined' ? parseFloat(animIn.duration) : 0.6;\n        const delay = typeof animIn.delay !== 'undefined' ? parseFloat(animIn.delay) : 0;\n        \n        let ease = 'power2.out';\n        if (animIn.ease === 'linear') ease = 'none';\n        else if (animIn.ease === 'ease-in') ease = 'power2.in';\n        else if (animIn.ease === 'ease-in-out') ease = 'power2.inOut';\n        else if (animIn.ease === 'back') ease = 'back.out(1.7)';\n        else if (animIn.ease === 'elastic') ease = 'elastic.out(1, 0.3)';\n        else if (animIn.ease === 'bounce') ease = 'bounce.out';\n\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 1, x: 0, y: 0, scale: 1, scaleX: 1, scaleY: 1, duration: duration, delay: delay, ease: ease });\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        cycleRunning = false;\n        activeTimeouts.forEach(t => clearTimeout(t));\n        activeTimeouts = [];\n        if (track) gsap.killTweensOf(track);\n        \n        const animOutStr = '{{{ANIMATION_OUT_JSON}}}';\n        const animOut = (animOutStr && animOutStr !== '') ? JSON.parse(animOutStr) : {};\n        const duration = typeof animOut.duration !== 'undefined' ? parseFloat(animOut.duration) : 0.4;\n        const delay = typeof animOut.delay !== 'undefined' ? parseFloat(animOut.delay) : 0;\n        \n        let ease = 'power2.in';\n        if (animOut.ease === 'linear') ease = 'none';\n        else if (animOut.ease === 'ease-out') ease = 'power2.out';\n        else if (animOut.ease === 'ease-in-out') ease = 'power2.inOut';\n        else if (animOut.ease === 'back') ease = 'back.in(1.7)';\n\n        let targetProps = { opacity: 0, duration: duration, delay: delay, ease: ease };\n        if (animOut.type === 'slide') {\n            if (animOut.direction === 'top') targetProps.y = -100;\n            else if (animOut.direction === 'bottom') targetProps.y = 100;\n            else if (animOut.direction === 'left') targetProps.x = -100;\n            else if (animOut.direction === 'right') targetProps.x = 100;\n        } else if (animOut.type === 'scale') {\n            targetProps.scale = 0.5;\n        }\n        \n        const tl = gsap.timeline();\n        tl.to(container, targetProps);\n        return tl;\n    };\n})();",
+    "defaultFields": {
+      "items": [
+        {
+          "text": "PILNE: PREZYDENT K. NAWROCKI WETUJE USTAWĘ WS. PROGRAMU \"SAFE\"",
+          "category": "POLSKA"
+        },
+        {
+          "text": "SZEF ZWIĄZKÓW ZAWODOWYCH POLICJI ALARMUJE: LUDZIE LICZYLI NA ŚRODKI Z \"SAFE\"",
+          "category": "POLSKA"
+        },
+        {
+          "text": "asdadsdfsdfsdfsdfc dssdfsdcsdc dcsc dcsdcsdcdc",
+          "category": "POLSKA"
+        },
+        {
+          "text": "PREMIER D. TUSK OSTRO O WECIE: \"PREZES PIS POPROWADZIŁ GO JAK ZA RĄCZKĘ\"",
+          "category": "ŚWIAT"
+        },
+        {
+          "text": "TEHERAN ZAPOWIADA ODWET. REŻIM WŚCIEKŁY PO DZIAŁANIACH STANÓW ZJEDNOCZONYCH",
+          "category": "ŚWIAT"
+        },
+        {
+          "text": "KONGRESMENI USA ALARMUJĄ: ZAWIESZENIE SANKCJI NA ROSYJSKĄ ROPĘ FINANSUJE MACHINĘ WOJENNĄ PUTINA",
+          "category": "ŚWIAT"
+        },
+        {
+          "text": "RUCH RZĄDU W ODPOWIEDZI NA WETO. JEST NOWA UCHWAŁA I UPOWAŻNIENIA DLA MINISTRÓW",
+          "category": "BIZNES"
+        },
+        {
+          "text": "USA OFERUJĄ GIGANTYCZNĄ NAGRODĘ ZA INFORMACJE O PRZYWÓDCACH IRANU",
+          "category": "BIZNES"
+        },
+        {
+          "text": "PILNE: ZMASOWANY ATAK USA NA IRAŃSKĄ WYSPĘ. \"JEDNO Z NAJSILNIEJSZYCH BOMBARDOWAŃ\"",
+          "category": "BIZNES"
+        }
+      ],
+      "primaryColor": "#730000",
+      "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+      "titleColor": "#ffffff",
+      "fontFamily": "Bahnschrift",
+      "introText": "",
+      "type": "TICKER",
+      "name": "Ticker Unified V3",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "bottom",
+          "duration": 0.5,
+          "ease": "ease-in"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "bottom",
+          "duration": 0.5,
+          "ease": "ease-out"
+        },
+        "text": {
+          "type": "fade",
+          "stagger": 0.4,
+          "duration": 4.3
+        },
+        "textSync": false,
+        "textOut": {
+          "syncWithBase": false
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#ffcc00",
+          "borderRadius": 10,
+          "borderWidth": 0,
+          "borderColor": "#442c2c",
+          "gradientAngle": 160,
+          "color2": "#d3a012"
+        },
+        "typography": {
+          "color": "#362626",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 24,
+          "fontWeight": "600",
+          "textTransform": "uppercase",
+          "paddingY": 0
+        }
+      },
+      "accentColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+      "layout": {
+        "x": 180,
+        "y": 800,
+        "width": 1650,
+        "height": "40",
+        "scale": 1,
+        "layer": 5,
+        "side": "bottom-right",
+        "marginY": 50,
+        "marginX": 50
+      },
+      "wiper": {
+        "show": true,
+        "fontFamily": "Bahnschrift",
+        "fontSize": 28,
+        "letterSpacing": 0,
+        "textColor": "#f0f0f0",
+        "gradientAngle": 160,
+        "useGradient": true,
+        "bgColor": "#c32c2c",
+        "color2": "#ba4f4f",
+        "fontWeight": "800"
+      },
+      "tickerMode": "horizontal",
+      "separatorStyle": "dot",
+      "title": "Ticker Unified V2 (Whip/Scroll/Vert)",
+      "titleHtml": "Ticker Unified V2 (Whip/Scroll/Vert)",
+      "subtitle": "",
+      "speed": 180,
+      "fields": {
+        "items": [
+          {
+            "text": "PILNE: PREZYDENT K. NAWROCKI WETUJE USTAWĘ WS. PROGRAMU \"SAFE\"",
+            "category": "test"
+          },
+          "PREMIER D. TUSK OSTRO O WECIE: \"PREZES PIS POPROWADZIŁ GO JAK ZA RĄCZKĘ\"",
+          {
+            "text": "RUCH RZĄDU W ODPOWIEDZI NA WETO. JEST NOWA UCHWAŁA I UPOWAŻNIENIA DLA MINISTRÓW",
+            "category": "cf"
+          },
+          "SZEF ZWIĄZKÓW ZAWODOWYCH POLICJI ALARMUJE: LUDZIE LICZYLI NA ŚRODKI Z \"SAFE\"",
+          "PILNE: ZMASOWANY ATAK USA NA IRAŃSKĄ WYSPĘ. \"JEDNO Z NAJSILNIEJSZYCH BOMBARDOWAŃ\"",
+          "TEHERAN ZAPOWIADA ODWET. REŻIM WŚCIEKŁY PO DZIAŁANIACH STANÓW ZJEDNOCZONYCH",
+          "USA OFERUJĄ GIGANTYCZNĄ NAGRODĘ ZA INFORMACJE O PRZYWÓDCACH IRANU",
+          "KONGRESMENI USA ALARMUJĄ: ZAWIESZENIE SANKCJI NA ROSYJSKĄ ROPĘ FINANSUJE MACHINĘ WOJENNĄ PUTINA"
+        ],
+        "primaryColor": "#730000",
+        "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+        "titleColor": "#ffffff",
+        "fontFamily": "Bahnschrift",
+        "introText": "",
+        "type": "TICKER",
+        "name": "Ticker Unified V2 (Whip/Scroll/Vert)",
+        "animation": {
+          "in": {
+            "type": "slide",
+            "direction": "bottom",
+            "duration": 0.6
+          },
+          "out": {
+            "type": "slide",
+            "direction": "bottom",
+            "duration": 0.4
+          }
+        },
+        "style": {
+          "background": {
+            "type": "gradient",
+            "color": "#ffcc00",
+            "borderRadius": 10,
+            "borderWidth": 0,
+            "borderColor": "#442c2c",
+            "gradientAngle": 160,
+            "color2": "#d3a012"
+          },
+          "typography": {
+            "color": "#362626",
+            "fontFamily": "Bahnschrift",
+            "fontSize": 30,
+            "fontWeight": "600",
+            "textTransform": "uppercase",
+            "paddingY": 10
+          }
+        },
+        "accentColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+        "layout": {
+          "x": 180,
+          "y": 800,
+          "width": 1650,
+          "height": "40",
+          "scale": 1,
+          "layer": 5,
+          "side": "bottom-right",
+          "marginY": 50,
+          "marginX": 50
+        },
+        "wiper": {
+          "bgColor": "#901414",
+          "fontSize": 30,
+          "fontFamily": "Bahnschrift",
+          "show": true,
+          "useGradient": false,
+          "color2": "#ffffff",
+          "gradientAngle": 90,
+          "textColor": "#ffffff",
+          "fontWeight": "900",
+          "letterSpacing": 1,
+          "gleamEnabled": true,
+          "gleamColor": "rgba(255,255,255,0.4)",
+          "gleamDuration": 2
+        },
+        "tickerMode": "vertical",
+        "separatorStyle": "skewed",
+        "title": "Ticker Unified V2 (Whip/Scroll/Vert)",
+        "titleHtml": "Ticker Unified V2 (Whip/Scroll/Vert)",
+        "subtitle": "",
+        "speed": 100
+      }
+    },
+    "defaultStyle": {
+      "background": {
+        "type": "gradient",
+        "color": "#ffcc00",
+        "borderRadius": 10,
+        "borderWidth": 0,
+        "borderColor": "#442c2c",
+        "gradientAngle": 160,
+        "color2": "#d3a012"
+      },
+      "typography": {
+        "color": "#362626",
+        "fontFamily": "Bahnschrift",
+        "fontSize": 24,
+        "fontWeight": "600",
+        "textTransform": "uppercase",
+        "paddingY": 0
+      }
+    },
+    "defaultAnimation": {
       "in": {
         "type": "zoom",
         "direction": "bottom",
@@ -80,27 +263,7 @@
         "syncWithBase": false
       }
     },
-    "style": {
-      "background": {
-        "type": "gradient",
-        "color": "#ffcc00",
-        "borderRadius": 10,
-        "borderWidth": 0,
-        "borderColor": "#442c2c",
-        "gradientAngle": 160,
-        "color2": "#d3a012"
-      },
-      "typography": {
-        "color": "#362626",
-        "fontFamily": "Bahnschrift",
-        "fontSize": 24,
-        "fontWeight": "600",
-        "textTransform": "uppercase",
-        "paddingY": 0
-      }
-    },
-    "accentColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
-    "layout": {
+    "defaultLayout": {
       "x": 180,
       "y": 800,
       "width": 1650,
@@ -111,166 +274,7 @@
       "marginY": 50,
       "marginX": 50
     },
-    "wiper": {
-      "show": true,
-      "fontFamily": "Bahnschrift",
-      "fontSize": 28,
-      "letterSpacing": 0,
-      "textColor": "#f0f0f0",
-      "gradientAngle": 160,
-      "useGradient": true,
-      "bgColor": "#c32c2c",
-      "color2": "#ba4f4f",
-      "fontWeight": "800"
-    },
-    "tickerMode": "horizontal",
-    "separatorStyle": "dot",
-    "title": "Ticker Unified V2 (Whip/Scroll/Vert)",
-    "titleHtml": "Ticker Unified V2 (Whip/Scroll/Vert)",
-    "subtitle": "",
-    "speed": 180,
-    "fields": {
-      "items": [
-        {
-          "text": "PILNE: PREZYDENT K. NAWROCKI WETUJE USTAWĘ WS. PROGRAMU \"SAFE\"",
-          "category": "test"
-        },
-        "PREMIER D. TUSK OSTRO O WECIE: \"PREZES PIS POPROWADZIŁ GO JAK ZA RĄCZKĘ\"",
-        {
-          "text": "RUCH RZĄDU W ODPOWIEDZI NA WETO. JEST NOWA UCHWAŁA I UPOWAŻNIENIA DLA MINISTRÓW",
-          "category": "cf"
-        },
-        "SZEF ZWIĄZKÓW ZAWODOWYCH POLICJI ALARMUJE: LUDZIE LICZYLI NA ŚRODKI Z \"SAFE\"",
-        "PILNE: ZMASOWANY ATAK USA NA IRAŃSKĄ WYSPĘ. \"JEDNO Z NAJSILNIEJSZYCH BOMBARDOWAŃ\"",
-        "TEHERAN ZAPOWIADA ODWET. REŻIM WŚCIEKŁY PO DZIAŁANIACH STANÓW ZJEDNOCZONYCH",
-        "USA OFERUJĄ GIGANTYCZNĄ NAGRODĘ ZA INFORMACJE O PRZYWÓDCACH IRANU",
-        "KONGRESMENI USA ALARMUJĄ: ZAWIESZENIE SANKCJI NA ROSYJSKĄ ROPĘ FINANSUJE MACHINĘ WOJENNĄ PUTINA"
-      ],
-      "primaryColor": "#730000",
-      "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
-      "titleColor": "#ffffff",
-      "fontFamily": "Bahnschrift",
-      "introText": "",
-      "type": "TICKER",
-      "name": "Ticker Unified V2 (Whip/Scroll/Vert)",
-      "animation": {
-        "in": {
-          "type": "slide",
-          "direction": "bottom",
-          "duration": 0.6
-        },
-        "out": {
-          "type": "slide",
-          "direction": "bottom",
-          "duration": 0.4
-        }
-      },
-      "style": {
-        "background": {
-          "type": "gradient",
-          "color": "#ffcc00",
-          "borderRadius": 10,
-          "borderWidth": 0,
-          "borderColor": "#442c2c",
-          "gradientAngle": 160,
-          "color2": "#d3a012"
-        },
-        "typography": {
-          "color": "#362626",
-          "fontFamily": "Bahnschrift",
-          "fontSize": 30,
-          "fontWeight": "600",
-          "textTransform": "uppercase",
-          "paddingY": 10
-        }
-      },
-      "accentColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
-      "layout": {
-        "x": 180,
-        "y": 800,
-        "width": 1650,
-        "height": "40",
-        "scale": 1,
-        "layer": 5,
-        "side": "bottom-right",
-        "marginY": 50,
-        "marginX": 50
-      },
-      "wiper": {
-        "bgColor": "#901414",
-        "fontSize": 30,
-        "fontFamily": "Bahnschrift",
-        "show": true,
-        "useGradient": false,
-        "color2": "#ffffff",
-        "gradientAngle": 90,
-        "textColor": "#ffffff",
-        "fontWeight": "900",
-        "letterSpacing": 1,
-        "gleamEnabled": true,
-        "gleamColor": "rgba(255,255,255,0.4)",
-        "gleamDuration": 2
-      },
-      "tickerMode": "vertical",
-      "separatorStyle": "skewed",
-      "title": "Ticker Unified V2 (Whip/Scroll/Vert)",
-      "titleHtml": "Ticker Unified V2 (Whip/Scroll/Vert)",
-      "subtitle": "",
-      "speed": 100
-    }
+    "ocgInputs": []
   },
-  "defaultStyle": {
-    "background": {
-      "type": "gradient",
-      "color": "#ffcc00",
-      "borderRadius": 10,
-      "borderWidth": 0,
-      "borderColor": "#442c2c",
-      "gradientAngle": 160,
-      "color2": "#d3a012"
-    },
-    "typography": {
-      "color": "#362626",
-      "fontFamily": "Bahnschrift",
-      "fontSize": 24,
-      "fontWeight": "600",
-      "textTransform": "uppercase",
-      "paddingY": 0
-    }
-  },
-  "defaultAnimation": {
-    "in": {
-      "type": "zoom",
-      "direction": "bottom",
-      "duration": 0.5,
-      "ease": "ease-in"
-    },
-    "out": {
-      "type": "fade",
-      "direction": "bottom",
-      "duration": 0.5,
-      "ease": "ease-out"
-    },
-    "text": {
-      "type": "fade",
-      "stagger": 0.4,
-      "duration": 4.3
-    },
-    "textSync": false,
-    "textOut": {
-      "syncWithBase": false
-    }
-  },
-  "defaultLayout": {
-    "x": 180,
-    "y": 800,
-    "width": 1650,
-    "height": "40",
-    "scale": 1,
-    "layer": 5,
-    "side": "bottom-right",
-    "marginY": 50,
-    "marginX": 50
-  },
-  "ocgInputs": []
+  "graphics": []
 }

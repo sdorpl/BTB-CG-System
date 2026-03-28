@@ -1,7 +1,7 @@
 {
   "name": "newera",
   "version": "1.0.0",
-  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "description": "CG Master — Professional broadcast graphics control system with real-time rendering via Socket.io.",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

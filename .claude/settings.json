@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /usr/bin/node* /usr/local/bin/node* ~/.nvm/versions/node/*/bin/node)",
+      "Bash(grep -E \"\\\\.\\(js|html|json\\)$|^d\")"
+    ]
+  }
+}

@@ -88,6 +88,18 @@
         window.addEventListener('resize', applyScale);
         window.addEventListener('DOMContentLoaded', applyScale);
         applyScale();
+
+        // Listen for background color changes from control panel
+        const _bgSocket = io();
+        _bgSocket.on('set_background', (color) => {
+            document.body.style.backgroundColor = color === 'transparent' ? 'transparent' : color;
+            localStorage.setItem('cg_output_bg', color);
+        });
+        // Restore last background from localStorage
+        const _savedBg = localStorage.getItem('cg_output_bg');
+        if (_savedBg) {
+            document.body.style.backgroundColor = _savedBg === 'transparent' ? 'transparent' : _savedBg;
+        }
     </script>
 </body>
 

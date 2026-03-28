@@ -6,6 +6,71 @@
 const socket = io();
 let state = { templates: [], graphics: [], groups: [], settings: {} };
 
+// ── Ace Editor ──────────────────────────────────────────
+let _aceEditor = null;
+let _aceSuppressChange = false;
+
+function _aceInit() {
+    if (_aceEditor) return _aceEditor;
+    const el = document.getElementById('tpl-code-editor');
+    if (!el || typeof ace === 'undefined') return null;
+
+    _aceEditor = ace.edit(el, {
+        mode: 'ace/mode/html',
+        theme: 'ace/theme/one_dark',
+        fontSize: 13,
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        showPrintMargin: false,
+        wrap: true,
+        tabSize: 2,
+        useSoftTabs: true,
+        showGutter: true,
+        highlightActiveLine: true,
+        useWorker: false,           // Wyłącz walidator — szablony używają Handlebars {{}}
+        enableBasicAutocompletion: false,
+        enableLiveAutocompletion: false,
+    });
+
+    // Match app background
+    _aceEditor.container.style.background = '#1a1a2e';
+    _aceEditor.renderer.setScrollMargin(8, 8);
+    const gutter = _aceEditor.renderer.$gutterLayer?.element;
+    if (gutter) gutter.style.background = '#1a1a2e';
+
+    return _aceEditor;
+}
+
+function _cmGetValue() {
+    const ed = _aceInit();
+    return ed ? ed.getValue() : '';
+}
+
+function _cmSetValue(str) {
+    const ed = _aceInit();
+    if (!ed) return;
+    _aceSuppressChange = true;
+    ed.setValue(str || '', -1);  // -1 = move cursor to start
+    ed.clearSelection();
+    _aceSuppressChange = false;
+}
+
+function _cmSetLanguage(lang) {
+    const ed = _aceInit();
+    if (!ed) return;
+    const modeMap = { html: 'ace/mode/html', css: 'ace/mode/css', js: 'ace/mode/javascript' };
+    ed.session.setMode(modeMap[lang] || 'ace/mode/html');
+}
+
+function _cmSetReadOnly(val) {
+    const ed = _aceInit();
+    if (ed) ed.setReadOnly(!!val);
+}
+
+function _cmSetOpacity(val) {
+    const el = document.getElementById('tpl-code-editor');
+    if (el) el.style.opacity = val;
+}
+
 const draftsProxyHandler = {
     set(target, prop, val) {
         target[prop] = val;
@@ -32,6 +97,7 @@ let previewGraphic = null;      // copy of graphic in preview monitor
 let currentPage = 'dashboard'; // 'dashboard' | 'templates'
 let currentTemplateId = null;
 let currentTemplateTab = 'html';
+let codeEditorGraphicId = null; // When set, template editor edits this graphic's code overrides
 let inspectorAccordionStates = {}; // graphicId -> { accordionId -> isOpen }
 let currentInspectorTab = 'main'; // Tracks active tab in inspector
 const DB_KEY = 'cg_state_backup';
@@ -50,17 +116,294 @@ uiChannel.onmessage = (e) => {
 };
 
 // ===========================================================
+// HOTKEY ASSIGNMENT FOR GRAPHICS
+// ===========================================================
+let _hotkeyAssignActive = false;
+let _globalPressedKeys = new Set(); // tracks currently held keys for multi-key hotkeys
+
+function openHotkeyAssignModal(graphicId) {
+    const g = state.graphics.find(gx => gx.id === graphicId);
+    if (!g) return;
+
+    _hotkeyAssignActive = true;
+    let overlay = document.getElementById('hotkey-assign-overlay');
+    if (overlay) overlay.remove();
+
+    overlay = document.createElement('div');
+    overlay.id = 'hotkey-assign-overlay';
+    overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/80';
+
+    const currentLabel = g.hotkey ? g.hotkey.label : 'brak';
+    overlay.innerHTML = `
+        <div class="bg-gray-900 border border-purple-700 rounded-lg shadow-2xl p-6 max-w-sm w-full mx-4 text-center">
+            <h2 class="text-white font-bold text-lg mb-2">Przypisz skrót klawiszowy</h2>
+            <p class="text-gray-400 text-sm mb-1">Grafika: <span class="text-white font-bold">${escAttr(g.name)}</span></p>
+            <p class="text-gray-500 text-xs mb-4">Obecny skrót: <span class="text-purple-400 font-mono font-bold">${escAttr(currentLabel)}</span></p>
+            <div id="hotkey-mod-row" class="flex justify-center gap-2 mb-3">
+                <span id="hk-ctrl"  class="px-2 py-0.5 rounded text-xs font-mono font-bold border border-gray-700 text-gray-600 transition-all">Ctrl</span>
+                <span id="hk-alt"   class="px-2 py-0.5 rounded text-xs font-mono font-bold border border-gray-700 text-gray-600 transition-all">Alt</span>
+                <span id="hk-shift" class="px-2 py-0.5 rounded text-xs font-mono font-bold border border-gray-700 text-gray-600 transition-all">Shift</span>
+            </div>
+            <div id="hotkey-capture-box" tabindex="0" class="border-2 border-dashed border-purple-600 rounded-lg p-6 mb-3 text-purple-300 text-lg font-mono font-bold animate-pulse outline-none">
+                Naciśnij kombinację klawiszy...
+            </div>
+            <p id="hotkey-hint" class="text-gray-500 text-xs mb-3 hidden">Naciśnij <kbd class="bg-gray-700 px-1 rounded text-gray-300">Enter</kbd> aby przypisać &nbsp;·&nbsp; <kbd class="bg-gray-700 px-1 rounded text-gray-300">Esc</kbd> aby zmienić</p>
+            <div class="flex gap-2 justify-center">
+                <button id="hotkey-confirm-btn" class="hidden px-4 py-2 rounded bg-purple-700 hover:bg-purple-600 text-white text-sm font-bold border border-purple-500 transition-all">Przypisz</button>
+                <button id="hotkey-clear-btn" class="px-4 py-2 rounded bg-red-900/60 hover:bg-red-800 text-red-300 text-sm font-bold border border-red-700/50 transition-all">Usuń skrót</button>
+                <button id="hotkey-cancel-btn" class="px-4 py-2 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold border border-gray-700 transition-all">Anuluj</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const captureBox = document.getElementById('hotkey-capture-box');
+    captureBox.focus();
+    const hintEl    = document.getElementById('hotkey-hint');
+    const confirmBtn = document.getElementById('hotkey-confirm-btn');
+    const elCtrl    = document.getElementById('hk-ctrl');
+    const elAlt     = document.getElementById('hk-alt');
+    const elShift   = document.getElementById('hk-shift');
+    let pendingDescriptor = null;
+
+    function setModLight(el, on) {
+        if (on) {
+            el.classList.remove('border-gray-700', 'text-gray-600');
+            el.classList.add('border-blue-500', 'text-blue-300', 'bg-blue-900/40');
+        } else {
+            el.classList.remove('border-blue-500', 'text-blue-300', 'bg-blue-900/40');
+            el.classList.add('border-gray-700', 'text-gray-600');
+        }
+    }
+
+    function closeModal() {
+        _hotkeyAssignActive = false;
+        overlay.remove();
+        document.removeEventListener('keydown', onKeyDown);
+        document.removeEventListener('keyup',   onKeyUp);
+    }
+
+    function resetCapture() {
+        pendingDescriptor = null;
+        captureHeld.clear();
+        captureSnapshot = new Set();
+        setModLight(elCtrl, false);
+        setModLight(elAlt, false);
+        setModLight(elShift, false);
+        captureBox.classList.remove('border-green-500', 'text-green-300', 'border-red-600', 'text-red-300', 'border-yellow-500', 'text-yellow-300');
+        captureBox.classList.add('animate-pulse', 'border-purple-600', 'text-purple-300');
+        captureBox.textContent = 'Naciśnij kombinację klawiszy...';
+        hintEl.classList.add('hidden');
+        confirmBtn.classList.add('hidden');
+    }
+
+    function confirmAssign() {
+        if (!pendingDescriptor) return;
+        const g2 = state.graphics.find(gx => gx.id === graphicId);
+        if (!g2) { closeModal(); return; }
+        g2.hotkey = pendingDescriptor;
+        saveState();
+        renderShotbox();
+        closeModal();
+    }
+
+    confirmBtn.onclick = confirmAssign;
+    document.getElementById('hotkey-cancel-btn').onclick = closeModal;
+    document.getElementById('hotkey-clear-btn').onclick = () => {
+        const g2 = state.graphics.find(gx => gx.id === graphicId);
+        if (g2) g2.hotkey = null;
+        saveState();
+        renderShotbox();
+        closeModal();
+    };
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+
+    // Helper: human-readable label for a single e.key value
+    function singleKeyLabel(k) {
+        if (k === ' ')           return 'Space';
+        if (k === 'Control' || k === 'Meta') return 'Ctrl';
+        if (k === 'Alt')         return 'Alt';
+        if (k === 'Shift')       return 'Shift';
+        if (k === 'ArrowUp')     return '↑';
+        if (k === 'ArrowDown')   return '↓';
+        if (k === 'ArrowLeft')   return '←';
+        if (k === 'ArrowRight')  return '→';
+        if (k.length === 1)      return k.toUpperCase();
+        return k;
+    }
+
+    // Sort keys: modifiers first, then rest alphabetically
+    const MOD_ORDER = ['Control', 'Meta', 'Alt', 'Shift'];
+    function sortKeys(keysArr) {
+        return [...keysArr].sort((a, b) => {
+            const ai = MOD_ORDER.indexOf(a) >= 0 ? MOD_ORDER.indexOf(a) : 99;
+            const bi = MOD_ORDER.indexOf(b) >= 0 ? MOD_ORDER.indexOf(b) : 99;
+            if (ai !== bi) return ai - bi;
+            return singleKeyLabel(a).localeCompare(singleKeyLabel(b));
+        });
+    }
+
+    function buildDescriptorFromKeys(keysSet) {
+        if (keysSet.size === 0) return null;
+        // Require at least one non-modifier key
+        const nonMod = [...keysSet].filter(k => !['Control','Meta','Alt','Shift'].includes(k));
+        if (nonMod.length === 0) return null;
+        const sorted = sortKeys([...keysSet]);
+        const label = sorted.map(singleKeyLabel).join('+');
+        return { keys: sorted, label };
+    }
+
+    // Track keys held during capture
+    const captureHeld = new Set();
+    let captureSnapshot = new Set(); // full set at peak (before any releases)
+
+    function updateCaptureDisplay() {
+        if (captureHeld.size === 0) return;
+        const sorted = sortKeys([...captureHeld]);
+        const label = sorted.map(singleKeyLabel).join('+');
+        captureBox.classList.remove('animate-pulse', 'border-purple-600', 'text-purple-300', 'border-green-500', 'text-green-300', 'border-red-600', 'text-red-300');
+        captureBox.classList.add('border-yellow-500', 'text-yellow-300');
+        captureBox.textContent = label;
+        // Update modifier lights
+        setModLight(elCtrl,  captureHeld.has('Control') || captureHeld.has('Meta'));
+        setModLight(elAlt,   captureHeld.has('Alt'));
+        setModLight(elShift, captureHeld.has('Shift'));
+    }
+
+    function onKeyDown(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (e.key === 'Escape') {
+            if (pendingDescriptor) resetCapture();
+            else closeModal();
+            return;
+        }
+        if (e.key === 'Enter') {
+            if (pendingDescriptor) confirmAssign();
+            return;
+        }
+
+        captureHeld.add(e.key);
+        captureSnapshot = new Set([...captureHeld]); // update snapshot while building combo
+        pendingDescriptor = null;
+        hintEl.classList.add('hidden');
+        confirmBtn.classList.add('hidden');
+        updateCaptureDisplay();
+    }
+
+    function onKeyUp(e) {
+        if (!captureHeld.has(e.key)) return;
+        captureHeld.delete(e.key);
+
+        // Update modifier lights
+        setModLight(elCtrl,  captureHeld.has('Control') || captureHeld.has('Meta'));
+        setModLight(elAlt,   captureHeld.has('Alt'));
+        setModLight(elShift, captureHeld.has('Shift'));
+
+        // When all keys released → finalize using the peak snapshot
+        if (captureHeld.size === 0) {
+            const desc = buildDescriptorFromKeys(captureSnapshot);
+            if (!desc) { resetCapture(); return; }
+
+            const conflict = state.graphics.find(gx => gx.id !== graphicId && gx.hotkey &&
+                Array.isArray(gx.hotkey.keys) &&
+                gx.hotkey.keys.length === desc.keys.length &&
+                gx.hotkey.keys.every((k, i) => k === desc.keys[i])
+            );
+
+            if (conflict) {
+                pendingDescriptor = null;
+                captureBox.classList.remove('animate-pulse', 'border-purple-600', 'text-purple-300', 'border-yellow-500', 'text-yellow-300', 'border-green-500', 'text-green-300');
+                captureBox.classList.add('border-red-600', 'text-red-300');
+                captureBox.innerHTML = `<span class="text-red-400">${escAttr(desc.label)}</span><br><span class="text-xs text-red-500">Konflikt z: ${escAttr(conflict.name)}</span>`;
+                hintEl.classList.add('hidden');
+                confirmBtn.classList.add('hidden');
+                setTimeout(resetCapture, 1500);
+                return;
+            }
+
+            pendingDescriptor = desc;
+            captureBox.classList.remove('animate-pulse', 'border-purple-600', 'text-purple-300', 'border-yellow-500', 'text-yellow-300', 'border-red-600', 'text-red-300');
+            captureBox.classList.add('border-green-500', 'text-green-300');
+            captureBox.textContent = desc.label;
+            hintEl.classList.remove('hidden');
+            confirmBtn.classList.remove('hidden');
+        }
+    }
+
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup',   onKeyUp);
+}
+
+function triggerGraphicHotkey(e) {
+    if (_hotkeyAssignActive) return false;
+
+    // Maintain global pressed-keys set
+    _globalPressedKeys.add(e.key);
+
+    for (const g of state.graphics) {
+        if (!g.hotkey) continue;
+        const hk = g.hotkey;
+
+        let match = false;
+        if (Array.isArray(hk.keys)) {
+            // New multi-key format
+            if (hk.keys.length === _globalPressedKeys.size &&
+                hk.keys.every(k => _globalPressedKeys.has(k))) {
+                match = true;
+            }
+        } else if (hk.key) {
+            // Legacy format {key, ctrl, alt, shift} — still support old saved hotkeys
+            const ctrl = e.ctrlKey || e.metaKey;
+            const alt = e.altKey;
+            const shift = e.shiftKey;
+            if (hk.key === e.key && hk.ctrl === ctrl && hk.alt === alt && hk.shift === shift) {
+                match = true;
+            }
+        }
+
+        if (match) {
+            e.preventDefault();
+            g.visible = !g.visible;
+            saveState();
+            renderShotbox();
+            updateProgramMonitor();
+            if (previewGraphic?.id === g.id) {
+                previewGraphic.visible = g.visible;
+                refreshPreviewControls();
+            }
+            if (selectedGraphicId === g.id) {
+                openInspector(g.id);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+// ===========================================================
 // 1. BOOT
 // ===========================================================
+let _globalEventsBound = false;
+
 async function init() {
     socket.on('initialState', (serverState) => {
         state = serverState;
         renderShotbox();
         renderTemplateList();
-        setupMonitorScaling();
-        bindGlobalEvents();
-        bindWysiwygModalEvents();
-        bindTickerEditorEvents();
+        renderPresetSelect();
+        if (!_globalEventsBound) {
+            setupMonitorScaling();
+            bindGlobalEvents();
+            bindWysiwygModalEvents();
+            bindTickerEditorEvents();
+            bindPresetEvents();
+            _globalEventsBound = true;
+        }
         document.getElementById('loading-overlay').classList.add('hidden');
 
         // ==== STANDALONE PANELS SETUP ====
@@ -74,7 +417,8 @@ async function init() {
             document.getElementById('dashboard-left').style.display = 'none';
             const inspector = document.getElementById('inspector-panel');
             if (inspector) {
-                inspector.classList.remove('hidden', 'w-72');
+                inspector.style.display = 'flex';
+                inspector.classList.remove('w-72');
                 inspector.classList.add('w-full');
             }
         }
@@ -87,12 +431,45 @@ async function init() {
             updateProgramMonitor();
         });
 
-        document.getElementById('btn-bg-black')?.addEventListener('click', () => {
-            socket.emit('set_background', 'black');
-        });
+        // --- Background control (color picker + checkerboard) ---
+        function changeBg(color) {
+            // Update monitors with checkerboard for transparent
+            document.querySelectorAll('#preview-monitor-inner, #program-monitor-wrap .relative.bg-black').forEach(m => {
+                if (color === 'transparent') {
+                    m.style.backgroundImage = 'linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%)';
+                    m.style.backgroundSize = '20px 20px';
+                    m.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
+                    m.style.backgroundColor = '#111';
+                } else {
+                    m.style.backgroundImage = 'none';
+                    m.style.backgroundColor = color;
+                }
+            });
+            // Sync color picker & hex input
+            const picker = document.getElementById('hex-bg-picker');
+            const hexInput = document.getElementById('hex-bg');
+            if (color !== 'transparent') {
+                if (picker) picker.value = color;
+                if (hexInput) hexInput.value = color;
+            }
+            // Send to output via socket
+            socket.emit('set_background', color);
+        }
+        window.changeBg = changeBg; // expose for inline handlers
 
+        document.getElementById('hex-bg-picker')?.addEventListener('input', (e) => {
+            document.getElementById('hex-bg').value = e.target.value;
+            changeBg(e.target.value);
+        });
+        document.getElementById('hex-bg')?.addEventListener('change', (e) => {
+            document.getElementById('hex-bg-picker').value = e.target.value;
+            changeBg(e.target.value);
+        });
+        document.getElementById('btn-bg-set')?.addEventListener('click', () => {
+            changeBg(document.getElementById('hex-bg').value);
+        });
         document.getElementById('btn-bg-trans')?.addEventListener('click', () => {
-            socket.emit('set_background', 'transparent');
+            changeBg('transparent');
         });
         // -------------------------
 
@@ -133,6 +510,7 @@ async function init() {
         state = newState;
         renderShotbox();
         renderTemplateList(); // Keep template list in sync
+        renderPresetSelect();
         if (selectedGraphicId) {
             if (!window._draftGraphics[selectedGraphicId]) {
                 openInspector(selectedGraphicId);
@@ -174,8 +552,8 @@ function switchPage(page) {
     const navT = document.getElementById('nav-templates');
     const navS = document.getElementById('nav-settings');
 
-    const activeClass = 'nav-tab px-3 py-1.5 rounded font-bold text-blue-400 bg-blue-600/10 border border-blue-600/20 text-xs';
-    const inactiveClass = 'nav-tab px-3 py-1.5 rounded font-medium text-gray-400 hover:text-white transition-colors text-xs';
+    const activeClass = 'nav-tab px-4 py-1.5 rounded font-black uppercase tracking-wider text-blue-400 bg-blue-600/10 border border-blue-600/20 text-[10px]';
+    const inactiveClass = 'nav-tab px-4 py-1.5 rounded font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors text-[10px]';
 
     if (page === 'dashboard') {
         dash.classList.remove('hidden');
@@ -394,8 +772,9 @@ function renderShotbox() {
     const groupedItemsMap = {};
     const ungroupedItems = [];
 
+    const existingGroupIds = new Set(state.groups.map(grp => grp.id));
     state.graphics.forEach(g => {
-        if (g.groupId) {
+        if (g.groupId && existingGroupIds.has(g.groupId)) {
             if (!groupedItemsMap[g.groupId]) groupedItemsMap[g.groupId] = [];
             groupedItemsMap[g.groupId].push(g);
         } else {
@@ -420,10 +799,12 @@ function renderShotbox() {
             card.style.borderTopColor = grp.color;
         }
 
+        const hotkeyLabel = graphic.hotkey ? graphic.hotkey.label : null;
         const actionBtns = `
             <div class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button data-copy-id="${graphic.id}" title="Kopiuj" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-blue-900/60 text-gray-500 hover:text-blue-400 text-[10px] leading-none">📋</button>
-                <button data-delete-id="${graphic.id}" title="Usuń" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs leading-none">&times;</button>
+                <button data-hotkey-assign="${graphic.id}" title="${hotkeyLabel ? 'Zmień skrót: ' + escAttr(hotkeyLabel) : 'Przypisz skrót klawiszowy'}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-purple-900/60 text-gray-500 hover:text-purple-400 text-[10px] leading-none">⌨</button>
+                <button data-copy-id="${graphic.id}" title="Kopiuj" aria-label="Kopiuj grafikę ${escAttr(graphic.name)}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-blue-900/60 text-gray-500 hover:text-blue-400 text-[10px] leading-none">📋</button>
+                <button data-delete-id="${graphic.id}" title="Usuń" aria-label="Usuń grafikę ${escAttr(graphic.name)}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs leading-none">&times;</button>
             </div>`;
 
         const groupOptions = state.groups.map(g =>
@@ -446,7 +827,10 @@ function renderShotbox() {
                     <span class="text-[10px] font-black text-white truncate uppercase tracking-tight" title="${escAttr(graphic.name)}">${escAttr(primaryText || graphic.name)}</span>
                     <span class="text-[8px] text-gray-500 font-mono truncate uppercase">${tpl ? tpl.type : 'NONE'} // ${escAttr(graphic.name)}</span>
                 </div>
-                ${isActive ? `<div class="flex items-center gap-1 bg-red-600 px-1 rounded shadow-[0_0_8px_rgba(229,57,53,0.5)]"><span class="text-[8px] font-black text-white italic">LIVE</span></div>` : ''}
+                <div class="flex items-center gap-1">
+                    ${hotkeyLabel ? `<div class="bg-purple-900/60 border border-purple-700/50 px-1.5 rounded"><span class="text-[8px] font-mono font-bold text-purple-300">${escAttr(hotkeyLabel)}</span></div>` : ''}
+                    ${isActive ? `<div class="flex items-center gap-1 bg-red-600 px-1 rounded shadow-[0_0_8px_rgba(229,57,53,0.5)]"><span class="text-[8px] font-black text-white italic">LIVE</span></div>` : ''}
+                </div>
             </div>
 
             <div class="flex gap-1 mt-auto">
@@ -642,6 +1026,13 @@ function renderShotbox() {
         });
     });
 
+    grid.querySelectorAll('[data-hotkey-assign]').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            openHotkeyAssignModal(btn.getAttribute('data-hotkey-assign'));
+        });
+    });
+
     grid.querySelectorAll('[data-group-take]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -775,7 +1166,9 @@ window.syncDraftGraphic = function(id) {
         const idx = state.graphics.findIndex(g => g.id === id);
         if (idx !== -1) {
             const isVisible = state.graphics[idx].visible;
-            state.graphics[idx] = JSON.parse(JSON.stringify(draft));
+            const saved = JSON.parse(JSON.stringify(draft));
+            delete saved._codeTab;
+            state.graphics[idx] = saved;
             state.graphics[idx].visible = isVisible;
             delete window._draftGraphics[id];
             saveState();
@@ -856,7 +1249,7 @@ function updateProgramMonitor() {
 // 8. INSPECTOR PANEL
 // ===========================================================
 function closeInspector() {
-    document.getElementById('inspector-panel').classList.add('hidden');
+    document.getElementById('inspector-panel').style.display = 'none';
     document.getElementById('inspector-empty').classList.remove('hidden');
     document.getElementById('inspector-content').classList.add('hidden');
     document.getElementById('inspector-content').classList.remove('flex');
@@ -880,7 +1273,7 @@ function openInspector(id) {
     refreshPreviewMonitor();
     refreshPreviewControls();
 
-    document.getElementById('inspector-panel').classList.remove('hidden');
+    document.getElementById('inspector-panel').style.display = 'flex';
     document.getElementById('inspector-empty').classList.add('hidden');
     document.getElementById('inspector-content').classList.remove('hidden');
     document.getElementById('inspector-content').classList.add('flex');
@@ -894,17 +1287,14 @@ function openInspector(id) {
     renderInspectorBody(graphic);
 
     // Sync tab button styles
-    const tabMain = document.getElementById('ins-tab-main');
-    const tabAnim = document.getElementById('ins-tab-anim');
-    if (tabMain && tabAnim) {
-        if (currentInspectorTab === 'main') {
-            tabMain.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
-            tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
-        } else {
-            tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
-            tabMain.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
-        }
-    }
+    const _tabActive = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
+    const _tabInactive = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
+    ['main', 'anim'].forEach(t => {
+        const btn = document.getElementById(`ins-tab-${t}`);
+        if (btn) btn.className = (currentInspectorTab === t) ? _tabActive : _tabInactive;
+    });
+    // If user was on 'code' tab (removed), reset to 'main'
+    if (currentInspectorTab === 'code') currentInspectorTab = 'main';
 }
 
 function renderInspectorBody(graphic) {
@@ -1734,6 +2124,7 @@ function renderInspectorBody(graphic) {
             }, 120);
         });
     }
+
 }
 
 function handleInspectorChange(el, graphic) {
@@ -2541,7 +2932,15 @@ function exportTemplate(id) {
     const tpl = state.templates.find(t => t.id === id);
     if (!tpl) return;
 
-    const dataStr = JSON.stringify(tpl, null, 2);
+    // Bundle template with its associated graphics so settings are preserved on import
+    const associatedGraphics = state.graphics.filter(g => g.templateId === id);
+    const exportData = {
+        _exportVersion: 2,
+        template: tpl,
+        graphics: associatedGraphics
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
@@ -2565,6 +2964,35 @@ function importTemplate(file) {
     reader.onload = (e) => {
         try {
             const imported = JSON.parse(e.target.result);
+
+            // New bundled format (v2) — template + associated graphics
+            if (imported._exportVersion === 2 && imported.template) {
+                const tpl = imported.template;
+                if (!tpl.name || (!tpl.html_template && !tpl.css_template)) {
+                    alert('Nieprawidłowy format pliku szablonu.');
+                    return;
+                }
+                const newTplId = crypto.randomUUID();
+                const newTpl = { ...tpl, id: newTplId, name: tpl.name + ' (Imported)' };
+                state.templates.push(newTpl);
+
+                // Import associated graphics with new IDs, linked to the new template
+                if (Array.isArray(imported.graphics) && imported.graphics.length > 0) {
+                    for (const g of imported.graphics) {
+                        const newGraphic = { ...g, id: crypto.randomUUID(), templateId: newTplId };
+                        state.graphics.push(newGraphic);
+                    }
+                }
+
+                saveState();
+                renderTemplateList();
+                renderShotbox();
+                openTemplateEditor(newTpl.id);
+                alert(`Szablon i ${imported.graphics?.length || 0} elementów graficznych zostały pomyślnie zaimportowane!`);
+                return;
+            }
+
+            // Legacy format — plain template object (backward compatibility)
             if (!imported.name || (!imported.html_template && !imported.css_template)) {
                 alert('Nieprawidłowy format pliku szablonu.');
                 return;
@@ -2880,12 +3308,13 @@ function exportOCGTemplate(templateId) {
         html: tpl.html_template,
         css: tpl.css_template,
         js: tpl.js_template,
-        inputs: tpl.ocgInputs || []
+        inputs: tpl.ocgInputs || [],
+        defaultFields: tpl.defaultFields,
+        defaultStyle: tpl.defaultStyle,
+        defaultAnimation: tpl.defaultAnimation,
+        defaultLayout: tpl.defaultLayout
     };
 
-    // If it doesn't have ocgInputs but has defaultFields, try to infer?
-    // For now, only export what was imported as OCG or manually added as OCG-compatible.
-    
     const blob = new Blob([JSON.stringify(ocgTpl, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2900,6 +3329,7 @@ function exportOCGTemplate(templateId) {
 }
 
 function openTemplateEditor(id) {
+    codeEditorGraphicId = null; // exit graphic mode
     currentTemplateId = id;
     const tpl = state.templates.find(t => t.id === id);
     if (!tpl) return;
@@ -2912,38 +3342,115 @@ function openTemplateEditor(id) {
     main.classList.add('flex');
 
     document.getElementById('tpl-name-input').value = tpl.name;
+    document.getElementById('tpl-name-input').readOnly = false;
+    document.getElementById('tpl-graphic-mode-bar').classList.add('hidden');
+
+    // Show template-only buttons
+    document.getElementById('btn-delete-template').classList.remove('hidden');
+    document.getElementById('btn-export-template').classList.remove('hidden');
+    document.getElementById('btn-export-ocg-template').classList.remove('hidden');
+
+    // Show vars tab
+    document.querySelector('.tpl-tab.tab-vars')?.classList.remove('hidden');
+
     currentTemplateTab = currentTemplateTab || 'html';
     updateTemplateEditorTab();
+}
+
+function openGraphicCodeEditor(graphicId) {
+    const graphic = window._draftGraphics[graphicId] || state.graphics.find(g => g.id === graphicId);
+    if (!graphic) return;
+    const tpl = state.templates.find(t => t.id === graphic.templateId);
+    if (!tpl) return;
+
+    codeEditorGraphicId = graphicId;
+    currentTemplateId = tpl.id;
+
+    // Switch to templates page
+    switchPage('templates');
+    renderTemplateList();
+
+    document.getElementById('tpl-editor-empty').classList.add('hidden');
+    const main = document.getElementById('tpl-editor-main');
+    main.classList.remove('hidden');
+    main.classList.add('flex');
+
+    // Header shows graphic name (read-only)
+    document.getElementById('tpl-name-input').value = graphic.name || tpl.name;
+    document.getElementById('tpl-name-input').readOnly = true;
+
+    // Show graphic mode bar
+    const modeBar = document.getElementById('tpl-graphic-mode-bar');
+    modeBar.classList.remove('hidden');
+    document.getElementById('tpl-graphic-mode-name').textContent = graphic.name || graphic.id;
+    document.getElementById('tpl-graphic-override-toggle').checked = !!graphic.useCodeOverride;
+
+    // Hide template-only buttons
+    document.getElementById('btn-delete-template').classList.add('hidden');
+    document.getElementById('btn-export-template').classList.add('hidden');
+    document.getElementById('btn-export-ocg-template').classList.add('hidden');
+
+    // Hide vars tab in graphic mode (vars are edited in inspector)
+    document.querySelector('.tpl-tab.tab-vars')?.classList.add('hidden');
+    if (currentTemplateTab === 'vars') currentTemplateTab = 'html';
+
+    updateTemplateEditorTab();
+}
+
+function _getGraphicForCodeEditor() {
+    if (!codeEditorGraphicId) return null;
+    return window._draftGraphics[codeEditorGraphicId] || state.graphics.find(g => g.id === codeEditorGraphicId);
 }
 
 function updateTemplateEditorTab() {
     const tpl = state.templates.find(t => t.id === currentTemplateId);
     if (!tpl) return;
 
-    const editor = document.getElementById('tpl-code-editor');
+    const aceEl = document.getElementById('tpl-code-editor');
     const builderWrapper = document.getElementById('fields-builder-wrapper');
+    const graphic = _getGraphicForCodeEditor();
 
-    if (currentTemplateTab === 'vars') {
-        // Show builder, hide textarea
-        editor.classList.add('hidden');
+    if (currentTemplateTab === 'vars' && !graphic) {
+        // Show builder, hide code editor
+        if (aceEl) aceEl.style.display = 'none';
         if (builderWrapper) {
             builderWrapper.classList.remove('hidden');
             builderWrapper.classList.add('flex');
         }
         renderFieldsBuilder(tpl);
     } else {
-        // Show textarea, hide builder
-        editor.classList.remove('hidden');
+        // Show code editor, hide builder
         if (builderWrapper) {
             builderWrapper.classList.add('hidden');
             builderWrapper.classList.remove('flex');
         }
+        if (aceEl) aceEl.style.display = '';
 
-        const valMap = { html: tpl.html_template, css: tpl.css_template, js: tpl.js_template };
-        editor.value = valMap[currentTemplateTab] || '';
+        if (graphic) {
+            // Graphic code override mode
+            const fieldMap = { html: 'html_override', css: 'css_override', js: 'js_override' };
+            const tplMap = { html: tpl.html_template, css: tpl.css_template, js: tpl.js_template };
+            if (graphic.useCodeOverride) {
+                _cmSetValue(graphic[fieldMap[currentTemplateTab]] ?? tplMap[currentTemplateTab] ?? '');
+                _cmSetReadOnly(false);
+                _cmSetOpacity('1');
+            } else {
+                _cmSetValue(tplMap[currentTemplateTab] || '');
+                _cmSetReadOnly(true);
+                _cmSetOpacity('0.5');
+            }
+        } else {
+            // Template mode (original behavior)
+            const valMap = { html: tpl.html_template, css: tpl.css_template, js: tpl.js_template };
+            _cmSetValue(valMap[currentTemplateTab] || '');
+            _cmSetReadOnly(false);
+            _cmSetOpacity('1');
+        }
 
-        const colorMap = { html: '#fde68a', css: '#93c5fd', js: '#fdba74' };
-        editor.style.color = colorMap[currentTemplateTab];
+        _cmSetLanguage(currentTemplateTab);
+
+        // Ace needs resize after visibility change
+        if (_aceEditor) _aceEditor.resize();
     }
 
     // Update tab styles
@@ -2954,36 +3461,96 @@ function updateTemplateEditorTab() {
     });
 }
 
-function saveCurrentTemplate() {
-    const tpl = state.templates.find(t => t.id === currentTemplateId);
-    if (!tpl) return;
-    const nameInput = document.getElementById('tpl-name-input');
-    tpl.name = nameInput.value || tpl.name;
+function _saveCurrentCodeEditorContent() {
+    if (!currentTemplateId) return;
+    const graphic = _getGraphicForCodeEditor();
 
-    if (currentTemplateTab === 'vars') {
-        // Collect rows from the fields builder
-        const rows = document.querySelectorAll('#fields-builder-container .field-builder-row');
-        const inputsArray = [];
-        rows.forEach(r => {
-            const idVal = r.querySelector('.f-id').value.trim();
-            const labelVal = r.querySelector('.f-label').value.trim();
-            const defVal = r.querySelector('.f-def').value.trim();
-            const typeVal = r.querySelector('.f-type').value;
-            if (idVal && labelVal) {
-                inputsArray.push({ id: idVal, label: labelVal, default: defVal, type: typeVal });
+    if (graphic && graphic.useCodeOverride) {
+        // Save graphic override
+        const fieldMap = { html: 'html_override', css: 'css_override', js: 'js_override' };
+        const field = fieldMap[currentTemplateTab];
+        if (!field) return; // vars tab — nothing to save here
+        graphic[field] = _cmGetValue();
+        window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(graphic));
+        if (previewGraphic?.id === graphic.id) {
+            Object.assign(previewGraphic, graphic);
+            refreshPreviewMonitor();
+        }
+    } else if (!graphic) {
+        // Save template code
+        const tpl = state.templates.find(t => t.id === currentTemplateId);
+        if (tpl) {
+            if (currentTemplateTab === 'vars') {
+                const rows = document.querySelectorAll('#fields-builder-container .field-builder-row');
+                const inputsArray = [];
+                rows.forEach(r => {
+                    const idVal = r.querySelector('.f-id')?.value.trim();
+                    const labelVal = r.querySelector('.f-label')?.value.trim();
+                    const defVal = r.querySelector('.f-def')?.value.trim();
+                    const typeVal = r.querySelector('.f-type')?.value;
+                    if (idVal && labelVal) {
+                        inputsArray.push({ id: idVal, label: labelVal, default: defVal, type: typeVal });
+                    }
+                });
+                tpl.ocgInputs = inputsArray;
+            } else {
+                const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
+                tpl[fieldMap[currentTemplateTab]] = _cmGetValue();
             }
-        });
-        tpl.ocgInputs = inputsArray;
+        }
+    }
+}
+
+function saveCurrentTemplate() {
+    const graphic = _getGraphicForCodeEditor();
+    const btn = document.getElementById('btn-save-template');
+
+    if (graphic) {
+        // Graphic code override mode — save graphic to state
+        _saveCurrentCodeEditorContent();
+        const draft = window._draftGraphics[graphic.id];
+        if (draft) {
+            const idx = state.graphics.findIndex(g => g.id === draft.id);
+            if (idx !== -1) {
+                const saved = JSON.parse(JSON.stringify(draft));
+                delete saved._codeTab;
+                const wasVisible = state.graphics[idx].visible;
+                state.graphics[idx] = saved;
+                state.graphics[idx].visible = wasVisible;
+                delete window._draftGraphics[draft.id];
+            }
+        }
+        saveState();
+        renderShotbox();
     } else {
-        const editor = document.getElementById('tpl-code-editor');
-        const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
-        tpl[fieldMap[currentTemplateTab]] = editor.value;
+        // Template mode (original behavior)
+        const tpl = state.templates.find(t => t.id === currentTemplateId);
+        if (!tpl) return;
+        const nameInput = document.getElementById('tpl-name-input');
+        tpl.name = nameInput.value || tpl.name;
+
+        if (currentTemplateTab === 'vars') {
+            const rows = document.querySelectorAll('#fields-builder-container .field-builder-row');
+            const inputsArray = [];
+            rows.forEach(r => {
+                const idVal = r.querySelector('.f-id').value.trim();
+                const labelVal = r.querySelector('.f-label').value.trim();
+                const defVal = r.querySelector('.f-def').value.trim();
+                const typeVal = r.querySelector('.f-type').value;
+                if (idVal && labelVal) {
+                    inputsArray.push({ id: idVal, label: labelVal, default: defVal, type: typeVal });
+                }
+            });
+            tpl.ocgInputs = inputsArray;
+        } else {
+            const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
+            tpl[fieldMap[currentTemplateTab]] = _cmGetValue();
+        }
+
+        saveState();
+        renderTemplateList();
     }
 
-    saveState();
-    renderTemplateList();
-
-    const btn = document.getElementById('btn-save-template');
     btn.textContent = '✓ Zapisano!';
     btn.classList.replace('bg-blue-600', 'bg-green-600');
     setTimeout(() => {
@@ -3002,6 +3569,7 @@ function renderFieldsBuilder(tpl) {
     const inputs = tpl.ocgInputs || [];
     inputs.forEach(inp => addFieldRow(inp.id, inp.label, inp.default, inp.type));
     refreshFieldsBuilderEmptyState();
+    renderDefaultsEditor(tpl);
 }
 
 function addFieldRow(idVal = '', labelVal = '', defVal = '', typeVal = 'text') {
@@ -3045,6 +3613,154 @@ function refreshFieldsBuilderEmptyState() {
     const hasRows = container.querySelectorAll('.field-builder-row').length > 0;
     emptyMsg.classList.toggle('hidden', hasRows);
     container.classList.toggle('hidden', !hasRows);
+}
+
+// ===========================================================
+// 9b. DEFAULT VALUES EDITOR (Template Defaults)
+// ===========================================================
+function renderDefaultsEditor(tpl) {
+    const container = document.getElementById('tpl-defaults-editor');
+    if (!container) return;
+
+    const df = tpl.defaultFields || {};
+    const ds = tpl.defaultStyle || {};
+    const da = tpl.defaultAnimation || {};
+    const dl = tpl.defaultLayout || {};
+    const bg = ds.background || {};
+    const typo = ds.typography || {};
+    const subTypo = ds.subtitleTypography || {};
+    const animIn = da.in || {};
+    const animOut = da.out || {};
+
+    const secClass = 'bg-gray-900/50 border border-gray-800 rounded p-3 space-y-2';
+    const secTitle = (text) => `<h4 class="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">${text}</h4>`;
+    const row = (label, id, val, type = 'text', extra = '') => {
+        if (type === 'color') {
+            return `<div class="flex items-center justify-between gap-2">
+                <label class="text-[10px] text-gray-400 shrink-0 w-28">${label}</label>
+                <div class="flex items-center gap-1 flex-1">
+                    <input type="color" data-default="${id}" value="${escAttr(val || '#000000')}" class="w-7 h-7 rounded border border-gray-700 bg-gray-800 cursor-pointer p-0.5">
+                    <input type="text" data-default="${id}" value="${escAttr(val || '')}" class="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-200 font-mono focus:outline-none focus:border-blue-500" placeholder="#000000">
+                </div>
+            </div>`;
+        }
+        if (type === 'select') {
+            return `<div class="flex items-center justify-between gap-2">
+                <label class="text-[10px] text-gray-400 shrink-0 w-28">${label}</label>
+                <select data-default="${id}" class="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-blue-400 focus:outline-none focus:border-blue-500 appearance-none">${extra}</select>
+            </div>`;
+        }
+        if (type === 'number') {
+            return `<div class="flex items-center justify-between gap-2">
+                <label class="text-[10px] text-gray-400 shrink-0 w-28">${label}</label>
+                <input type="number" data-default="${id}" value="${val ?? ''}" ${extra} class="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-200 focus:outline-none focus:border-blue-500">
+            </div>`;
+        }
+        return `<div class="flex items-center justify-between gap-2">
+            <label class="text-[10px] text-gray-400 shrink-0 w-28">${label}</label>
+            <input type="text" data-default="${id}" value="${escAttr(val || '')}" class="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-200 focus:outline-none focus:border-blue-500" placeholder="${extra}">
+        </div>`;
+    };
+
+    const opts = (vals, selected) => vals.map(v => {
+        const [val, label] = Array.isArray(v) ? v : [v, v];
+        return `<option value="${val}" ${selected === val ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="${secClass}">
+            ${secTitle('Treść')}
+            ${row('Tytuł', 'defaultFields.title', df.title, 'text', 'Domyślny tytuł')}
+            ${row('Podtytuł', 'defaultFields.subtitle', df.subtitle, 'text', 'Domyślny podtytuł')}
+            ${row('Tekst intro / wiper', 'defaultFields.introText', df.introText, 'text', 'Tekst wipera')}
+            ${row('Prędkość tickera', 'defaultFields.speed', df.speed, 'number', 'min="1" max="500"')}
+            ${row('Tryb tickera', 'defaultFields.tickerMode', df.tickerMode, 'select', opts([['whip','Whip'],['horizontal','Poziomy'],['vertical','Pionowy'],['scrolling','Scrolling']], df.tickerMode))}
+        </div>
+
+        <div class="${secClass}">
+            ${secTitle('Tło i obramowanie')}
+            ${row('Typ tła', 'defaultStyle.background.type', bg.type, 'select', opts([['solid','Jednolite'],['gradient','Gradient'],['transparent','Przezroczyste']], bg.type))}
+            ${row('Kolor tła', 'defaultStyle.background.color', bg.color, 'color')}
+            ${row('Kolor tła 2', 'defaultStyle.background.color2', bg.color2, 'color')}
+            ${row('Kąt gradientu', 'defaultStyle.background.gradientAngle', bg.gradientAngle, 'number', 'min="0" max="360"')}
+            ${row('Kolor obramowania', 'defaultStyle.background.borderColor', bg.borderColor, 'color')}
+            ${row('Grubość obramowania', 'defaultStyle.background.borderWidth', bg.borderWidth, 'number', 'min="0" max="20"')}
+            ${row('Zaokrąglenie', 'defaultStyle.background.borderRadius', bg.borderRadius, 'number', 'min="0" max="100"')}
+            ${row('Kolor podtytułu tło', 'defaultStyle.background.subtitleBackgroundColor', bg.subtitleBackgroundColor, 'color')}
+        </div>
+
+        <div class="${secClass}">
+            ${secTitle('Typografia — tytuł')}
+            ${row('Kolor tekstu', 'defaultStyle.typography.color', typo.color, 'color')}
+            ${row('Czcionka', 'defaultStyle.typography.fontFamily', typo.fontFamily, 'text', 'np. Inter')}
+            ${row('Rozmiar', 'defaultStyle.typography.fontSize', typo.fontSize, 'number', 'min="8" max="200"')}
+            ${row('Grubość', 'defaultStyle.typography.fontWeight', typo.fontWeight, 'select', opts([['normal','Normal'],['bold','Bold'],['100','100'],['200','200'],['300','300'],['400','400'],['500','500'],['600','600'],['700','700'],['800','800'],['900','900']], typo.fontWeight))}
+            ${row('Transformacja', 'defaultStyle.typography.textTransform', typo.textTransform, 'select', opts([['none','Brak'],['uppercase','WIELKIE'],['lowercase','małe'],['capitalize','Pierwsza Wielka']], typo.textTransform))}
+        </div>
+
+        <div class="${secClass}">
+            ${secTitle('Typografia — podtytuł')}
+            ${row('Kolor tekstu', 'defaultStyle.subtitleTypography.color', subTypo.color, 'color')}
+            ${row('Czcionka', 'defaultStyle.subtitleTypography.fontFamily', subTypo.fontFamily, 'text', 'np. Inter')}
+            ${row('Rozmiar', 'defaultStyle.subtitleTypography.fontSize', subTypo.fontSize, 'number', 'min="8" max="200"')}
+            ${row('Grubość', 'defaultStyle.subtitleTypography.fontWeight', subTypo.fontWeight, 'select', opts([['normal','Normal'],['bold','Bold'],['100','100'],['300','300'],['500','500'],['700','700'],['900','900']], subTypo.fontWeight))}
+        </div>
+
+        <div class="${secClass}">
+            ${secTitle('Layout domyślny')}
+            ${row('Szerokość', 'defaultLayout.width', dl.width, 'number', 'min="0" max="3840"')}
+            ${row('Wysokość', 'defaultLayout.height', dl.height, 'number', 'min="0" max="2160"')}
+            ${row('Pozycja X', 'defaultLayout.x', dl.x, 'number')}
+            ${row('Pozycja Y', 'defaultLayout.y', dl.y, 'number')}
+            ${row('Skala', 'defaultLayout.scale', dl.scale, 'number', 'min="0.1" max="5" step="0.1"')}
+            ${row('Warstwa (Z-Index)', 'defaultLayout.layer', dl.layer, 'number', 'min="0" max="100"')}
+        </div>
+
+        <div class="${secClass}">
+            ${secTitle('Animacja — wejście')}
+            ${row('Typ', 'defaultAnimation.in.type', animIn.type, 'select', opts([['slide','Slide'],['fade','Fade'],['zoom','Zoom'],['wipe','Wipe'],['none','Brak']], animIn.type))}
+            ${row('Kierunek', 'defaultAnimation.in.direction', animIn.direction, 'select', opts([['left','Lewo'],['right','Prawo'],['top','Góra'],['bottom','Dół']], animIn.direction))}
+            ${row('Czas trwania (s)', 'defaultAnimation.in.duration', animIn.duration, 'number', 'min="0" max="10" step="0.1"')}
+            ${row('Opóźnienie (s)', 'defaultAnimation.in.delay', animIn.delay, 'number', 'min="0" max="10" step="0.1"')}
+        </div>
+
+        <div class="${secClass}">
+            ${secTitle('Animacja — wyjście')}
+            ${row('Typ', 'defaultAnimation.out.type', animOut.type, 'select', opts([['slide','Slide'],['fade','Fade'],['zoom','Zoom'],['wipe','Wipe'],['none','Brak']], animOut.type))}
+            ${row('Kierunek', 'defaultAnimation.out.direction', animOut.direction, 'select', opts([['left','Lewo'],['right','Prawo'],['top','Góra'],['bottom','Dół']], animOut.direction))}
+            ${row('Czas trwania (s)', 'defaultAnimation.out.duration', animOut.duration, 'number', 'min="0" max="10" step="0.1"')}
+            ${row('Opóźnienie (s)', 'defaultAnimation.out.delay', animOut.delay, 'number', 'min="0" max="10" step="0.1"')}
+        </div>
+    `;
+
+    // Bind change events
+    container.querySelectorAll('[data-default]').forEach(el => {
+        const handler = () => {
+            const path = el.getAttribute('data-default');
+            let value = el.value;
+            if (el.type === 'number') value = parseFloat(value) || 0;
+
+            // Set value in template using dot path
+            const parts = path.split('.');
+            let obj = tpl;
+            for (let i = 0; i < parts.length - 1; i++) {
+                if (!obj[parts[i]] || typeof obj[parts[i]] !== 'object') obj[parts[i]] = {};
+                obj = obj[parts[i]];
+            }
+            obj[parts[parts.length - 1]] = value;
+
+            // Sync paired color inputs
+            if (el.type === 'color') {
+                const textInput = container.querySelector(`input[type="text"][data-default="${path}"]`);
+                if (textInput && textInput !== el) textInput.value = value;
+            } else if (el.type === 'text' && /^#[0-9a-f]{3,8}$/i.test(value)) {
+                const colorInput = container.querySelector(`input[type="color"][data-default="${path}"]`);
+                if (colorInput && colorInput !== el) colorInput.value = value.length === 4 ? value + value.slice(1) : value;
+            }
+        };
+        el.addEventListener('change', handler);
+        if (el.tagName === 'INPUT' && el.type !== 'color') el.addEventListener('input', handler);
+    });
 }
 
 // ===========================================================
@@ -3115,6 +3831,7 @@ function createGraphicFromTemplate(templateIdOrTpl) {
             in: { type: 'slide', direction: 'left', duration: 0.5, delay: 0, ease: 'ease-out' },
             out: { type: 'fade', direction: 'left', duration: 0.5, delay: 0, ease: 'ease-in' }
         },
+        hotkey: null,
         style: tpl.defaultStyle ? JSON.parse(JSON.stringify(tpl.defaultStyle)) : {
             background: {
                 type: 'solid',
@@ -3213,7 +3930,7 @@ function easingSelect(field, value, isOut = false) {
 }
 
 function escAttr(str) {
-    return (str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function deepSet(obj, path, value) {
@@ -3253,26 +3970,24 @@ function bindGlobalEvents() {
     // Inspector Tabs
     const tabMain = document.getElementById('ins-tab-main');
     const tabAnim = document.getElementById('ins-tab-anim');
-    if (tabMain && tabAnim) {
-        tabMain.onclick = () => {
-            currentInspectorTab = 'main';
-            document.getElementById('ins-tab-content-main')?.classList.remove('hidden');
-            document.getElementById('ins-tab-content-anim')?.classList.add('hidden');
-            tabMain.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
-            tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
-        };
-        tabAnim.onclick = () => {
-            currentInspectorTab = 'anim';
-            if (selectedGraphicId && inspectorAccordionStates[selectedGraphicId]) {
-                inspectorAccordionStates[selectedGraphicId].animation = true;
-                openInspector(selectedGraphicId);
-            }
-            document.getElementById('ins-tab-content-main')?.classList.add('hidden');
-            document.getElementById('ins-tab-content-anim')?.classList.remove('hidden');
-            tabAnim.className = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
-            tabMain.className = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
-        };
+    const insTabActive = "flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors";
+    const insTabInactive = "flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors";
+    function switchInsTab(tab) {
+        currentInspectorTab = tab;
+        ['main', 'anim'].forEach(t => {
+            document.getElementById(`ins-tab-content-${t}`)?.classList.toggle('hidden', t !== tab);
+        });
+        if (tabMain) tabMain.className = tab === 'main' ? insTabActive : insTabInactive;
+        if (tabAnim) tabAnim.className = tab === 'anim' ? insTabActive : insTabInactive;
     }
+    if (tabMain) tabMain.onclick = () => switchInsTab('main');
+    if (tabAnim) tabAnim.onclick = () => {
+        if (selectedGraphicId && inspectorAccordionStates[selectedGraphicId]) {
+            inspectorAccordionStates[selectedGraphicId].animation = true;
+            openInspector(selectedGraphicId);
+        }
+        switchInsTab('anim');
+    };
 
     // Settings
     const wInput = document.getElementById('setting-res-width');
@@ -3418,15 +4133,23 @@ function bindGlobalEvents() {
     // Reset DB
     document.getElementById('reset-db-btn').onclick = async () => {
         if (!confirm('Zresetować DB do db.json? Wszystkie zmiany zostaną utracone.')) return;
-        localStorage.removeItem(DB_KEY);
-        const res = await fetch('db.json');
-        state = await res.json();
-        saveState();
-        selectedGraphicId = null; previewGraphic = null;
-        closeInspector();
-        renderShotbox();
-        renderTemplateList();
-        updateProgramMonitor();
+        try {
+            const res = await fetch('db.json');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (!data || !data.templates) throw new Error('Nieprawidłowy format db.json');
+            localStorage.removeItem(DB_KEY);
+            state = data;
+            saveState();
+            selectedGraphicId = null; previewGraphic = null;
+            closeInspector();
+            renderShotbox();
+            renderTemplateList();
+            updateProgramMonitor();
+        } catch (err) {
+            alert(`Nie udało się zresetować bazy danych: ${err.message}`);
+            console.error('[Reset DB] Error:', err);
+        }
     };
 
     // Preview buttons
@@ -3519,12 +4242,15 @@ function bindGlobalEvents() {
         if (draft) {
             const idx = state.graphics.findIndex(x => x.id === draft.id);
             if (idx !== -1) {
-                state.graphics[idx] = JSON.parse(JSON.stringify(draft));
+                const saved = JSON.parse(JSON.stringify(draft));
+                delete saved._codeTab; // UI-only state, don't persist
+                state.graphics[idx] = saved;
                 state.graphics[idx].visible = false;
                 delete window._draftGraphics[draft.id];
             }
         } else if (g) {
             Object.assign(g, previewGraphic);
+            delete g._codeTab;
             g.visible = false;
         }
 
@@ -3572,6 +4298,12 @@ function bindGlobalEvents() {
         setTimeout(() => {
             btn.innerHTML = '<span>ZAPISZ JAKO</span><span>SZABLON</span>';
         }, 2000);
+    };
+
+    // Inspector edit code — opens graphic in template editor page
+    document.getElementById('btn-ins-edit-code').onclick = () => {
+        if (!selectedGraphicId) return;
+        openGraphicCodeEditor(selectedGraphicId);
     };
 
     // Inspector export JSON
@@ -3717,50 +4449,89 @@ function bindGlobalEvents() {
     document.querySelectorAll('.tpl-tab').forEach(tab => {
         tab.onclick = () => {
             // Save current tab content before switching
-            if (currentTemplateId) {
-                const tpl = state.templates.find(t => t.id === currentTemplateId);
-                if (tpl) {
-                    if (currentTemplateTab === 'vars') {
-                        // Save fields builder state
-                        const rows = document.querySelectorAll('#fields-builder-container .field-builder-row');
-                        const inputsArray = [];
-                        rows.forEach(r => {
-                            const idVal = r.querySelector('.f-id').value.trim();
-                            const labelVal = r.querySelector('.f-label').value.trim();
-                            const defVal = r.querySelector('.f-def').value.trim();
-                            const typeVal = r.querySelector('.f-type').value;
-                            if (idVal && labelVal) {
-                                inputsArray.push({ id: idVal, label: labelVal, default: defVal, type: typeVal });
-                            }
-                        });
-                        tpl.ocgInputs = inputsArray;
-                    } else {
-                        const editor = document.getElementById('tpl-code-editor');
-                        const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
-                        tpl[fieldMap[currentTemplateTab]] = editor.value;
-                    }
-                }
-            }
+            _saveCurrentCodeEditorContent();
             currentTemplateTab = tab.getAttribute('data-tab');
             updateTemplateEditorTab();
         };
     });
 
+    // Graphic code editor mode bar bindings
+    const overrideToggle = document.getElementById('tpl-graphic-override-toggle');
+    if (overrideToggle) {
+        overrideToggle.onchange = () => {
+            const graphic = _getGraphicForCodeEditor();
+            if (!graphic) return;
+            const tpl = state.templates.find(t => t.id === graphic.templateId);
+            graphic.useCodeOverride = overrideToggle.checked;
+            if (overrideToggle.checked && !graphic.html_override && !graphic.css_override && !graphic.js_override) {
+                graphic.html_override = tpl?.html_template || '';
+                graphic.css_override = tpl?.css_template || '';
+                graphic.js_override = tpl?.js_template || '';
+            }
+            window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(graphic));
+            if (previewGraphic?.id === graphic.id) {
+                Object.assign(previewGraphic, graphic);
+                refreshPreviewMonitor();
+            }
+            updateTemplateEditorTab();
+        };
+    }
+    const btnExitGraphicCode = document.getElementById('btn-exit-graphic-code');
+    if (btnExitGraphicCode) {
+        btnExitGraphicCode.onclick = () => {
+            _saveCurrentCodeEditorContent();
+            codeEditorGraphicId = null;
+            if (currentTemplateId) {
+                openTemplateEditor(currentTemplateId);
+            }
+        };
+    }
+
     // Bind fields builder 'Add Variable' button
     const btnAddFieldRow = document.getElementById('btn-add-field-row');
     if (btnAddFieldRow) btnAddFieldRow.onclick = () => addFieldRow();
 
-    // Auto-save template code on edit
-    document.getElementById('tpl-code-editor').oninput = () => {
-        if (!currentTemplateId) return;
-        const tpl = state.templates.find(t => t.id === currentTemplateId);
-        if (!tpl) return;
-        const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
-        tpl[fieldMap[currentTemplateTab]] = document.getElementById('tpl-code-editor').value;
-        // Debounce save to not spam storage
+    // Auto-save code on edit (handles both template and graphic modes)
+    // Shared handler for both textarea and CodeMirror
+    function _onCodeEditorChange(editorValue) {
+        // Ignore changes when on vars tab — no code field to update
+        if (currentTemplateTab === 'vars') return;
+
+        const graphic = _getGraphicForCodeEditor();
+
+        if (graphic) {
+            if (!graphic.useCodeOverride) return;
+            const fieldMap = { html: 'html_override', css: 'css_override', js: 'js_override' };
+            const field = fieldMap[currentTemplateTab];
+            if (!field) return;
+            graphic[field] = editorValue;
+            window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(graphic));
+            if (previewGraphic?.id === graphic.id) {
+                previewGraphic[field] = editorValue;
+                previewGraphic.useCodeOverride = true;
+                refreshPreviewMonitor();
+            }
+        } else {
+            if (!currentTemplateId) return;
+            const tpl = state.templates.find(t => t.id === currentTemplateId);
+            if (!tpl) return;
+            const fieldMap = { html: 'html_template', css: 'css_template', js: 'js_template' };
+            const field = fieldMap[currentTemplateTab];
+            if (!field) return;
+            tpl[field] = editorValue;
+        }
         clearTimeout(window._tplSaveTimer);
         window._tplSaveTimer = setTimeout(() => saveState(), 800);
-    };
+    }
+
+    // Ace Editor change handler
+    const _aceEd = _aceInit();
+    if (_aceEd) {
+        _aceEd.on('change', () => {
+            if (_aceSuppressChange) return;
+            _onCodeEditorChange(_aceEd.getValue());
+        });
+    }
 
     // Template name change
     document.getElementById('tpl-name-input').oninput = (e) => {
@@ -3825,6 +4596,188 @@ function bindGlobalEvents() {
             };
             reader.readAsText(file);
         });
+    }
+
+    // ===========================================================
+    // KEYBOARD SHORTCUTS
+    // ===========================================================
+    document.addEventListener('keydown', (e) => {
+        if (_hotkeyAssignActive) return;
+
+        // Ignore shortcuts when typing in inputs, textareas, or contenteditable
+        const tag = e.target.tagName;
+        const isEditable = e.target.isContentEditable;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || isEditable) return;
+
+        // Ignore when Ace editor is focused
+        if (e.target.closest && e.target.closest('.ace_editor')) return;
+
+        // Ignore when a modal is open
+        const modals = document.querySelectorAll('.fixed:not(.hidden)');
+        for (const m of modals) {
+            if (m.id && m.id.startsWith('modal-') && !m.classList.contains('hidden')) return;
+        }
+
+        // Check graphic hotkeys first (they take priority)
+        if (triggerGraphicHotkey(e)) return;
+
+        const key = e.key;
+        const ctrl = e.ctrlKey || e.metaKey;
+
+        // F1 / Space — TAKE preview graphic (toggle on/off air)
+        if (key === 'F1' || (key === ' ' && !ctrl)) {
+            e.preventDefault();
+            document.getElementById('btn-take-preview')?.click();
+            return;
+        }
+
+        // F2 — Update active graphic from preview (SYNC)
+        if (key === 'F2') {
+            e.preventDefault();
+            document.getElementById('btn-update-active')?.click();
+            return;
+        }
+
+        // Escape — Kill All (hide all graphics from program)
+        if (key === 'Escape') {
+            e.preventDefault();
+            document.getElementById('btn-kill-all')?.click();
+            return;
+        }
+
+        // Delete — Delete selected graphic
+        if (key === 'Delete' && !ctrl) {
+            e.preventDefault();
+            document.getElementById('btn-delete-graphic-ins')?.click();
+            return;
+        }
+
+        // ArrowUp / ArrowDown — navigate shotbox graphics
+        if (key === 'ArrowUp' || key === 'ArrowDown') {
+            e.preventDefault();
+            const visibleCards = state.graphics;
+            if (!visibleCards.length) return;
+            const currentIdx = visibleCards.findIndex(g => g.id === selectedGraphicId);
+            let nextIdx;
+            if (key === 'ArrowUp') {
+                nextIdx = currentIdx <= 0 ? visibleCards.length - 1 : currentIdx - 1;
+            } else {
+                nextIdx = currentIdx >= visibleCards.length - 1 ? 0 : currentIdx + 1;
+            }
+            const nextGraphic = visibleCards[nextIdx];
+            if (nextGraphic) {
+                setPreviewGraphic(JSON.parse(JSON.stringify(nextGraphic)));
+                openInspector(nextGraphic.id);
+            }
+            return;
+        }
+
+        // Tab — switch between Dashboard and Templates pages
+        if (key === 'Tab' && !ctrl) {
+            e.preventDefault();
+            switchPage(currentPage === 'dashboard' ? 'templates' : 'dashboard');
+            return;
+        }
+
+        // B — set output background to current picker color (default: black)
+        if (key === 'b' || key === 'B') {
+            e.preventDefault();
+            changeBg(document.getElementById('hex-bg')?.value || '#000000');
+            return;
+        }
+
+        // T — set output background to transparent (OBS)
+        if (key === 't' || key === 'T') {
+            e.preventDefault();
+            changeBg('transparent');
+            return;
+        }
+
+        // ? — show keyboard shortcuts help
+        if (key === '?' || (key === '/' && e.shiftKey)) {
+            e.preventDefault();
+            _toggleShortcutsHelp();
+            return;
+        }
+    });
+
+    // Track key releases globally so multi-key hotkeys reset properly
+    document.addEventListener('keyup', (e) => {
+        _globalPressedKeys.delete(e.key);
+    });
+
+    // Shortcuts help overlay
+    function _toggleShortcutsHelp() {
+        let overlay = document.getElementById('shortcuts-help-overlay');
+        if (overlay) {
+            overlay.remove();
+            return;
+        }
+        overlay = document.createElement('div');
+        overlay.id = 'shortcuts-help-overlay';
+        overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/70';
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+        overlay.innerHTML = `
+            <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-6 max-w-md w-full mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-white font-bold text-lg tracking-wide">Skróty Klawiszowe</h2>
+                    <button onclick="document.getElementById('shortcuts-help-overlay').remove()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+                </div>
+                <div class="space-y-1 text-sm">
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">TAKE (Wejdź / Ściągnij)</span>
+                        <span class="text-blue-400 font-mono font-bold">F1 / Space</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">Synchronizuj (Update Active)</span>
+                        <span class="text-blue-400 font-mono font-bold">F2</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">Wyczyść Program (Kill All)</span>
+                        <span class="text-blue-400 font-mono font-bold">Escape</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">Usuń wybraną grafikę</span>
+                        <span class="text-blue-400 font-mono font-bold">Delete</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">Poprzednia / Następna grafika</span>
+                        <span class="text-blue-400 font-mono font-bold">↑ / ↓</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">Dashboard / Szablony</span>
+                        <span class="text-blue-400 font-mono font-bold">Tab</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">Ustaw tło (wybrany kolor)</span>
+                        <span class="text-blue-400 font-mono font-bold">B</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">Tło przezroczyste / OBS</span>
+                        <span class="text-blue-400 font-mono font-bold">T</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-800">
+                        <span class="text-gray-300">Pokaż tę pomoc</span>
+                        <span class="text-blue-400 font-mono font-bold">?</span>
+                    </div>
+                </div>
+                ${state.graphics.some(g => g.hotkey) ? `
+                <div class="mt-3 pt-3 border-t border-gray-700">
+                    <p class="text-purple-400 text-xs font-bold uppercase tracking-wider mb-2">Skróty grafik</p>
+                    <div class="space-y-1 text-sm">
+                        ${state.graphics.filter(g => g.hotkey).map(g => `
+                            <div class="flex justify-between py-1 border-b border-gray-800/50">
+                                <span class="text-gray-300 truncate mr-2">${escAttr(g.name)}</span>
+                                <span class="text-purple-400 font-mono font-bold shrink-0">${escAttr(g.hotkey.label)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                <p class="text-gray-600 text-xs mt-4 text-center">Skróty nie działają podczas edycji pól tekstowych</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
     }
 }
 
@@ -3930,7 +4883,7 @@ window.renderTickerEditorBody = function() {
 window.updateTickerGroupName = function(input) {
     const card = input.closest('.ticker-group-card');
     const list = card.querySelector('.ticker-item-list');
-    const newName = input.value.trim() || 'BRAK KATEGORII';
+    const newName = input.value.trim();
     card.dataset.category = newName;
     list.dataset.group = newName;
 };
@@ -4064,6 +5017,173 @@ function bindTickerEditorEvents() {
     if (btnCancel) btnCancel.onclick = window.closeTickerEditor;
     if (btnSave) btnSave.onclick = window.saveTickerEditor;
     if (btnAddGroup) btnAddGroup.onclick = window.addTickerGroup;
+}
+
+// ===========================================================
+// 13. PRESET MANAGEMENT
+// ===========================================================
+
+let _activePresetId = null;
+
+function renderPresetSelect() {
+    const sel = document.getElementById('preset-select');
+    if (!sel) return;
+    // Preserve the currently displayed selection (user might have changed dropdown without loading)
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="">— brak —</option>';
+    const presets = state.presets || [];
+    presets.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        sel.appendChild(opt);
+    });
+    // Determine what to select: _activePresetId takes priority, then last user selection
+    const preferredId = _activePresetId || currentVal;
+    if (preferredId && presets.some(p => p.id === preferredId)) {
+        sel.value = preferredId;
+    }
+    // Clear stale _activePresetId if it no longer exists
+    if (_activePresetId && !presets.some(p => p.id === _activePresetId)) {
+        _activePresetId = null;
+    }
+}
+
+function savePreset() {
+    const sel = document.getElementById('preset-select');
+    const selectedId = sel?.value || '';
+
+    if (selectedId) {
+        // Overwrite existing preset — no prompt, just save immediately
+        const existing = (state.presets || []).find(p => p.id === selectedId);
+        const name = existing?.name || selectedId;
+        socket.emit('savePreset', {
+            id: selectedId,
+            name,
+            graphics: JSON.parse(JSON.stringify(state.graphics)),
+            groups: JSON.parse(JSON.stringify(state.groups))
+        });
+        _activePresetId = selectedId;
+    } else {
+        // New preset — ask for name
+        const name = prompt('Nazwa nowego presetu:', 'Program A');
+        if (!name || !name.trim()) return;
+        const newId = 'preset-' + Date.now();
+        socket.emit('savePreset', {
+            id: newId,
+            name: name.trim(),
+            graphics: JSON.parse(JSON.stringify(state.graphics)),
+            groups: JSON.parse(JSON.stringify(state.groups))
+        });
+        _activePresetId = newId;
+    }
+}
+
+function loadPreset() {
+    const sel = document.getElementById('preset-select');
+    const id = sel?.value;
+    if (!id) { alert('Wybierz preset z listy.'); return; }
+    const preset = (state.presets || []).find(p => p.id === id);
+    if (!preset) return;
+
+    const onAir = state.graphics.some(g => g.visible);
+    if (onAir) {
+        if (!confirm(`Załadować preset "${preset.name}"?\n\nWszystkie aktywne grafiki zostaną wyłączone.`)) return;
+    }
+
+    _activePresetId = id;
+    socket.emit('loadPreset', id);
+}
+
+function deletePreset() {
+    const sel = document.getElementById('preset-select');
+    const id = sel?.value;
+    if (!id) { alert('Wybierz preset do usunięcia.'); return; }
+    const preset = (state.presets || []).find(p => p.id === id);
+    if (!preset) return;
+    if (!confirm(`Usunąć preset "${preset.name}"? Tej operacji nie można cofnąć.`)) return;
+    if (_activePresetId === id) _activePresetId = null;
+    socket.emit('deletePreset', id);
+}
+
+function exportPreset() {
+    const sel = document.getElementById('preset-select');
+    const id = sel?.value;
+    let preset, exportData;
+
+    if (id) {
+        preset = (state.presets || []).find(p => p.id === id);
+    }
+
+    if (preset) {
+        exportData = {
+            _exportVersion: 1,
+            _type: 'preset',
+            id: preset.id,
+            name: preset.name,
+            created_at: preset.created_at,
+            graphics: preset.graphics || [],
+            groups: preset.groups || []
+        };
+    } else {
+        // Export current state as preset
+        const name = prompt('Nazwa eksportowanego presetu:', 'Preset Export');
+        if (!name) return;
+        exportData = {
+            _exportVersion: 1,
+            _type: 'preset',
+            id: 'preset-export-' + Date.now(),
+            name: name.trim(),
+            created_at: Date.now(),
+            graphics: JSON.parse(JSON.stringify(state.graphics)),
+            groups: JSON.parse(JSON.stringify(state.groups))
+        };
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `preset-${exportData.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importPreset(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data._type !== 'preset' || !data.graphics) {
+                alert('Nieprawidłowy plik presetu.');
+                return;
+            }
+            const name = prompt('Nazwa presetu po imporcie:', data.name || 'Importowany preset');
+            if (!name) return;
+            const newId = 'preset-' + Date.now();
+            socket.emit('savePreset', {
+                id: newId,
+                name: name.trim(),
+                graphics: data.graphics,
+                groups: data.groups || []
+            });
+            _activePresetId = newId;
+        } catch (err) {
+            alert('Błąd odczytu pliku: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function bindPresetEvents() {
+    const bind = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
+    bind('btn-preset-load', 'click', loadPreset);
+    bind('btn-preset-save', 'click', savePreset);
+    bind('btn-preset-delete', 'click', deletePreset);
+    bind('btn-preset-export', 'click', exportPreset);
+    const fileInput = document.getElementById('preset-import-file');
+    if (fileInput) fileInput.addEventListener('change', (e) => { importPreset(e.target.files[0]); e.target.value = ''; });
 }
 
 // ===========================================================

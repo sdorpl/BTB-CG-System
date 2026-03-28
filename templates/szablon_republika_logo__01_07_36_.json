@@ -1,44 +1,112 @@
 {
-  "id": "e195ecc9-fb81-4208-8443-5a6f9ac9f3ac",
-  "name": "Republika Logo (01:07:36) (Eksport)",
-  "type": "IMAGE",
-  "version": 1,
-  "html_template": "<div class=\"rep-logo-box\">\n    <img class=\"rep-logo-img\" src=\"{{LOGO_URL}}\" alt=\"Logo\" />\n</div>",
-  "css_template": "#{{ID}} .rep-logo-box {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: {{#if LOGO_WIDTH}}{{LOGO_WIDTH}}px{{else}}150px{{/if}};\n    height: {{#if LOGO_HEIGHT}}{{LOGO_HEIGHT}}px{{else}}80px{{/if}};\n    background: {{#if TRANSPARENT}}transparent{{else}}{{PRIMARY_BG}}{{/if}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    box-sizing: border-box;\n    box-shadow: {{#if TRANSPARENT}}none{{else}}{{BOX_SHADOW}}{{/if}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: {{#if TRANSPARENT}}none{{else}}2px solid rgba(255,255,255,0.1){{/if}};\n}\n#{{ID}} .rep-logo-img {\n    max-width: 90%;\n    max-height: 90%;\n    object-fit: contain;\n    filter: {{#if TRANSPARENT}}none{{else}}drop-shadow(0 2px 4px rgba(0,0,0,0.5)){{/if}};\n}",
-  "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-logo-box\");\n    root.__slt_show = () => {\n        return GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n    };\n    root.__slt_hide = () => {\n        return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n    };\n})();",
-  "defaultFields": {
-    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/TV_Republika_logo_2024.svg/200px-TV_Republika_logo_2024.svg.png",
-    "LOGO_URL": "",
+  "_exportVersion": 2,
+  "template": {
+    "id": "e195ecc9-fb81-4208-8443-5a6f9ac9f3ac",
+    "name": "Republika Logo (01:07:36) (Eksport)",
     "type": "IMAGE",
-    "name": "Republika Logo (01:07:36)",
-    "title": "Title",
-    "titleHtml": "Title",
-    "subtitle": "Subtitle",
-    "introText": "PILNE",
-    "items": [
-      "Wiadomość 1",
-      "Wiadomość 2"
-    ],
-    "speed": 100,
-    "url": "data:image/webp;base64,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",
-    "variant": "custom",
-    "animation": {
-      "in": {
-        "type": "slide",
-        "direction": "right",
-        "duration": 0.5,
-        "delay": 0,
-        "ease": "ease-out"
+    "version": 1,
+    "html_template": "<div class=\"rep-logo-box\">\n    <img class=\"rep-logo-img\" src=\"{{LOGO_URL}}\" alt=\"Logo\" />\n</div>",
+    "css_template": "#{{ID}} .rep-logo-box {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: {{#if LOGO_WIDTH}}{{LOGO_WIDTH}}px{{else}}150px{{/if}};\n    height: {{#if LOGO_HEIGHT}}{{LOGO_HEIGHT}}px{{else}}80px{{/if}};\n    background: {{#if TRANSPARENT}}transparent{{else}}{{PRIMARY_BG}}{{/if}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    box-sizing: border-box;\n    box-shadow: {{#if TRANSPARENT}}none{{else}}{{BOX_SHADOW}}{{/if}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: {{#if TRANSPARENT}}none{{else}}2px solid rgba(255,255,255,0.1){{/if}};\n}\n#{{ID}} .rep-logo-img {\n    max-width: 90%;\n    max-height: 90%;\n    object-fit: contain;\n    filter: {{#if TRANSPARENT}}none{{else}}drop-shadow(0 2px 4px rgba(0,0,0,0.5)){{/if}};\n}",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-logo-box\");\n    root.__slt_show = () => {\n        return GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n    };\n    root.__slt_hide = () => {\n        return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n    };\n})();",
+    "defaultFields": {
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/TV_Republika_logo_2024.svg/200px-TV_Republika_logo_2024.svg.png",
+      "LOGO_URL": "",
+      "type": "IMAGE",
+      "name": "Republika Logo (01:07:36)",
+      "title": "Title",
+      "titleHtml": "Title",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "data:image/webp;base64,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",
+      "variant": "custom",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "right",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "slide",
+          "direction": "right",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
       },
-      "out": {
-        "type": "slide",
-        "direction": "right",
-        "duration": 0.5,
-        "delay": 0,
-        "ease": "ease-in"
+      "style": {
+        "background": {
+          "type": "transparent",
+          "color": "#000000",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "layout": {
+        "x": 1685,
+        "y": 880,
+        "scale": 1,
+        "layer": 9,
+        "side": "bottom-right",
+        "attachedToGraphicId": [
+          "ce3ee2c7-a579-4404-8302-ac5ff6e178ed",
+          "6f6d9625-5a3a-460f-9d45-07a44145a92b"
+        ],
+        "marginY": 105,
+        "marginX": 50,
+        "attachOffsetY": -125,
+        "width": 300,
+        "height": 300
       }
     },
-    "style": {
+    "defaultLayout": {
+      "x": 1685,
+      "y": 880,
+      "scale": 1,
+      "layer": 9,
+      "side": "bottom-right",
+      "attachedToGraphicId": [
+        "ce3ee2c7-a579-4404-8302-ac5ff6e178ed",
+        "6f6d9625-5a3a-460f-9d45-07a44145a92b"
+      ],
+      "marginY": 105,
+      "marginX": 50,
+      "attachOffsetY": -125,
+      "width": 300,
+      "height": 300
+    },
+    "ocgInputs": [
+      {
+        "id": "LOGO_URL",
+        "label": "URL Grafiki / Logo",
+        "default": "",
+        "type": "text"
+      }
+    ],
+    "defaultStyle": {
       "background": {
         "type": "transparent",
         "color": "#000000",
@@ -63,86 +131,22 @@
         "fontWeight": "normal"
       }
     },
-    "layout": {
-      "x": 1685,
-      "y": 880,
-      "scale": 1,
-      "layer": 9,
-      "side": "bottom-right",
-      "attachedToGraphicId": [
-        "ce3ee2c7-a579-4404-8302-ac5ff6e178ed",
-        "6f6d9625-5a3a-460f-9d45-07a44145a92b"
-      ],
-      "marginY": 105,
-      "marginX": 50,
-      "attachOffsetY": -125,
-      "width": 300,
-      "height": 300
+    "defaultAnimation": {
+      "in": {
+        "type": "slide",
+        "direction": "right",
+        "duration": 0.5,
+        "delay": 0,
+        "ease": "ease-out"
+      },
+      "out": {
+        "type": "slide",
+        "direction": "right",
+        "duration": 0.5,
+        "delay": 0,
+        "ease": "ease-in"
+      }
     }
   },
-  "defaultLayout": {
-    "x": 1685,
-    "y": 880,
-    "scale": 1,
-    "layer": 9,
-    "side": "bottom-right",
-    "attachedToGraphicId": [
-      "ce3ee2c7-a579-4404-8302-ac5ff6e178ed",
-      "6f6d9625-5a3a-460f-9d45-07a44145a92b"
-    ],
-    "marginY": 105,
-    "marginX": 50,
-    "attachOffsetY": -125,
-    "width": 300,
-    "height": 300
-  },
-  "ocgInputs": [
-    {
-      "id": "LOGO_URL",
-      "label": "URL Grafiki / Logo",
-      "default": "",
-      "type": "text"
-    }
-  ],
-  "defaultStyle": {
-    "background": {
-      "type": "transparent",
-      "color": "#000000",
-      "color2": "#000000",
-      "gradientAngle": 135,
-      "opacity": 1,
-      "borderColor": "#ffffff",
-      "borderWidth": 0,
-      "borderRadius": 0,
-      "subtitleBackgroundColor": "#000000"
-    },
-    "typography": {
-      "color": "#ffffff",
-      "fontFamily": "Bahnschrift",
-      "fontSize": 30,
-      "fontWeight": "bold"
-    },
-    "subtitleTypography": {
-      "color": "#eeeeee",
-      "fontFamily": "Arial",
-      "fontSize": 20,
-      "fontWeight": "normal"
-    }
-  },
-  "defaultAnimation": {
-    "in": {
-      "type": "slide",
-      "direction": "right",
-      "duration": 0.5,
-      "delay": 0,
-      "ease": "ease-out"
-    },
-    "out": {
-      "type": "slide",
-      "direction": "right",
-      "duration": 0.5,
-      "delay": 0,
-      "ease": "ease-in"
-    }
-  }
+  "graphics": []
 }
