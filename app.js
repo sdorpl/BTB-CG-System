@@ -1472,7 +1472,8 @@ function renderInspectorBody(graphic) {
                                     <span class="text-[9px] text-gray-300 font-bold uppercase">Pokaż etykietę (Wiper)</span>
                                 </label>
                             </div>
-                            
+
+                            ${(graphic.wiper?.show !== false) ? `
                             <div class="mb-3">
                                 ${ctrlLabel('Tło Etykiety Wipera')}
                                 <div class="grid grid-cols-2 gap-2 mb-2">
@@ -1539,6 +1540,7 @@ function renderInspectorBody(graphic) {
                                     <option value="monospace" ${graphic.wiper?.fontFamily === 'monospace' ? 'selected' : ''}>Monospace</option>
                                 </select>
                             </div>
+                            ` : ''}
 
                         </div>
                     ` : ''}
@@ -2165,8 +2167,8 @@ function handleInspectorChange(el, graphic) {
     // Commit to persistent draft
     window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(g));
 
-    // Re-render inspector when background type changes (shows/hides gradient fields) or layout side changes
-    if (field === 'style.background.type' || field === 'layout.side') {
+    // Re-render inspector when background type changes (shows/hides gradient fields), layout side changes, or wiper visibility toggles
+    if (field === 'style.background.type' || field === 'layout.side' || field === 'wiper.show') {
         renderInspectorBody(previewGraphic);
         return;
     }
