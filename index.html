@@ -254,10 +254,10 @@
   <div id="page-dashboard" class="flex flex-1 overflow-hidden">
 
     <!-- ====== LEFT COLUMN: MONITORS + SHOTBOX ==-->
-    <div id="dashboard-left" class="flex-1 flex flex-col min-w-0">
+    <div id="dashboard-left" class="flex-1 min-w-0 qc-bank grid h-full" style="grid-template-rows: minmax(15rem, 50vh) minmax(200px, 1fr);">
 
       <!-- MONITORS ROW -->
-      <div class="flex gap-2 p-2 border-b border-gray-800 bg-gray-925" style="height:55%; min-height: 400px;">
+      <div class="flex gap-2 p-2 border-b border-gray-800 bg-gray-925 min-h-0">
 
         <!-- PREVIEW Monitor -->
         <div class="flex-1 flex flex-col min-w-0" id="preview-monitor-wrap" style="display: flex; flex-direction: column;">
@@ -358,14 +358,14 @@
           </div>
         </div>
         <div id="shotbox-grid"
-          class="flex-1 overflow-y-auto custom-scrollbar p-3 grid grid-cols-3 gap-2 auto-rows-max content-start">
+          class="flex-1 overflow-y-auto custom-scrollbar p-3 grid gap-2 auto-rows-max content-start">
           <!-- Cards injected here -->
         </div>
       </div>
     </div>
 
     <!-- ====== RIGHT COLUMN: INSPECTOR PANEL == -->
-    <aside id="inspector-panel" class="w-72 flex-col bg-gray-900 border-l border-gray-800 shrink-0" style="display:none">
+    <aside id="inspector-panel" class="w-72 md:w-80 lg:w-96 flex-col bg-gray-900 border-l border-gray-800 shrink-0 qc-inspector" style="display:none; transition: width 0.3s ease;">
       <!-- Inspector Empty State -->
       <div id="inspector-empty" class="flex-1 flex flex-col items-center justify-center text-gray-600 p-8 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
@@ -419,7 +419,7 @@
             ZAPISZ ZMIANY
           </button>
 
-          <div class="flex gap-2">
+          <div class="flex gap-2 ins-actions-row">
             <button id="btn-ins-save-template"
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-green-900/40 hover:bg-green-600 text-green-500 hover:text-white py-1.5 rounded font-bold border border-green-900/50 transition-all hover:scale-[1.02] text-[9px] text-center leading-tight">
               <span>ZAPISZ JAKO</span>

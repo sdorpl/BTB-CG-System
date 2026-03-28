@@ -206,3 +206,45 @@ input:-webkit-autofill:active{
     background: #334155;
 }
 
+/* ============================================================ */
+/* RWD & CONTAINER QUERIES (Opcja 1)                            */
+/* ============================================================ */
+
+/* Zmienne CSS używane do płynnego układu UI */
+:root {
+    --monitor-aspect: 16/9;
+}
+
+/* Deklaracja kontenerów do elastycznego ułożenia przy mniejszych "oknach" */
+.qc-inspector {
+    container-type: inline-size;
+    container-name: inspector;
+}
+
+.qc-bank {
+    container-type: inline-size;
+    container-name: bank;
+}
+
+/* --- Breakpoints Inspektora --- */
+@container inspector (max-width: 320px) {
+    /* Wygaszamy rzędy przycisków w gorszych rozdziałkach okienka pop-up */
+    .ins-actions-row {
+        flex-direction: column !important;
+    }
+    .ins-actions-row > button {
+        width: 100% !important;
+    }
+}
+
+/* Grid shotbox auto-dostosowuje karty przy malejącej przestrzeni  */
+#shotbox-grid, .group-inner-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+}
+
+@container bank (max-width: 600px) {
+    #shotbox-grid, .group-inner-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+    }
+}
+

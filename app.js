@@ -408,12 +408,10 @@ async function init() {
 
         // ==== STANDALONE PANELS SETUP ====
         if (panelMode === 'bank') {
-            document.querySelector('header').style.display = 'none';
             document.getElementById('preview-monitor-wrap').parentElement.style.display = 'none';
             const inspector = document.getElementById('inspector-panel');
             if (inspector) inspector.style.display = 'none';
         } else if (panelMode === 'inspector') {
-            document.querySelector('header').style.display = 'none';
             document.getElementById('dashboard-left').style.display = 'none';
             const inspector = document.getElementById('inspector-panel');
             if (inspector) {
@@ -897,7 +895,7 @@ function renderShotbox() {
         const isCollapsed = window._groupCollapseState[grp.id];
 
         const groupWrapper = document.createElement('div');
-        groupWrapper.className = 'col-span-3 bg-[#111] border border-gray-800 rounded-lg flex flex-col transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.5)]';
+        groupWrapper.className = 'col-span-full bg-[#111] border border-gray-800 rounded-lg flex flex-col transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.5)]';
         groupWrapper.style.borderLeft = `4px solid ${grp.color || '#555'}`;
         groupWrapper.setAttribute('data-group-container-id', grp.id);
 
@@ -928,7 +926,7 @@ function renderShotbox() {
         groupWrapper.appendChild(header);
 
         const innerGrid = document.createElement('div');
-        innerGrid.className = 'group-inner-grid grid grid-cols-3 gap-2 p-2 pt-2 transition-all duration-300 min-h-[10px]';
+        innerGrid.className = 'group-inner-grid grid gap-2 p-2 pt-2 transition-all duration-300 min-h-[10px]';
         if (isCollapsed) {
             innerGrid.style.display = 'none';
         }
@@ -3808,12 +3806,23 @@ function createGraphicFromTemplate(templateIdOrTpl) {
         name: tpl.name,
         visible: false,
         title: tpl.defaultFields?.title || tpl.name,
-        titleHtml: tpl.defaultFields?.title || tpl.name,
+        titleHtml: tpl.defaultFields?.titleHtml || tpl.defaultFields?.title || tpl.name,
         subtitle: tpl.defaultFields?.subtitle || '',
         items: tpl.defaultFields?.items || [],
         speed: tpl.defaultFields?.speed !== undefined ? tpl.defaultFields.speed : 100,
+        squashing: tpl.defaultFields?.squashing !== undefined ? tpl.defaultFields.squashing : false,
+        useCodeOverride: tpl.defaultFields?.useCodeOverride || false,
+        wiper: tpl.defaultFields?.wiper ? JSON.parse(JSON.stringify(tpl.defaultFields.wiper)) : undefined,
         fields: (() => {
             const f = tpl.defaultFields ? JSON.parse(JSON.stringify(tpl.defaultFields)) : {};
+            delete f.title;
+            delete f.titleHtml;
+            delete f.subtitle;
+            delete f.speed;
+            delete f.squashing;
+            delete f.items;
+            delete f.useCodeOverride;
+            delete f.wiper;
             // Initialize all ocgInputs with their defaults if not already present
             (tpl.ocgInputs || []).forEach(inp => {
                 if (f[inp.id] === undefined) f[inp.id] = inp.default || '';
@@ -4279,17 +4288,28 @@ function bindGlobalEvents() {
         newTpl.id = crypto.randomUUID();
         newTpl.name = g.name + ' (Szablon)';
         
+        newTpl.type = g.type || newTpl.type;
+        if (g.useCodeOverride) {
+            newTpl.html_template = g.html_override || newTpl.html_template;
+            newTpl.css_template = g.css_override || newTpl.css_template;
+            newTpl.js_template = g.js_override || newTpl.js_template;
+        }
+
         newTpl.defaultFields = newTpl.defaultFields || {};
-        Object.assign(newTpl.defaultFields, JSON.parse(JSON.stringify(g)));
-        delete newTpl.defaultFields.id;
-        delete newTpl.defaultFields.templateId;
-        delete newTpl.defaultFields.visible;
-        delete newTpl.defaultFields.groupId;
+        if (g.fields) Object.assign(newTpl.defaultFields, JSON.parse(JSON.stringify(g.fields)));
         
+        if (g.title !== undefined) newTpl.defaultFields.title = g.title;
+        if (g.titleHtml !== undefined) newTpl.defaultFields.titleHtml = g.titleHtml;
+        if (g.subtitle !== undefined) newTpl.defaultFields.subtitle = g.subtitle;
+        if (g.speed !== undefined) newTpl.defaultFields.speed = g.speed;
+        if (g.squashing !== undefined) newTpl.defaultFields.squashing = g.squashing;
+        if (g.items !== undefined) newTpl.defaultFields.items = JSON.parse(JSON.stringify(g.items));
+        if (g.useCodeOverride !== undefined) newTpl.defaultFields.useCodeOverride = g.useCodeOverride;
+        if (g.wiper !== undefined) newTpl.defaultFields.wiper = JSON.parse(JSON.stringify(g.wiper));
+
         if (g.style) newTpl.defaultStyle = JSON.parse(JSON.stringify(g.style));
         if (g.animation) newTpl.defaultAnimation = JSON.parse(JSON.stringify(g.animation));
         if (g.layout) newTpl.defaultLayout = JSON.parse(JSON.stringify(g.layout));
-        if (g.wiper) newTpl.defaultFields.wiper = JSON.parse(JSON.stringify(g.wiper));
 
         state.templates.push(newTpl);
         saveState();
@@ -4322,17 +4342,28 @@ function bindGlobalEvents() {
         exportTpl.id = crypto.randomUUID();
         exportTpl.name = g.name + ' (Eksport)';
         
+        exportTpl.type = g.type || exportTpl.type;
+        if (g.useCodeOverride) {
+            exportTpl.html_template = g.html_override || exportTpl.html_template;
+            exportTpl.css_template = g.css_override || exportTpl.css_template;
+            exportTpl.js_template = g.js_override || exportTpl.js_template;
+        }
+
         exportTpl.defaultFields = exportTpl.defaultFields || {};
-        Object.assign(exportTpl.defaultFields, JSON.parse(JSON.stringify(g)));
-        delete exportTpl.defaultFields.id;
-        delete exportTpl.defaultFields.templateId;
-        delete exportTpl.defaultFields.visible;
-        delete exportTpl.defaultFields.groupId;
+        if (g.fields) Object.assign(exportTpl.defaultFields, JSON.parse(JSON.stringify(g.fields)));
+        
+        if (g.title !== undefined) exportTpl.defaultFields.title = g.title;
+        if (g.titleHtml !== undefined) exportTpl.defaultFields.titleHtml = g.titleHtml;
+        if (g.subtitle !== undefined) exportTpl.defaultFields.subtitle = g.subtitle;
+        if (g.speed !== undefined) exportTpl.defaultFields.speed = g.speed;
+        if (g.squashing !== undefined) exportTpl.defaultFields.squashing = g.squashing;
+        if (g.items !== undefined) exportTpl.defaultFields.items = JSON.parse(JSON.stringify(g.items));
+        if (g.useCodeOverride !== undefined) exportTpl.defaultFields.useCodeOverride = g.useCodeOverride;
+        if (g.wiper !== undefined) exportTpl.defaultFields.wiper = JSON.parse(JSON.stringify(g.wiper));
 
         if (g.style) exportTpl.defaultStyle = JSON.parse(JSON.stringify(g.style));
         if (g.animation) exportTpl.defaultAnimation = JSON.parse(JSON.stringify(g.animation));
         if (g.layout) exportTpl.defaultLayout = JSON.parse(JSON.stringify(g.layout));
-        if (g.wiper) exportTpl.defaultFields.wiper = JSON.parse(JSON.stringify(g.wiper));
         
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportTpl, null, 2));
         const el = document.createElement('a');
@@ -5025,8 +5056,12 @@ function bindTickerEditorEvents() {
 // 13. PRESET MANAGEMENT
 // ===========================================================
 
-let _activePresetId = null;
-
+function getActivePresetId() { return state.settings?.activePresetId || null; }
+function setActivePresetId(id) {
+    if (!state.settings) state.settings = {};
+    state.settings.activePresetId = id;
+    saveState();
+}
 function renderPresetSelect() {
     const sel = document.getElementById('preset-select');
     if (!sel) return;
@@ -5040,14 +5075,14 @@ function renderPresetSelect() {
         opt.textContent = p.name;
         sel.appendChild(opt);
     });
-    // Determine what to select: _activePresetId takes priority, then last user selection
-    const preferredId = _activePresetId || currentVal;
+    // Determine what to select: activePresetId takes priority, then last user selection
+    const preferredId = getActivePresetId() || currentVal;
     if (preferredId && presets.some(p => p.id === preferredId)) {
         sel.value = preferredId;
     }
-    // Clear stale _activePresetId if it no longer exists
-    if (_activePresetId && !presets.some(p => p.id === _activePresetId)) {
-        _activePresetId = null;
+    // Clear stale activePresetId if it no longer exists
+    if (getActivePresetId() && !presets.some(p => p.id === getActivePresetId())) {
+        setActivePresetId(null);
     }
 }
 
@@ -5065,7 +5100,7 @@ function savePreset() {
             graphics: JSON.parse(JSON.stringify(state.graphics)),
             groups: JSON.parse(JSON.stringify(state.groups))
         });
-        _activePresetId = selectedId;
+        setActivePresetId(selectedId);
     } else {
         // New preset — ask for name
         const name = prompt('Nazwa nowego presetu:', 'Program A');
@@ -5077,7 +5112,7 @@ function savePreset() {
             graphics: JSON.parse(JSON.stringify(state.graphics)),
             groups: JSON.parse(JSON.stringify(state.groups))
         });
-        _activePresetId = newId;
+        setActivePresetId(newId);
     }
 }
 
@@ -5093,7 +5128,7 @@ function loadPreset() {
         if (!confirm(`Załadować preset "${preset.name}"?\n\nWszystkie aktywne grafiki zostaną wyłączone.`)) return;
     }
 
-    _activePresetId = id;
+    setActivePresetId(id);
     socket.emit('loadPreset', id);
 }
 
@@ -5104,7 +5139,7 @@ function deletePreset() {
     const preset = (state.presets || []).find(p => p.id === id);
     if (!preset) return;
     if (!confirm(`Usunąć preset "${preset.name}"? Tej operacji nie można cofnąć.`)) return;
-    if (_activePresetId === id) _activePresetId = null;
+    if (getActivePresetId() === id) setActivePresetId(null);
     socket.emit('deletePreset', id);
 }
 
@@ -5170,7 +5205,7 @@ function importPreset(file) {
                 graphics: data.graphics,
                 groups: data.groups || []
             });
-            _activePresetId = newId;
+            setActivePresetId(newId);
         } catch (err) {
             alert('Błąd odczytu pliku: ' + err.message);
         }
@@ -5186,6 +5221,15 @@ function bindPresetEvents() {
     bind('btn-preset-export', 'click', exportPreset);
     const fileInput = document.getElementById('preset-import-file');
     if (fileInput) fileInput.addEventListener('change', (e) => { importPreset(e.target.files[0]); e.target.value = ''; });
+
+    const presetSelect = document.getElementById('preset-select');
+    if (presetSelect) {
+        presetSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                setActivePresetId(e.target.value);
+            }
+        });
+    }
 }
 
 // ===========================================================
