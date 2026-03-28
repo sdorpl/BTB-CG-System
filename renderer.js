@@ -117,10 +117,6 @@
                 });
 
                 if (existingHash !== newHash) {
-                    console.log('HASH MISMATCH FOR:', graphic.id);
-                    console.log('OLD HASH:', existingHash);
-                    console.log('NEW HASH:', newHash);
-                    
                     const oldMeta = activeGraphics[graphic.id];
                     let durationMs = 550;
                     try {
@@ -350,7 +346,7 @@
                         rootEl.classList.add('active');
                         // Legacy support: also add .active to the first child (often .lt-container)
                         if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
-                        rootEl.setAttribute('data-squash-enabled', data.style?.typography?.squatEnabled !== false);
+                        rootEl.setAttribute('data-squash-enabled', data.style?.typography?.squashEnabled !== false);
                     }
                     if (rootEl.__slt_show) {
                         rootEl.__slt_show();
@@ -616,13 +612,14 @@
                     else if (xS === 'center') cssStr += `\n#${instanceId} { justify-content: center; }`;
                 }
 
+                // Apply line-height from context (must be added to cssStr BEFORE setting styleEl.textContent)
+                cssStr += `\n#${instanceId} { line-height: ${context.LINE_HEIGHT || 1.4}; }`;
+
                 styleEl.textContent = cssStr;
                 if (options.instant) {
                     // Also kill all transitions and animations globally
                     styleEl.textContent += `\n#${instanceId}, #${instanceId} * { transition: none !important; transition-delay: 0s !important; animation: none !important; }`;
                 }
-                // Apply line-height from context
-                cssStr += `\n#${instanceId} { line-height: ${context.LINE_HEIGHT || 1.4}; }`;
 
                 innerContainer.appendChild(styleEl);
 
@@ -630,7 +627,7 @@
                 const wrapperDiv = document.createElement('div');
                 wrapperDiv.id = instanceId;
                 wrapperDiv.className = 'lt-root';
-                wrapperDiv.setAttribute('data-squash-enabled', graphic.style?.typography?.squatEnabled !== false);
+                wrapperDiv.setAttribute('data-squash-enabled', graphic.style?.typography?.squashEnabled !== false);
                 wrapperDiv.innerHTML = htmlStr;
                 innerContainer.appendChild(wrapperDiv);
 
@@ -825,11 +822,18 @@
         const wiperGleamBg = (() => {
             const color = wiperSettings.gleamColor || '#ffffff';
             const opacity = wiperSettings.gleamOpacity ?? 0.4;
-            // Convert hexagonal opacity (e.g. 0.4 -> 66 in hex) or just use rgba
-            // For simplicity and compatibility with existing templating, we use rgba
-            const r = parseInt(color.slice(1, 3), 16);
-            const g = parseInt(color.slice(3, 5), 16);
-            const b = parseInt(color.slice(5, 7), 16);
+            let r = 255, g = 255, b = 255;
+            // Support both #rrggbb hex and rgba(...) formats
+            const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (rgbaMatch) {
+                r = parseInt(rgbaMatch[1]);
+                g = parseInt(rgbaMatch[2]);
+                b = parseInt(rgbaMatch[3]);
+            } else if (color.startsWith('#') && color.length >= 7) {
+                r = parseInt(color.slice(1, 3), 16);
+                g = parseInt(color.slice(3, 5), 16);
+                b = parseInt(color.slice(5, 7), 16);
+            }
             return `linear-gradient(90deg, rgba(${r},${g},${b},0) 0%, rgba(${r},${g},${b},${opacity}) 50%, rgba(${r},${g},${b},0) 100%)`;
         })();
 
@@ -944,7 +948,6 @@
             ctx.LOGO_URL = graphic.url;
         }
 
-        console.log("RENDERER CONTEXT FOR:", graphic.id, tpl.id, ctx);
         return ctx;
     }
 

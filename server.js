@@ -244,45 +244,29 @@ function loadStateFromDB(callback) {
     });
 }
 
-// Funkcja synchronizująca pojedynczy element 'graphics' w bazie
-function syncGraphicsToDB(graphicsArray) {
+// Pojedyncza funkcja synchronizująca cały stan (settings, templates, groups, graphics) w jednej transakcji.
+// Zastępuje poprzednie syncGraphicsToDB + syncStateToDB, eliminując ryzyko race condition przy dwóch BEGIN TRANSACTION.
+function syncFullStateToDB(state) {
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
-        db.run("DELETE FROM graphics"); // Czyścimy i wypełniamy od nowa w obrębie transakcji by zachować kolejność
-        
-        if (graphicsArray && graphicsArray.length > 0) {
-            const stmt = db.prepare('INSERT INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
-            for (const g of graphicsArray) {
-                const visibleInt = g.visible ? 1 : 0;
-                stmt.run(g.id, g.templateId || null, g.name || '', g.groupId || null, visibleInt, JSON.stringify(g));
-            }
-            stmt.finalize();
-        }
-        db.run("COMMIT");
-    });
-}
 
-// Podstawowa synchronizacja całej reszty (templates, groups, settings)
-function syncStateToDB(state) {
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-        
         // 1. Settings
         if (state.settings) {
             db.run("INSERT OR REPLACE INTO settings (id, data) VALUES (1, ?)", [JSON.stringify(state.settings)]);
         }
 
-        // 2. Templates
-        if (state.templates && state.templates.length > 0) {
+        // 2. Templates — pomijamy aktualizację tylko jeśli pole jest undefined (nie wysłane przez klienta),
+        //    ale zapisujemy nawet pustą tablicę gdy użytkownik świadomie usunął wszystkie szablony.
+        if (state.templates !== undefined) {
             db.run("DELETE FROM templates");
-            const stmtTpl = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
-            for (const t of state.templates) {
-                if (!t.id) continue;
-                stmtTpl.run(t.id, JSON.stringify(t));
+            if (state.templates && state.templates.length > 0) {
+                const stmtTpl = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
+                for (const t of state.templates) {
+                    if (!t.id) continue;
+                    stmtTpl.run(t.id, JSON.stringify(t));
+                }
+                stmtTpl.finalize();
             }
-            stmtTpl.finalize();
-        } else {
-            console.warn("[!] syncStateToDB: Skipping templates update - state.templates is empty or missing. (Prevention of wiping DB)");
         }
 
         // 3. Groups
@@ -293,6 +277,17 @@ function syncStateToDB(state) {
                 stmtGrp.run(g.id, JSON.stringify(g));
             }
             stmtGrp.finalize();
+        }
+
+        // 4. Graphics
+        db.run("DELETE FROM graphics");
+        if (state.graphics && state.graphics.length > 0) {
+            const stmtGfx = db.prepare('INSERT INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
+            for (const g of state.graphics) {
+                const visibleInt = g.visible ? 1 : 0;
+                stmtGfx.run(g.id, g.templateId || null, g.name || '', g.groupId || null, visibleInt, JSON.stringify(g));
+            }
+            stmtGfx.finalize();
         }
 
         db.run("COMMIT");
@@ -336,9 +331,8 @@ io.on('connection', (socket) => {
         // Broadcast the updated state to ALL connected clients
         io.emit('stateUpdated', appState);
         
-        // Persist to disk — zawsze synchronizuj grafiki (nawet gdy pusta tablica)
-        syncGraphicsToDB(newState.graphics || []);
-        syncStateToDB(newState);
+        // Persist to disk — jedna atomowa transakcja dla całego stanu
+        syncFullStateToDB(newState);
     });
 
     // ── PRESET MANAGEMENT ──────────────────────────────────────
@@ -382,8 +376,7 @@ io.on('connection', (socket) => {
         const newState = { ...appState, graphics: newGraphics, groups: newGroups };
         appState = newState;
         io.emit('stateUpdated', appState);
-        syncGraphicsToDB(newGraphics);
-        syncStateToDB(newState);
+        syncFullStateToDB(newState);
     });
 
     socket.on('set_background', (color) => {

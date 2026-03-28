@@ -1606,7 +1606,7 @@ function renderInspectorBody(graphic) {
                         
                         <div class="flex items-center gap-2 mb-3">
                             <label class="flex items-center gap-2 cursor-pointer select-none">
-                                <input type="checkbox" data-field="style.typography.squatEnabled" ${graphic.style?.typography?.squatEnabled !== false ? 'checked' : ''} class="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-0 focus:ring-offset-0">
+                                <input type="checkbox" data-field="style.typography.squashEnabled" ${graphic.style?.typography?.squashEnabled !== false ? 'checked' : ''} class="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-0 focus:ring-offset-0">
                                 <span class="text-[10px] text-gray-400">Automatyczne ściskanie tekstu</span>
                             </label>
                         </div>
