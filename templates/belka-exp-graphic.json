@@ -1,0 +1,569 @@
+{
+  "_exportVersion": 2,
+  "template": {
+    "id": "belka-exp-graphic",
+    "name": "Belka EXP z Grafiką",
+    "type": "LOWER_THIRD",
+    "version": 1,
+    "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-main-content\">\n        <div class=\"rep-title\">{{{TITLE}}}</div>\n    </div>\n    {{#if SIDE_IMAGE}}\n        <div class=\"rep-right-image\">\n            <img src=\"{{SIDE_IMAGE}}\" alt=\"Graphic\" />\n        </div>\n    {{/if}}\n</div>",
+    "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-main-content {\n    flex: 1;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-right-image {\n    margin-left: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    height: 100%;\n}\n#{{ID}} .rep-right-image img {\n    max-height: 80px;\n    max-width: 150px;\n    object-fit: contain;\n}",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+    "defaultFields": {
+      "title": "Tytuł z grafiką",
+      "primaryColor": "#ffffff",
+      "primaryBg": "#c8102e",
+      "titleColor": "#ffffff",
+      "sideImage": "",
+      "TITLE": "",
+      "SUBTITLE": ""
+    },
+    "ocgInputs": [
+      {
+        "id": "TITLE",
+        "label": "Tytuł / Imię Nazwisko",
+        "default": "",
+        "type": "text"
+      },
+      {
+        "id": "SUBTITLE",
+        "label": "Podtytuł / Funkcja",
+        "default": "",
+        "type": "text"
+      }
+    ]
+  },
+  "graphics": [
+    {
+      "id": "e81baea2-f245-43b4-b50d-eafc68bc6d19",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:31:56)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "316d84aa-fc27-48c4-ba72-f3f5bee285eb",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:34:47)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      },
+      "sideImage": "data:image/webp;base64,UklGRsQBAABXRUJQVlA4TLgBAAAvOoAMEA6IkSTHbfJPxUkwBj80sKdfobiAu+UhAaxsk/0PCAIAlo1m27Zt27Zt62wj33bgtm0k0Rhk77l2vfOGuS1reI7LVQhQTOOUk+x5QYwClyRLD7Ig9h/2vRLGsIIkCcMh3pl7QxfZCBgCtF4DVJ36wJ//nnJy2PMNkw1+eTmSrYT64bLvJzeXVeQHw1QHQJSqy4Rl6HS1IAasYsAaFoQ9R1J/QmsYgIlVslZh3xQdOdARp2yT2oxMYsf57DTbvMFHgLuFXE1koaY9pK2Bmnk/IWpKugpzMDOx48gpwZWCmBkdd4TsoZ8JHWcnhZALpmTf78wNS4+eEob84gjn9o5DXZ5+OoG7dPGxpeOqTK5++jkv+I5bEHZPeM0oe6N+/DFtRthnmNO27TiizRgzBi3ZceiIcNrOyQ4sw78ZBnLedv51kKPWUE6U3T2h078bXE8Vu0LB94PYCNWE+zeTzus4SwOkEzqdlbqTkPMfjn9EV2F/jUTCmHnbv6OcGjclAOv0Oon8yQlczSpo+q55/B+9twb4xRPc4fcfHwDB9dRKsOctTq815oO7fczruENbSP/+Tz0Mhg=="
+    },
+    {
+      "id": "d23d4600-7428-4a18-a92c-3bdf8b98054b",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:36:26)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "ffa9cd68-875d-45dd-a571-970f3f0749ae",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:37:16)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "f349ea2c-8642-40f0-ac50-8db2b79636c7",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:38:43)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "9d53a666-0fff-4c34-9bbf-9ef91e7a2452",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:40:40)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "fc45fbf4-a9a9-4892-92a0-7f63f3a3ac83",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:48:01)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "Tytuł z grafiką",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "5c9bf877-89a9-44ff-ab55-292f94fd377e",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka EXP z Grafiką (20:52:11)",
+      "title": "Tytuł z grafiką",
+      "titleHtml": "<span style=\"font-size: 56px;\"><span style=\"font-size: 64px;\"><span style=\"font-size: 48px;\">Tytuł z grafiką</span></span></span>",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "belka-exp-graphic",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#233c76",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 100,
+        "y": 800,
+        "scale": 1,
+        "layer": 1,
+        "height": 0,
+        "width": 0
+      },
+      "sideImage": "data:image/png;base64,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"
+    }
+  ]
+}

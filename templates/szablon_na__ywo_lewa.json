@@ -1,0 +1,106 @@
+{
+  "_exportVersion": 2,
+  "template": {
+    "id": "d6fcc3ac-d0c8-4c2e-a402-245e38af5ee3",
+    "name": "NA ŻYWO lewa (Eksport)",
+    "type": "LOWER_THIRD",
+    "version": 1,
+    "html_template": "<div class=\"na-zywo-wrapper\">\n    <div class=\"na-zywo-container\">\n        <span class=\"na-zywo-dot\"></span>\n        <span class=\"na-zywo-text\">{{{TITLE}}}</span>\n    </div>\n</div>",
+    "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n#{{ID}} .na-zywo-dot {\n    width: 14px;\n    height: 14px;\n    background-color: #ffffff;\n    border-radius: 50%;\n    margin-right: 12px;\n    animation: pulse-dot 1s infinite alternate;\n    box-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n@keyframes pulse-dot {\n    0% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+    "defaultFields": {
+      "title": "na żywo",
+      "primaryColor": "#b91c1c",
+      "type": "LOWER_THIRD",
+      "name": "NA ŻYWO lewa",
+      "subtitle": "BIAŁYSTOK",
+      "introText": "",
+      "variant": "custom",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.9,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.8,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#b91c1c",
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 10,
+          "color2": "#8f2e24",
+          "gradientAngle": 160
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 24,
+          "fontWeight": "bold"
+        }
+      },
+      "layout": {
+        "x": 50,
+        "y": 50,
+        "layer": 1,
+        "scale": 1,
+        "side": "custom"
+      },
+      "titleHtml": "<span style=\"font-family: &quot;Roboto Condensed&quot;;\"><b><span style=\"font-size: 24px; font-family: Bahnschrift;\">na żywo</span></b></span>"
+    },
+    "defaultLayout": {
+      "x": 50,
+      "y": 50,
+      "layer": 1,
+      "scale": 1,
+      "side": "custom"
+    },
+    "ocgInputs": [],
+    "defaultStyle": {
+      "background": {
+        "type": "gradient",
+        "color": "#b91c1c",
+        "opacity": 1,
+        "borderColor": "#ffffff",
+        "borderWidth": 0,
+        "borderRadius": 10,
+        "color2": "#8f2e24",
+        "gradientAngle": 160
+      },
+      "typography": {
+        "color": "#ffffff",
+        "fontFamily": "Arial",
+        "fontSize": 24,
+        "fontWeight": "bold"
+      }
+    },
+    "defaultAnimation": {
+      "in": {
+        "type": "zoom",
+        "direction": "right",
+        "duration": 0.9,
+        "delay": 0,
+        "ease": "ease-in"
+      },
+      "out": {
+        "type": "fade",
+        "direction": "left",
+        "duration": 0.8,
+        "delay": 0,
+        "ease": "ease-in"
+      }
+    }
+  },
+  "graphics": []
+}

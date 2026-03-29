@@ -1,0 +1,125 @@
+{
+  "_exportVersion": 2,
+  "template": {
+    "id": "57361d7e-32a0-48d6-8600-5fa71f7fd9a9",
+    "name": "PILNE (OCG) (Eksport)",
+    "type": "TICKER",
+    "version": 1,
+    "features": {
+      "wiper": true
+    },
+    "html_template": "<div class=\"news-container-v8\">\n    <div class=\"news-text-v8\">{{#if ITEMS}}{{{ITEMS.[0]}}}{{else}}ŁADOWANIE...{{/if}}</div>\n    <div class=\"wiper-v8\" {{#unless WIPER_SHOW}}style=\"display:none;\"{{/unless}}><span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span></div>\n    <div id=\"f-news-list\" style=\"display:none;\" data-b64=\"{{ITEMS_B64}}\"></div>\n</div>",
+    "css_template": "#{{ID}} .news-container-v8 {\nposition: absolute;\nbottom: 0;\nleft: 0;\nwidth: var(--v-width, 100%);\nmin-height: var(--v-height, 60px);\nbackground: {{PRIMARY_BG}};\ncolor: {{TITLE_COLOR}};\ndisplay: flex;\nalign-items: center;\noverflow: hidden;\nborder: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\nborder-radius: {{BORDER_RADIUS}}px;\nbox-sizing: border-box;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nopacity: 0;\ntransform: translateY(100px);\nbox-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .news-text-v8 {\nposition: absolute;\nwidth: auto;\nleft: 0;\nwhite-space: nowrap;\ntext-align: left;\nfont-size: {{TITLE_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\npadding-left: var(--wiper-width, 170px);\npadding-right: 20px;\npadding-top: {{PADDING_Y}}px;\npadding-bottom: {{PADDING_Y}}px;\nbox-sizing: border-box;\nz-index: 1;\ntransition: opacity 0.4s ease-in-out;\nopacity: 0;\n}\n#{{ID}} .news-text-v8.visible {\nopacity: 1;\n}\n#{{ID}} .wiper-v8 {\nposition: absolute;\nleft: 0;\nwidth: auto;\nmin-width: 150px;\npadding: 0 40px;\nheight: 100%;\nbackground: {{WIPER_BG}};\ndisplay: flex;\nalign-items: center;\njustify-content: center;\nbox-shadow: 5px 0 15px rgba(0,0,0,0.5);\nborder-radius: {{BORDER_RADIUS}}px;\nz-index: 2;\nbox-sizing: border-box;\noverflow: hidden;\n}\n#{{ID}} .wiper-v8::before {\ncontent: '';\nposition: absolute;\ntop: 0;\nleft: -100%;\nwidth: 60%;\nheight: 100%;\ndisplay: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\nbackground: {{WIPER_GLEAM_BG}};\ntransform: skewX(-20deg);\npointer-events: none;\nanimation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .wiper-text-v8 {\nfont-weight: {{WIPER_FONT_WEIGHT}};\nfont-size: {{WIPER_FONT_SIZE}}px;\nfont-family: {{WIPER_FONT}}, sans-serif;\ncolor: {{WIPER_TEXT_COLOR}};\nletter-spacing: {{WIPER_LETTER_SPACING}}px;\nposition: relative;\nz-index: 1;\nwhite-space: nowrap;\n}\n#{{ID}} .wiper-v8.move-right {\nanimation: slide-right-v8 1s linear forwards;\n}\n#{{ID}} .wiper-v8.snap-back {\nanimation: slide-back-v8 0.5s ease-in-out forwards;\n}\n@keyframes slide-right-v8 {\n0% { left: 0%; }\n100% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n}\n@keyframes slide-back-v8 {\n0% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n100% { left: 0%; }\n}\n@keyframes sweep-gleam-v8 {\n0% { left: -100%; }\n100% { left: 200%; }\n}",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector('.news-container-v8');\n    const textElement = root.querySelector('.news-text-v8');\n    const wiper = root.querySelector('.wiper-v8');\n    const wiperTextEl = root.querySelector('.wiper-text-v8');\n    const gleamEl = root.querySelector('.wiper-v8-gleam');\n    const dataEl = root.querySelector('#f-news-list');\n    if(!textElement || !container || !wiper || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n    const WIPER_SHOW = \"{{WIPER_SHOW}}\" !== \"false\";\n    if (wiper && !WIPER_SHOW) wiper.style.display = 'none';\n\n    let newsList = [];\n    const b64 = dataEl.getAttribute('data-b64');\n    if (b64) {\n        try { newsList = JSON.parse(decodeURIComponent(escape(atob(b64 + \"=\".repeat((4 - b64.length % 4) % 4))))); } catch(e) { try { newsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(err) {} }\n    } else {\n        try { newsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(e) {}\n    }\n    if(newsList.length === 0) newsList = [\"BRAK WIADOMOŚCI\"];\n\n    let currentIndex = 0;\n    let activeTimeouts = [];\n    let cycleRunning = false;\n\n    function adjustFontSize() {\n        const baseFontSizeStr = \"{{TITLE_SIZE}}\";\n        const baseFontSize = parseFloat(baseFontSizeStr) || 40;\n        const wiperEl = root.querySelector('.wiper-v8');\n        const wiperWidth = (wiperEl && wiperEl.style.display !== 'none') ? wiperEl.offsetWidth : 0;\n        if (wiperEl) {\n            container.style.setProperty('--wiper-width', (wiperWidth || 20) + 'px');\n        }\n        const leftPadding = wiperWidth > 0 ? (wiperWidth + 20) : 20;\n        const maxWidth = container.offsetWidth - (leftPadding + 20);\n        \n        textElement.style.paddingLeft = leftPadding + 'px';\n        textElement.style.fontSize = baseFontSize + \"px\";\n        \n        let currentWidth = textElement.scrollWidth - leftPadding;\n        if (currentWidth > maxWidth && currentWidth > 0) {\n            const newSize = (maxWidth / currentWidth) * baseFontSize;\n            textElement.style.fontSize = Math.min(newSize, baseFontSize) + \"px\";\n        }\n    }\n\n    function runGleam() {\n        if (!cycleRunning || !{{WIPER_GLEAM_ENABLED}}) return;\n        if (!gleamEl) return;\n        \n        gsap.fromTo(gleamEl, \n            { left: '-150%' }, \n            { \n                left: '150%', \n                duration: {{WIPER_GLEAM_DURATION}} || 2, \n                ease: \"power1.inOut\",\n                onComplete: () => {\n                    activeTimeouts.push(setTimeout(runGleam, {{WIPER_GLEAM_FREQUENCY}} * 1000));\n                }\n            }\n        );\n    }\n\n    function animateWiper(labelText) {\n        const label = (labelText || '').trim();\n        const show = WIPER_SHOW && !!label;\n        if (!wiper) return;\n        gsap.killTweensOf(wiper);\n        if (!show) {\n            if (wiper.style.display !== 'none') {\n                gsap.to(wiper, {\n                    width: 0, minWidth: 0, opacity: 0, duration: 0.3, ease: 'power2.in',\n                    onUpdate: () => container.style.setProperty('--wiper-width', wiper.offsetWidth + 'px'),\n                    onComplete: () => {\n                        wiper.style.display = 'none';\n                        gsap.set(wiper, { clearProps: 'width,minWidth,opacity' });\n                        container.style.setProperty('--wiper-width', '0px');\n                    }\n                });\n            }\n            return;\n        }\n        wiperTextEl.innerText = label;\n        if (wiper.style.display === 'none') {\n            wiper.style.display = 'flex';\n            const naturalW = wiper.offsetWidth;\n            gsap.fromTo(wiper,\n                { width: 0, minWidth: 0, opacity: 0 },\n                { width: naturalW, minWidth: naturalW, opacity: 1, duration: 0.4, ease: 'power2.out',\n                  onUpdate: () => container.style.setProperty('--wiper-width', wiper.offsetWidth + 'px'),\n                  onComplete: () => { gsap.set(wiper, { clearProps: 'width,minWidth,opacity' }); container.style.setProperty('--wiper-width', wiper.offsetWidth + 'px'); }\n                }\n            );\n        } else {\n            const currentW = wiper.offsetWidth;\n            gsap.fromTo(wiper, { width: currentW }, {\n                width: 'auto', duration: 0.35, ease: 'power2.inOut',\n                onUpdate: () => container.style.setProperty('--wiper-width', wiper.offsetWidth + 'px'),\n                onComplete: () => { gsap.set(wiper, { clearProps: 'width' }); container.style.setProperty('--wiper-width', wiper.offsetWidth + 'px'); }\n            });\n        }\n    }\n\n    function runCycle() {\n        if (!cycleRunning) return;\n        textElement.classList.remove('visible');\n        const currentMsg = newsList[currentIndex];\n        const text = typeof currentMsg === 'object' ? (currentMsg.text || \"\") : currentMsg;\n        const category = typeof currentMsg === 'object' ? (currentMsg.category || \"\") : \"\";\n        \n        textElement.innerText = text;\n        \n        const labelText = category || DEFAULT_WIPER;\n        animateWiper(labelText);\n\n        adjustFontSize();\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.add('visible');\n        }, 100));\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.remove('visible');\n            activeTimeouts.push(setTimeout(() => {\n                if(!cycleRunning) return;\n                if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 move-right';\n                activeTimeouts.push(setTimeout(() => {\n                    if(!cycleRunning) return;\n                    if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 snap-back';\n                    activeTimeouts.push(setTimeout(() => {\n                        if(!cycleRunning) return;\n                        currentIndex = (currentIndex + 1) % newsList.length;\n                        runCycle();\n                    }, 500));\n                }, 1000));\n            }, 400));\n        }, 4000));\n    }\n\n    root.__slt_show = () => {\n        cycleRunning = true;\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 1, y: 0, duration: 0.6, ease: \"power2.out\" });\n        tl.add(() => {\n            runCycle();\n            runGleam();\n        }, \"+ =0.1\");\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        cycleRunning = false;\n        activeTimeouts.forEach(t => clearTimeout(t));\n        activeTimeouts = [];\n        if(window.gsap && gleamEl) gsap.killTweensOf(gleamEl);\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 0, y: 100, duration: 0.4, ease: \"power2.in\" });\n        return tl;\n    };\n\n    window.addEventListener('resize', adjustFontSize);\n})();",
+    "defaultFields": {
+      "items": [
+        {
+          "text": "PILNE: PREZYDENT K. NAWROCKI WETUJE USTAWĘ WS. PROGRAMU \"SAFE\"",
+          "category": "test"
+        },
+        "PREMIER D. TUSK OSTRO O WECIE: \"PREZES PIS POPROWADZIŁ GO JAK ZA RĄCZKĘ\"",
+        {
+          "text": "RUCH RZĄDU W ODPOWIEDZI NA WETO. JEST NOWA UCHWAŁA I UPOWAŻNIENIA DLA MINISTRÓW",
+          "category": "cf"
+        },
+        "SZEF ZWIĄZKÓW ZAWODOWYCH POLICJI ALARMUJE: LUDZIE LICZYLI NA ŚRODKI Z \"SAFE\"",
+        "PILNE: ZMASOWANY ATAK USA NA IRAŃSKĄ WYSPĘ. \"JEDNO Z NAJSILNIEJSZYCH BOMBARDOWAŃ\"",
+        "TEHERAN ZAPOWIADA ODWET. REŻIM WŚCIEKŁY PO DZIAŁANIACH STANÓW ZJEDNOCZONYCH",
+        "USA OFERUJĄ GIGANTYCZNĄ NAGRODĘ ZA INFORMACJE O PRZYWÓDCACH IRANU",
+        "KONGRESMENI USA ALARMUJĄ: ZAWIESZENIE SANKCJI NA ROSYJSKĄ ROPĘ FINANSUJE MACHINĘ WOJENNĄ PUTINA"
+      ],
+      "primaryColor": "#730000",
+      "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+      "titleColor": "#ffffff",
+      "fontFamily": "Bahnschrift",
+      "introText": "",
+      "type": "TICKER",
+      "name": "PILNE (OCG)",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "bottom",
+          "duration": 0.6
+        },
+        "out": {
+          "type": "slide",
+          "direction": "bottom",
+          "duration": 0.4
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#ffcc00",
+          "borderRadius": 10,
+          "borderWidth": 0,
+          "borderColor": "#442c2c",
+          "gradientAngle": 160,
+          "color2": "#d3a012"
+        },
+        "typography": {
+          "color": "#362626",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "600",
+          "textTransform": "uppercase"
+        }
+      },
+      "accentColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+      "layout": {
+        "layer": 5,
+        "width": 1650,
+        "x": 180,
+        "side": "bottom-right",
+        "marginY": 50,
+        "marginX": 50,
+        "height": "40"
+      },
+      "wiper": {
+        "bgColor": "#901414",
+        "fontSize": 30,
+        "fontFamily": "Bahnschrift"
+      }
+    },
+    "defaultStyle": {
+      "background": {
+        "type": "gradient",
+        "color": "#ffcc00",
+        "borderRadius": 10,
+        "borderWidth": 0,
+        "borderColor": "#442c2c",
+        "gradientAngle": 160,
+        "color2": "#d3a012"
+      },
+      "typography": {
+        "color": "#362626",
+        "fontFamily": "Bahnschrift",
+        "fontSize": 30,
+        "fontWeight": "600",
+        "textTransform": "uppercase"
+      }
+    },
+    "defaultAnimation": {
+      "in": {
+        "type": "slide",
+        "direction": "bottom",
+        "duration": 0.6
+      },
+      "out": {
+        "type": "slide",
+        "direction": "bottom",
+        "duration": 0.4
+      }
+    },
+    "defaultLayout": {
+      "layer": 5,
+      "width": 1650,
+      "x": 180,
+      "side": "bottom-right",
+      "marginY": 50,
+      "marginX": 50,
+      "height": "40"
+    }
+  },
+  "graphics": []
+}

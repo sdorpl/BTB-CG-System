@@ -1,0 +1,32 @@
+{
+  "_exportVersion": 2,
+  "template": {
+    "id": "tpl-ocg-belka_biala_v7",
+    "name": "OCG: BELKA: BIAŁO-SZARA",
+    "type": "LOWER_THIRD",
+    "version": 1,
+    "html_template": "<div class=\"lt-container-v8\"><div class=\"text-overlay\" style=\"color:{{TITLE_COLOR}};\">{{{TITLE}}}</div></div>",
+    "css_template": "\n.lt-container-v8 { position: relative; width: var(--v-width, 1575px); height: var(--v-height, 170px); background: linear-gradient(90deg, {{PRIMARY_COLOR}} 0%, {{SECONDARY_COLOR}} 50%, {{PRIMARY_COLOR}} 100%); display: flex; align-items: center; border-bottom: 4px solid rgba(0,0,0,0.1); transform: scaleX(0); transform-origin: left; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.lt-container-v8.active { transform: scaleX(1); }\n.text-overlay { margin-left: 30px; font-family: 'Bahnschrift', sans-serif; font-size: 80px; font-weight: bold; opacity: 0; white-space: nowrap; transition: opacity 0.4s ease 0.4s; }\n.lt-container-v8.active .text-overlay { opacity: 1; }\n        ",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\"div[class^='lt-container']\");\n    if (!container) return;\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_OUT_SYNC}}}) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+    "defaultFields": {
+      "title": "INFORMACJA DNIA",
+      "TITLE": "",
+      "SUBTITLE": ""
+    },
+    "ocgInputs": [
+      {
+        "id": "TITLE",
+        "label": "Tytuł / Imię Nazwisko",
+        "default": "",
+        "type": "text"
+      },
+      {
+        "id": "SUBTITLE",
+        "label": "Podtytuł / Funkcja",
+        "default": "",
+        "type": "text"
+      }
+    ]
+  },
+  "graphics": []
+}

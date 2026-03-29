@@ -1,73 +1,29 @@
-# React + TypeScript + Vite
+# CG Master Alpha (CG Control Pro)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+System profesjonalnej emisji grafik telewizyjnych i streamingowych w czasie rzeczywistym, oparty na silniku **VinciFlow**.
 
-Currently, two official plugins are available:
+## Kluczowe Cechy
+- **Dynamiczne Szablony**: HTML5 + CSS + GSAP (animacje).
+- **Inspektor**: Edycja treści w czasie rzeczywistym z podglądem Preview.
+- **Bank Grafik (Shotbox)**: Szybki dostęp do przygotowanych elementów.
+- **Global Squashing**: Automatyczne ściskanie tekstu w poziomie.
+- **Edytor WYSIWYG**: Zaawansowane formatowanie tekstu wewnątrz grafik.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Dokumentacja
 
-## React Compiler
+Pełna dokumentacja systemu znajduje się w katalogu `/docs`:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1.  **[Instrukcja Obsługi Operatora](docs/funkcje.md)** — Wszystko co musisz wiedzieć, aby emitować grafiki.
+2.  **[Przewodnik Twórcy Szablonów](docs/szablony.md)** — Jak budować własne szablony (HTML/CSS/JS).
+3.  **[Architektura Systemu](docs/architektura.md)** — Szczegóły techniczne i struktura bazy danych.
+4.  **[API Techniczne](docs/api_techniczna.md)** — Opis kluczowych funkcji i synchronizacji.
 
-## Expanding the ESLint configuration
+## Instalacja i Uruchomienie
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Zainstaluj zależności: `npm install`
+2. Uruchom serwer developerski: `npm run dev`
+3. Otwórz panel sterowania: `http://localhost:5173` (lub inny port wskazany przez Vite).
+4. Otwórz wyjście wideo (Output): `http://localhost:5173/output.html`
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+*System CG Control Pro — Wersja ALPHA*

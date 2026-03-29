@@ -1,6 +1,43 @@
 ; (function () {
     'use strict';
 
+    // Injection of global styles for automatic text squashing (scaleX)
+    const style = document.createElement('style');
+    style.textContent = `
+        .slt-squash {
+            display: inline-block !important;
+            transform-origin: left center !important;
+            white-space: nowrap !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    function applyGlobalSquashing(root) {
+        if (!root) return;
+        const enabled = root.getAttribute('data-squash-enabled') !== 'false';
+        if (!enabled) {
+            // If disabled, reset any existing transforms on squashing targets
+            root.querySelectorAll('.slt-squash').forEach(t => t.style.transform = 'none');
+            return;
+        }
+        const targets = root.querySelectorAll('.slt-squash');
+        targets.forEach(target => {
+            const container = target.parentElement;
+            if (!container) return;
+            
+            // Reset scale to measure natural width
+            target.style.transform = 'none';
+            
+            const containerWidth = container.clientWidth;
+            const textWidth = target.scrollWidth;
+            
+            if (textWidth > containerWidth && containerWidth > 0) {
+                const scale = containerWidth / textWidth;
+                target.style.transform = `scaleX(${scale})`;
+            }
+        });
+    }
+
     const container = document.getElementById('render-container');
     // Socket only needed in output.html (where container exists)
     const socket = (typeof io !== 'undefined' && container) ? io() : null;
@@ -17,6 +54,16 @@
         const scale = layout?.scale || 1;
         const rotation = layout?.rotation || 0;
         return `scale(${autoScale}) translate(${finalX}px, ${finalY}px) scale(${scale}) rotate(${rotation}deg)`;
+    }
+
+    function formatDimension(val, fallback = 'auto') {
+        if (val === undefined || val === null || val === '') return fallback;
+        const sVal = String(val).trim();
+        // If it already has a unit (%, px, vh, etc.), return as is
+        if (/[a-z%]$/i.test(sVal)) return sVal;
+        // If it's a pure number, append px
+        if (!isNaN(parseFloat(sVal)) && isFinite(sVal)) return `${sVal}px`;
+        return sVal;
     }
 
     // Safely assign GSAP global (may not be available in all contexts)
@@ -63,18 +110,27 @@
                     titleHtml: graphic.titleHtml, titleLines: graphic.titleLines,
                     layout: graphic.layout, animation: graphic.animation,
                     style: graphic.style, sideImage: graphic.sideImage,
+                    speed: graphic.speed, items: graphic.items, wiper: graphic.wiper,
+                    fields: graphic.fields,
                     activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(graphic.id)) ? settings.globalFontFamily : null
 
                 });
 
                 if (existingHash !== newHash) {
-                    console.log('HASH MISMATCH FOR:', graphic.id);
-                    console.log('OLD HASH:', existingHash);
-                    console.log('NEW HASH:', newHash);
-                    // Update properties by fast re-render without out-animation
-                    container.removeChild(activeGraphics[graphic.id].el);
-                    delete activeGraphics[graphic.id];
-                    showGraphic(graphic, settings, graphics);
+                    const oldMeta = activeGraphics[graphic.id];
+                    let durationMs = 550;
+                    try {
+                        const dataHash = JSON.parse(oldMeta.hash);
+                        durationMs = ((dataHash.animation?.out?.duration) || 0.5) * 1000 + 50;
+                    } catch(e) {}
+
+                    // Trigger OUT animation of old graphic
+                    hideGraphic(graphic.id);
+                    
+                    // Trigger IN animation of new graphic after the OUT animation completes
+                    setTimeout(() => {
+                        showGraphic(graphic, settings, graphics);
+                    }, durationMs + 50);
                 }
             }
         });
@@ -138,9 +194,10 @@
         layoutStyleWrapper.style.pointerEvents = 'none';
 
         // Set custom CSS variables exactly like VinciFlowGraphic.tsx Lines 331-338
-        layoutStyleWrapper.style.setProperty('--v-width', data.layout?.width ? `${data.layout.width}px` : '90%');
-        layoutStyleWrapper.style.setProperty('--v-height', data.layout?.height ? `${data.layout.height}px` : 'auto');
+        layoutStyleWrapper.style.setProperty('--v-width', formatDimension(data.layout?.width, '90%'));
+        layoutStyleWrapper.style.setProperty('--v-height', formatDimension(data.layout?.height, 'auto'));
         layoutStyleWrapper.style.zIndex = data.layout?.layer || 1;
+        layoutStyleWrapper.style.opacity = data.style?.opacity ?? 1;
 
         // Inner container that holds the Graphic
         const innerContainer = document.createElement('div');
@@ -150,23 +207,46 @@
         innerContainer.style.top = '0';
         innerContainer.style.left = '0';
 
-        // Inject HTML scoped with ID
-        const html = prepareStr(tpl.html_template);
+        // Inject HTML scoped with ID (per-graphic override takes priority)
+        const htmlSource = (data.useCodeOverride && data.html_override != null) ? data.html_override : tpl.html_template;
+        const html = prepareStr(htmlSource);
         innerContainer.innerHTML = `<div id="${instanceId}" class="lt-root">${html}</div>`;
         layoutStyleWrapper.appendChild(innerContainer);
 
-        // Inject Custom CSS (scoped to instanceId)
-        if (tpl.css_template) {
-            let cssStr = prepareStr(tpl.css_template);
-            // Clean out any self-injected #ids if the template author put them there natively
+        // Inject Custom CSS (scoped to instanceId, per-graphic override takes priority)
+        const cssSource = (data.useCodeOverride && data.css_override != null) ? data.css_override : tpl.css_template;
+        if (cssSource) {
+            let cssStr = prepareStr(cssSource);
+            // Clean out any self-injected #ids if the template author put them there natively.
+            // NOTE: We strip the *compiled* #instanceId that came from {{ID}} in the template.
+            // The scoping regex below will then re-add it properly for all known class prefixes.
             cssStr = cssStr.replace(new RegExp(`#${instanceId}\\s+`, 'g'), '');
 
             // Advanced Scoping:
-            // By prefixing common generic classes with the parent instance ID, we sandbox the CSS.
-            cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+            // By prefixing common generic classes with #instanceId, we sandbox the CSS.
+            // IMPORTANT: 'utk-' must be here so that .utk-wiper, .utk-container etc. get scoped.
+            // Without it, those rules would be global after the strip above.
+            cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-|utk-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+
+            // @keyframes scoping: rename all @keyframes to include instanceId so that
+            // multiple instances of the same template do NOT overwrite each other's animations.
+            const keyframeNames = [];
+            cssStr = cssStr.replace(/@keyframes\s+([\w-]+)/g, (match, name) => {
+                const scopedName = `${name}_${instanceId}`;
+                keyframeNames.push({ original: name, scoped: scopedName });
+                return `@keyframes ${scopedName}`;
+            });
+            // Replace animation references to use the scoped keyframe names
+            keyframeNames.forEach(({ original, scoped }) => {
+                // Match animation property values that reference the original name
+                cssStr = cssStr.replace(
+                    new RegExp(`(animation:[^;]*?)\\b${original}\\b`, 'g'),
+                    (match, prefix) => `${prefix}${scoped}`
+                );
+            });
 
             // Gradient override: if the graphic uses a gradient background, force it onto
-            // all elements that only have background-color set (which doesn't support gradients).
+            // container elements specifically (but NOT wiper, ticker-track, msg-box which have their own colors).
             const bgData = data.style?.background || {};
             const globalRadiusGraphics = settings?.globalRadiusGraphics || [];
             const isGlobalRadius = globalRadiusGraphics.includes(data.id);
@@ -177,14 +257,15 @@
                 const c1 = bgData.color || '#1e3a8a';
                 const c2 = bgData.color2 || '#3b82f6';
                 const gradientVal = `linear-gradient(${angle}deg, ${c1}, ${c2})`;
-                // Target container/bar elements specifically, not child decorative elements
+                // Target container/bar elements specifically, but EXCLUDE wiper/ticker elements
+                // that have their own distinct background colors (wiper, msg-box, track, etc.)
                 cssStr += `\n/* gradient override */`;
-                cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { background: ${gradientVal} !important; background-color: transparent !important; }`;
+                cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]):not([class*="msg"]):not([class*="track"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { background: ${gradientVal} !important; background-color: transparent !important; }`;
             }
 
             if (isGlobalRadius || bgData.borderRadius > 0) {
                 cssStr += `\n/* border radius override */`;
-                cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { border-radius: ${borderRadius}px !important; overflow: hidden !important; }`;
+                cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { border-radius: ${borderRadius}px !important; overflow: hidden !important; }`;
             }
 
             // Layout side override
@@ -202,6 +283,7 @@
                 cssStr += `\n/* Side Layout */`;
                 cssStr += `\n#${instanceId} { display: flex; width: 100%; height: 100%; box-sizing: border-box; pointer-events: none; }`;
                 cssStr += `\n#${instanceId} > * { pointer-events: auto; position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; }`;
+                cssStr += `\n#${instanceId} p, #${instanceId} div { margin: 0; padding: 0; }`;
                 
                 if (yS === 'top') cssStr += `\n#${instanceId} { align-items: flex-start; padding-top: ${my}px; }`;
                 else if (yS === 'bottom') cssStr += `\n#${instanceId} { align-items: flex-end; padding-bottom: ${my}px; }`;
@@ -212,10 +294,14 @@
                 else if (xS === 'center') cssStr += `\n#${instanceId} { justify-content: center; }`;
             }
 
+            // Apply line-height from context
+            cssStr += `\n#${instanceId} { line-height: ${ctx.LINE_HEIGHT || 1.4}; }`;
+
             const style = document.createElement('style');
             style.textContent = cssStr;
             layoutStyleWrapper.appendChild(style);
         }
+
 
         container.appendChild(layoutStyleWrapper);
 
@@ -228,15 +314,18 @@
                 titleHtml: data.titleHtml, titleLines: data.titleLines,
                 layout: data.layout, animation: data.animation,
                 style: data.style, sideImage: data.sideImage,
+                speed: data.speed, items: data.items, wiper: data.wiper,
+                fields: data.fields,
                 activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(data.id)) ? settings.globalFontFamily : null
             }),
             isHiding: false
         };
 
-        // Execute internal JS & Animation wrapper
+        // Execute internal JS & Animation wrapper (per-graphic override takes priority)
+        const jsSource = (data.useCodeOverride && data.js_override != null) ? data.js_override : tpl.js_template;
         const rootEl = document.getElementById(instanceId);
-        if (rootEl && tpl.js_template) {
-            const jsCode = prepareStr(tpl.js_template);
+        if (rootEl && jsSource) {
+            const jsCode = prepareStr(jsSource);
 
             try {
                 const wrappedCode = [
@@ -253,15 +342,30 @@
 
                 // Allow DOM repaints before executing GSAP show animations logic
                 setTimeout(() => {
+                    if (rootEl) {
+                        rootEl.classList.add('active');
+                        // Legacy support: also add .active to the first child (often .lt-container)
+                        if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
+                        rootEl.setAttribute('data-squash-enabled', data.style?.typography?.squashEnabled !== false);
+                    }
                     if (rootEl.__slt_show) {
                         rootEl.__slt_show();
                     } else {
                         rootEl.style.display = 'block';
                     }
+                    // Apply global text squashing after initial render/animation trigger
+                    requestAnimationFrame(() => applyGlobalSquashing(rootEl));
                 }, 30);
             } catch (e) {
                 console.error("Vinci JS error", e);
             }
+        } else if (rootEl) {
+            // No JS template, but still trigger active class for CSS-only templates
+            setTimeout(() => {
+                rootEl.classList.add('active');
+                if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
+                rootEl.style.display = 'block';
+            }, 30);
         }
     }
 
@@ -271,6 +375,11 @@
 
         meta.isHiding = true;
         const rootEl = document.getElementById(meta.instanceId);
+
+        if (rootEl) {
+            rootEl.classList.remove('active');
+            if (rootEl.firstElementChild) rootEl.firstElementChild.classList.remove('active');
+        }
 
         // Hide Animation logic (matches original VinciFlowGraphic lines 292-316)
         if (rootEl && rootEl.__slt_hide && typeof rootEl.__slt_hide === 'function') {
@@ -300,6 +409,11 @@
                 console.error("Hide execution error", e);
                 removeElement(id, meta);
             }
+        } else if (rootEl) {
+            // Legacy support: wait for CSS transitions triggered by .active removal
+            setTimeout(() => {
+                removeElement(id, meta);
+            }, 600);
         } else {
             removeElement(id, meta);
         }
@@ -352,7 +466,9 @@
         if (meta.el && meta.el.parentNode) {
             meta.el.parentNode.removeChild(meta.el);
         }
-        delete activeGraphics[id];
+        if (activeGraphics[id] === meta) {
+            delete activeGraphics[id];
+        }
     }
 
     // ===========================================================
@@ -372,7 +488,8 @@
             // Remove stale
             Object.keys(instances).forEach(id => {
                 if (!visibleIds.has(id)) {
-                    const el = instances[id];
+                    const meta = instances[id];
+                    const el = meta?.el || meta;
                     if (el && el.parentNode) el.parentNode.removeChild(el);
                     delete instances[id];
                 }
@@ -385,8 +502,9 @@
 
                 // Remove and re-render on update
                 if (instances[graphic.id]) {
-                    const old = instances[graphic.id];
-                    if (old && old.parentNode) old.parentNode.removeChild(old);
+                    const oldMeta = instances[graphic.id];
+                    const oldEl = oldMeta?.el || oldMeta;
+                    if (oldEl && oldEl.parentNode) oldEl.parentNode.removeChild(oldEl);
                     delete instances[graphic.id];
                 }
 
@@ -403,11 +521,13 @@
                     }
                 };
 
-                const htmlStr = prepareStr(tpl.html_template);
-                let cssStr = prepareStr(tpl.css_template);
+                const htmlSource = (graphic.useCodeOverride && graphic.html_override != null) ? graphic.html_override : tpl.html_template;
+                const cssSourcePrev = (graphic.useCodeOverride && graphic.css_override != null) ? graphic.css_override : tpl.css_template;
+                const htmlStr = prepareStr(htmlSource);
+                let cssStr = prepareStr(cssSourcePrev);
 
                 cssStr = cssStr.replace(new RegExp(`#${instanceId}\\s+`, 'g'), '');
-                cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
+                cssStr = cssStr.replace(/\.(rep-|lt-|modern-|na-zywo-|plate|title|subtitle|ticker|dot|news-|wiper-|utk-)[a-zA-Z0-9_-]*/g, `#${instanceId} $&`);
                 cssStr = cssStr.replace(/#\{\{ID\}\}|#GRAPHIC_ID/g, `#${instanceId}`);
 
                 const layoutStyleWrapper = document.createElement('div');
@@ -421,9 +541,10 @@
                 layoutStyleWrapper.style.height = '1080px';
                 layoutStyleWrapper.style.pointerEvents = 'none';
 
-                layoutStyleWrapper.style.setProperty('--v-width', graphic.layout?.width ? `${graphic.layout.width}px` : '90%');
-                layoutStyleWrapper.style.setProperty('--v-height', graphic.layout?.height ? `${graphic.layout.height}px` : 'auto');
+                layoutStyleWrapper.style.setProperty('--v-width', formatDimension(graphic.layout?.width, '90%'));
+                layoutStyleWrapper.style.setProperty('--v-height', formatDimension(graphic.layout?.height, 'auto'));
                 layoutStyleWrapper.style.zIndex = graphic.layout?.layer || 1;
+                layoutStyleWrapper.style.opacity = graphic.style?.opacity ?? 1;
 
                 const innerContainer = document.createElement('div');
                 innerContainer.style.width = '100%';
@@ -454,15 +575,16 @@
                     const c1_2 = bgData2.color || '#1e3a8a';
                     const c2_2 = bgData2.color2 || '#3b82f6';
                     const gradientVal2 = `linear-gradient(${angle2}deg, ${c1_2}, ${c2_2})`;
-                    // Target container/bar elements specifically, not child decorative elements
+                    // Target container/bar elements but exclude utk-* ticker/wiper elements with their own colors
                     cssStr += `\n/* gradient override */`;
-                    cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { background: ${gradientVal2} !important; background-color: transparent !important; }`;
+                    cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]):not([class*="msg"]):not([class*="track"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { background: ${gradientVal2} !important; background-color: transparent !important; }`;
                 }
 
                 if (isGlobalRadiusPrev || bgData2.borderRadius > 0) {
                     cssStr += `\n/* border radius override */`;
-                    cssStr += `\n#${instanceId} [class*="container"], #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"], #${instanceId} [class*="plate"], #${instanceId} [class*="box"], #${instanceId} [class*="panel"] { border-radius: ${borderRadiusPrev}px !important; overflow: hidden !important; }`;
+                    cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { border-radius: ${borderRadiusPrev}px !important; overflow: hidden !important; }`;
                 }
+
 
                 // Layout side override
                 if (graphic.layout?.side && graphic.layout.side !== 'custom') {
@@ -479,6 +601,7 @@
                     cssStr += `\n/* Side Layout */`;
                     cssStr += `\n#${instanceId} { display: flex; width: 100%; height: 100%; box-sizing: border-box; pointer-events: none; }`;
                     cssStr += `\n#${instanceId} > * { pointer-events: auto; position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; }`;
+                    cssStr += `\n#${instanceId} p, #${instanceId} div { margin: 0; padding: 0; }`;
                     
                     if (yS === 'top') cssStr += `\n#${instanceId} { align-items: flex-start; padding-top: ${my}px; }`;
                     else if (yS === 'bottom') cssStr += `\n#${instanceId} { align-items: flex-end; padding-bottom: ${my}px; }`;
@@ -489,17 +612,22 @@
                     else if (xS === 'center') cssStr += `\n#${instanceId} { justify-content: center; }`;
                 }
 
+                // Apply line-height from context (must be added to cssStr BEFORE setting styleEl.textContent)
+                cssStr += `\n#${instanceId} { line-height: ${context.LINE_HEIGHT || 1.4}; }`;
+
                 styleEl.textContent = cssStr;
                 if (options.instant) {
                     // Also kill all transitions and animations globally
                     styleEl.textContent += `\n#${instanceId}, #${instanceId} * { transition: none !important; transition-delay: 0s !important; animation: none !important; }`;
                 }
+
                 innerContainer.appendChild(styleEl);
 
                 // Inject HTML scoped with ID, matching showGraphic wrapping
                 const wrapperDiv = document.createElement('div');
                 wrapperDiv.id = instanceId;
                 wrapperDiv.className = 'lt-root';
+                wrapperDiv.setAttribute('data-squash-enabled', graphic.style?.typography?.squashEnabled !== false);
                 wrapperDiv.innerHTML = htmlStr;
                 innerContainer.appendChild(wrapperDiv);
 
@@ -508,10 +636,11 @@
                 containerEl.appendChild(layoutStyleWrapper);
                 instances[graphic.id] = layoutStyleWrapper;
 
-                // Run template JS identical to showGraphic
+                // Run template JS identical to showGraphic (per-graphic override takes priority)
+                const jsSourcePrev = (graphic.useCodeOverride && graphic.js_override != null) ? graphic.js_override : tpl.js_template;
                 const rootEl = document.getElementById(instanceId);
-                if (rootEl && tpl.js_template) {
-                    const jsCode = prepareStr(tpl.js_template);
+                if (rootEl && jsSourcePrev) {
+                    const jsCode = prepareStr(jsSourcePrev);
                     try {
                         const wrappedCode = [
                             '(function(root, gsap) {',
@@ -534,6 +663,11 @@
                     try {
                         rootEl.__slt_show();
                     } catch (e) { console.error("__slt_show error:", e); }
+                }
+
+                if (rootEl) {
+                    rootEl.classList.add('active');
+                    if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
                 }
 
                 if (options.instant && rootEl) {
@@ -561,6 +695,9 @@
                 } else if (!rootEl.__slt_show) {
                     rootEl.style.display = 'block';
                 }
+
+                // Apply global text squashing to preview instances
+                requestAnimationFrame(() => applyGlobalSquashing(rootEl));
             });
         }
     };
@@ -568,8 +705,24 @@
     function buildPreviewContext(graphic, tpl, instanceId, settings = {}) {
         const animIn = graphic.animation?.in || {};
         const animOut = graphic.animation?.out || {};
-        const bgStyle = graphic.style?.background || {};
-        const typo = graphic.style?.typography || {};
+        
+        // Merge styles: Instance overrides Template Defaults
+        const ds = tpl.defaultStyle || {};
+        const bgStyle = { ...(ds.background || {}), ...(graphic.style?.background || {}) };
+        const typo = { ...(ds.typography || {}), ...(graphic.style?.typography || {}) };
+        const subTypo = { ...(ds.subtitleTypography || {}), ...(graphic.style?.subtitleTypography || {}) };
+
+        // Prepare OCG fields (serialize arrays to JSON)
+        const customFields = {};
+        if (graphic.fields) {
+            Object.entries(graphic.fields).forEach(([k, v]) => {
+                if (Array.isArray(v)) {
+                    customFields[k] = JSON.stringify(v);
+                } else {
+                    customFields[k] = v;
+                }
+            });
+        }
 
         let activeFontFamily = typo.fontFamily || 'Arial';
         if (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(graphic.id)) {
@@ -606,10 +759,20 @@
         }
 
         let rawItems = graphic.items || tpl.defaultFields?.items || [];
-        rawItems = rawItems.map(item => {
-            if (typeof item === 'string' && item.includes('<font')) {
+        const itemsData = rawItems.map(item => {
+            let text = '';
+            let category = '';
+            
+            if (typeof item === 'string') {
+                text = item;
+            } else if (item && typeof item === 'object') {
+                text = item.text || '';
+                category = item.category || '';
+            }
+            
+            if (text && typeof text === 'string' && text.includes('<font')) {
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = item;
+                tempDiv.innerHTML = text;
                 tempDiv.querySelectorAll('font').forEach(f => {
                     const s = document.createElement('span');
                     if (f.face) s.style.fontFamily = f.face;
@@ -621,39 +784,100 @@
                     s.innerHTML = f.innerHTML;
                     f.replaceWith(s);
                 });
-                return tempDiv.innerHTML;
+                text = tempDiv.innerHTML;
             }
-            return item;
+            return { text, category };
         });
+
+        // ITEMS is still strings for legacy templates
+        const itemsStrings = itemsData.map(id => id.text);
 
         const globalShadow = settings?.globalShadow || { enabled: false };
         const shadowStr = globalShadow.enabled
             ? `${globalShadow.offsetX ?? 0}px ${globalShadow.offsetY ?? 2}px ${globalShadow.blur ?? 4}px ${globalShadow.color || 'rgba(0,0,0,0.5)'}`
             : 'none';
 
-        return {
+        const sepColor = bgStyle.borderColor || '#3b82f6';
+        const SEPARATOR_CSS = (() => {
+            switch (graphic.separatorStyle || 'skewed') {
+                case 'none':   return 'display: none;';
+                case 'dot':    return `width: 10px; height: 10px; background: ${sepColor}; border-radius: 50%; margin: 0 15px; transform: none; flex-shrink: 0;`;
+                case 'square': return `width: 10px; height: 10px; background: ${sepColor}; margin: 0 15px; transform: none; flex-shrink: 0;`;
+                case 'pipe':   return `width: 2px; height: 24px; background: ${sepColor}; margin: 0 15px; transform: none; flex-shrink: 0;`;
+                default:       return `width: 12px; height: 24px; background: ${sepColor}; transform: skewX(-30deg); margin: 0 10px; flex-shrink: 0;`;
+            }
+        })();
+
+        const wiperSettings = graphic.wiper || {};
+        const wiperBg = (() => {
+            const base = wiperSettings.bgColor || tpl.defaultFields?.secondaryColor || '#ff0000';
+            if (wiperSettings.useGradient) {
+                const c2 = wiperSettings.color2 || '#880000';
+                const angle = wiperSettings.gradientAngle || 90;
+                return `linear-gradient(${angle}deg, ${base} 0%, ${c2} 100%)`;
+            }
+            return base;
+        })();
+
+        const wiperGleamBg = (() => {
+            const color = wiperSettings.gleamColor || '#ffffff';
+            const opacity = wiperSettings.gleamOpacity ?? 0.4;
+            let r = 255, g = 255, b = 255;
+            // Support both #rrggbb hex and rgba(...) formats
+            const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (rgbaMatch) {
+                r = parseInt(rgbaMatch[1]);
+                g = parseInt(rgbaMatch[2]);
+                b = parseInt(rgbaMatch[3]);
+            } else if (color.startsWith('#') && color.length >= 7) {
+                r = parseInt(color.slice(1, 3), 16);
+                g = parseInt(color.slice(3, 5), 16);
+                b = parseInt(color.slice(5, 7), 16);
+            }
+            return `linear-gradient(90deg, rgba(${r},${g},${b},0) 0%, rgba(${r},${g},${b},${opacity}) 50%, rgba(${r},${g},${b},0) 100%)`;
+        })();
+
+        const ctx = {
             ID: instanceId,
             TITLE: rawTitle,
             SUBTITLE: graphic.subtitle || tpl.defaultFields?.subtitle || '',
-            INTRO_TEXT: graphic.introText || 'PILNE',
-            ITEMS: rawItems,
-            ITEMS_JSON: JSON.stringify(rawItems),
+            INTRO_TEXT: graphic.introText !== undefined ? graphic.introText : (tpl.defaultFields?.introText || ''),
+            WIPER_BG: wiperBg,
+            WIPER_TEXT_COLOR: wiperSettings.textColor || '#ffffff',
+            WIPER_FONT: wiperSettings.fontFamily || activeFontFamily,
+            WIPER_FONT_SIZE: wiperSettings.fontSize || 35,
+            WIPER_FONT_WEIGHT: wiperSettings.fontWeight || '900',
+            WIPER_LETTER_SPACING: wiperSettings.letterSpacing ?? 1,
+            WIPER_GLEAM_ENABLED: wiperSettings.gleamEnabled !== false,
+            WIPER_GLEAM_BG: wiperGleamBg,
+            WIPER_GLEAM_DURATION: wiperSettings.gleamDuration || 2,
+            WIPER_GLEAM_HEIGHT: wiperSettings.gleamHeight || 100,
+            WIPER_GLEAM_WIDTH: wiperSettings.gleamWidth || 150,
+            WIPER_GLEAM_FREQUENCY: wiperSettings.gleamFrequency || 3,
+            WIPER_GLEAM_OPACITY: wiperSettings.gleamOpacity ?? 0.4,
+            ITEMS: itemsStrings,
+            ITEMS_JSON: JSON.stringify(itemsData),
+            ITEMS_B64: (() => { try { const s = JSON.stringify(itemsData); const b64 = (typeof btoa !== 'undefined') ? btoa(unescape(encodeURIComponent(s))) : Buffer.from(s).toString('base64'); return b64.replace(/=+$/, ''); } catch(e) { return ''; } })(),
+            WIPER_TEXT: (graphic.introText !== undefined) ? graphic.introText : (tpl.defaultFields?.introText || ''),
+            WIPER_SHOW: wiperSettings.show !== false,
             LOGO_URL: graphic.url || tpl.defaultFields?.logoUrl || '',
             TICKER_SPEED: graphic.speed || 100,
+            TICKER_MODE: graphic.tickerMode || tpl.defaultFields?.tickerMode || 'whip',
             PRIMARY_COLOR: bgStyle.color || '#1e3a8a',
             PRIMARY_BG: bg,
             SECONDARY_COLOR: graphic.accentColor || bgStyle.borderColor || '#000000',
             BORDER_COLOR: bgStyle.borderColor || '#3b82f6',
             TITLE_COLOR: typo.color || '#ffffff',
-            SUBTITLE_COLOR: graphic.style?.subtitleTypography?.color || '#eeeeee',
+            SUBTITLE_COLOR: subTypo.color || '#eeeeee',
             FONT_FAMILY: activeFontFamily,
             FONT_SIZE: typo.fontSize || 30,
-            TITLE_SIZE: typo.fontSize || tpl.defaultFields?.titleSize || 48,
+            TITLE_SIZE: typo.fontSize || 48,
             TITLE_WEIGHT: typo.fontWeight || '800',
             TITLE_TRANSFORM: typo.textTransform || 'uppercase',
+            PADDING_Y: typo.paddingY || 0,
             BOX_SHADOW: shadowStr,
             TITLE_FONT: activeFontFamily,
-            SUBTITLE_SIZE: graphic.style?.subtitleTypography?.fontSize || tpl.defaultFields?.subtitleSize || 24,
+            SUBTITLE_SIZE: subTypo.fontSize || 24,
             BACKGROUND: bg,
             BORDER_RADIUS: (settings && settings.globalRadiusGraphics && settings.globalRadiusGraphics.includes(graphic.id)) ? (settings.globalBorderRadius || 0) : (bgStyle.borderRadius || 0),
             BORDER_WIDTH: bgStyle.borderWidth || 0,
@@ -687,14 +911,44 @@
             ANIMATION_OUT_EASE: animOut.ease || 'ease-in',
             LAYOUT_X: graphic.layout?.x || 0,
             LAYOUT_Y: graphic.layout?.y || 0,
-            V_WIDTH: tpl.defaultLayout?.width || 1920,
-            V_HEIGHT: tpl.defaultLayout?.height || 1080,
+            V_WIDTH: graphic.layout?.width || tpl.defaultLayout?.width || 1920,
+            V_HEIGHT: graphic.layout?.height || tpl.defaultLayout?.height || 1080,
             SIDE_IMAGE: graphic.sideImage || '',
             LOGO_WIDTH: graphic.layout?.width || null,
             LOGO_HEIGHT: graphic.layout?.height || null,
             TRANSPARENT: (graphic.style?.background?.type === 'transparent' || !!graphic.style?.background?.transparent),
             LINE_HEIGHT: typo.lineHeight || '1.4',
+            ANIMATION_IN_JSON: JSON.stringify(animIn),
+            ANIMATION_OUT_JSON: JSON.stringify(animOut),
+            TEXT_ANIM_JSON: JSON.stringify(graphic.animation?.text || { type: 'none' }),
+            TEXT_ANIM_SYNC: !!graphic.animation?.textSync,
+            TEXT_ANIM_OUT_JSON: JSON.stringify(graphic.animation?.textOut || { type: 'none' }),
+            TEXT_ANIM_OUT_SYNC: !!graphic.animation?.textOut?.syncWithBase,
+            SEPARATOR_CSS: SEPARATOR_CSS,
+            DOM_CONTEXT: `document.getElementById("${instanceId}")`,
+            ...customFields
         };
+
+        // Intelligent OCG mapping: if TITLE/SUBTITLE are still standard/empty, 
+        // try to find matching OCG fields (e.g. f-tytul-nazwa -> TITLE)
+        const isStandardTitle = (ctx.TITLE === graphic.title || ctx.TITLE === tpl.defaultFields?.title || ctx.TITLE === tpl.name);
+        if (isStandardTitle) {
+            const titleKey = Object.keys(customFields).find(k => /title|tytul|nazwa/i.test(k) && !/sub/i.test(k));
+            if (titleKey) ctx.TITLE = customFields[titleKey];
+        }
+        const isStandardSub = (!ctx.SUBTITLE || ctx.SUBTITLE === tpl.defaultFields?.subtitle);
+        if (isStandardSub) {
+            const subKey = Object.keys(customFields).find(k => /sub|opis|funkcja/i.test(k));
+            if (subKey) ctx.SUBTITLE = customFields[subKey];
+        }
+
+        // Handle LOGO_URL / IMAGE prioritisation: if standard/empty, use graphic.url (Alpha upload)
+        const isStandardLogo = (!ctx.LOGO_URL || ctx.LOGO_URL === tpl.defaultFields?.LOGO_URL || ctx.LOGO_URL === tpl.defaultFields?.logoUrl);
+        if (isStandardLogo && graphic.url) {
+            ctx.LOGO_URL = graphic.url;
+        }
+
+        return ctx;
     }
 
     // Start — only run if this is the output.html renderer context

@@ -1,0 +1,17 @@
+{
+  "_exportVersion": 2,
+  "template": {
+    "id": "tpl-ocg-tag_powtorka",
+    "name": "OCG: TAG: POWTÓRKA",
+    "type": "LOWER_THIRD",
+    "version": 1,
+    "html_template": "<div id=\"tag-powtorka-wrap\"><div class=\"live-tag\"><span class=\"live-text\" id=\"f-tag-powtorka\">{{{TITLE}}}</span></div></div>",
+    "css_template": "#tag-powtorka-wrap { position: relative;   width: var(--v-width, 190px); height: 40px; transform: translateX(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 9999; } .active #tag-powtorka-wrap { transform: translateX(0); opacity: 1; } #tag-powtorka-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: var(--v-width, 100%); height: 100%; background: linear-gradient(-45deg, #ffffff, #808080, #404040); background-size: 400% 400%; animation: liveGrad2 4s ease infinite; border: 2px solid #020202; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; } #tag-powtorka-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 25px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin- } @keyframes liveGrad2 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\"div[id^='tag-']\");\n    if (!container) return;\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_OUT_SYNC}}}) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+    "defaultFields": {
+      "title": "POWTÓRKA"
+    },
+    "ocgInputs": []
+  },
+  "graphics": []
+}

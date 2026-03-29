@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /home/maciej/Documents/GitHub/BTB-CG-System_main/*.js)",
+      "Bash(npm start:*)",
+      "Bash(node /home/maciej/Documents/GitHub/BTB-CG-System_main/server.js)",
+      "Read(//usr/local/**)",
+      "Read(//home/maciej/.nvm/versions/**)",
+      "Bash(/home/maciej/.cache/ms-playwright-go/1.50.1/node /home/maciej/Documents/GitHub/BTB-CG-System_main/server.js)",
+      "Bash(source /home/maciej/.bashrc)",
+      "Read(//usr/**)",
+      "Bash(find /snap -name node -type f)",
+      "Bash(pkill -f \"node.*server.js\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(netstat -tlnp)",
+      "Bash(command -v node)",
+      "Read(//home/maciej/.nvm/current/bin/**)",
+      "Read(//home/maciej/**)",
+      "Bash(echo $PATH)",
+      "Bash(ls /home/maciej/.nvm/versions/node/*/bin/node)",
+      "Bash(ls /home/maciej/.local/share/fnm/node-versions/*/installation/bin/node)",
+      "Bash(/home/maciej/.cache/ms-playwright-go/1.50.1/node --version)",
+      "Bash(/home/maciej/.cache/ms-playwright-go/1.50.1/node -c /home/maciej/Documents/GitHub/BTB-CG-System_main/renderer.js)",
+      "Bash(grep -l \"attachedToGraphic\" /home/maciej/Documents/GitHub/BTB-CG-System_main/templates/*.json)",
+      "Bash(ls -1 /home/maciej/Documents/GitHub/BTB-CG-System_main/templates/*.json)",
+      "Bash(node -e \":*)",
+      "Bash(ls /usr/local/bin/node* /usr/bin/node* ~/.nvm/versions/node/*/bin/node)",
+      "Bash(python3 -c \":*)",
+      "Bash(npm install:*)",
+      "Bash(flatpak list:*)",
+      "Bash(snap list:*)",
+      "Bash(ls /usr/bin/node*)",
+      "Bash(ls ~/.nvm/versions/node/*/bin/node)",
+      "Read(//app/bin/**)",
+      "Bash(host-spawn node:*)",
+      "Bash(grep -l \"autoStart\\\\|auto_start\\\\|isDefault\\\\|defaultRun\\\\|startOnLoad\" /home/maciej/Documents/GitHub/BTB-CG-System_main/templates/*.json)"
+    ]
+  }
+}

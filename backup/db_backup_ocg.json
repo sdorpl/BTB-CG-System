@@ -1,5 +1,496 @@
 {
-  "templates": [],
+  "settings": {
+    "resolution": {
+      "width": 1920,
+      "height": 1080
+    },
+    "globalFontFamily": "Bahnschrift",
+    "globalFontGraphics": [
+      "90208c00-623d-4202-aaa1-46cbb1a49290",
+      "1b3de3d9-3513-4bea-9f4c-9ad3f81d0f09",
+      "e81baea2-f245-43b4-b50d-eafc68bc6d19",
+      "500c87f9-1ce8-4b8f-98b3-4f29a00c95d2",
+      "316d84aa-fc27-48c4-ba72-f3f5bee285eb",
+      "d23d4600-7428-4a18-a92c-3bdf8b98054b",
+      "ffa9cd68-875d-45dd-a571-970f3f0749ae",
+      "29820277-16c5-46f5-a193-16e692697635",
+      "f349ea2c-8642-40f0-ac50-8db2b79636c7",
+      "9d53a666-0fff-4c34-9bbf-9ef91e7a2452",
+      "50da9cab-b766-4283-aa04-c3ee3dc879ea",
+      "fc45fbf4-a9a9-4892-92a0-7f63f3a3ac83",
+      "29199870-d2fc-4415-a454-87e642d1543d",
+      "5c9bf877-89a9-44ff-ab55-292f94fd377e",
+      "8f122d0f-e8c5-4c73-a272-fff860364a71",
+      "9c56ac3f-bfb6-4b17-98de-5e7da078aa36",
+      "ab70671a-4a6e-40df-b52a-e91b5c961651",
+      "64c00f5c-41dd-4c61-8c44-898ae8fa5aa8",
+      "6f6d9625-5a3a-460f-9d45-07a44145a92b",
+      "ce3ee2c7-a579-4404-8302-ac5ff6e178ed",
+      "b9bb1f87-0d16-4e53-a68f-4f7c64abc4bf",
+      "accbbc51-9603-4638-9013-17ff8fe9625c",
+      "30c55e1a-78cb-46b9-9769-3362df6c2fe4",
+      "7879222f-f949-4af2-a6bd-ad2485f08c83",
+      "na-zywo-instance-01"
+    ],
+    "globalShadow": {
+      "enabled": true,
+      "color": "rgba(0,0,0,0.5)",
+      "blur": 10,
+      "offsetX": 1,
+      "offsetY": 3
+    }
+  },
+  "templates": [
+    {
+      "id": "system-standard",
+      "name": "Lw ",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "\n<div class=\"lt-container\">\n    <div class=\"plate\">\n        <h1 class=\"title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
+      "css_template": "\n#{{ID}} .lt-container {\npadding: 0;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nline-height: {{LINE_HEIGHT}};\n}\n#{{ID}} .plate {\nbackground: {{PRIMARY_BG}};\npadding: 20px 40px;\nborder-left: 10px solid {{SECONDARY_COLOR}};\ncolor: white;\ndisplay: inline-block;\nbox-shadow: {{BOX_SHADOW}};\nopacity: 0;\ntransform: {{ANIMATION_IN_TRANSFORM}};\ntransition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .title {\nmargin: 0;\nfont-size: {{TITLE_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\nletter-spacing: -1px;\n}\n",
+      "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const container = root.querySelector('.plate'); root.__slt_show = () => { const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}}); const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}}); if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0); return tl; }; root.__slt_hide = () => { const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}}); const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}}); if (textTl) { const sync = {{{TEXT_ANIM_OUT_SYNC}}}; if (sync) { const combined = gsap.timeline(); combined.add(textTl); combined.add(tl, \">-0.1\"); return combined; } else { tl.add(textTl, 0); } } return tl; }; })();",
+      "defaultFields": {
+        "title": "VinciFlow Title",
+        "primaryColor": "#2563eb",
+        "secondaryColor": "#facc15"
+      },
+      "defaultLayout": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "modern-lower-third",
+      "name": "Modern Lower Third",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"modern-lt-container\">\n    <div class=\"modern-plate\">\n        <h1 class=\"modern-title\">{{{TITLE}}}</h1>\n    </div>\n</div>",
+      "css_template": "#{{ID}} .modern-lt-container {\npadding: 0;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nline-height: {{LINE_HEIGHT}};\n}\n#{{ID}} .modern-plate {\nbackground: {{PRIMARY_BG}};\npadding: 24px 48px;\nborder-radius: 12px;\ncolor: white;\ndisplay: inline-block;\nbox-shadow: {{BOX_SHADOW}};\nopacity: 0;\ntransform: {{ANIMATION_IN_TRANSFORM}};\ntransition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\nborder: 1px solid rgba(255,255,255,0.1);\nbackdrop-filter: blur(10px);\n}\n#{{ID}} .modern-title {\nmargin: 0;\nfont-size: {{TITLE_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\nletter-spacing: 1px;\ntext-shadow: 2px 2px 4px rgba(0,0,0,0.3);\n}\n#{{ID}} .modern-plate {\nposition: relative;\noverflow: hidden;\n}\n#{{ID}} .modern-plate::after {\ncontent: '';\nposition: absolute;\ntop: 0;\nleft: -100%;\nwidth: 50%;\nheight: 100%;\nbackground: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);\ntransform: skewX(-20deg);\nanimation: shine 6s infinite;\n}\n@keyframes shine {\n0% { left: -100%; }\n20% { left: 200%; }\n100% { left: 200%; }\n}",
+      "js_template": "(() => { const root = document.getElementById(\"{{ID}}\"); const container = root.querySelector('.modern-plate'); root.__slt_show = () => { const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}}); const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}}); if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0); return tl; }; root.__slt_hide = () => { const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}}); const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}}); if (textTl) { const sync = {{{TEXT_ANIM_OUT_SYNC}}}; if (sync) { const combined = gsap.timeline(); combined.add(textTl); combined.add(tl, \">-0.1\"); return combined; } else { tl.add(textTl, 0); } } return tl; }; })();",
+      "defaultFields": {
+        "title": "Modern Title",
+        "primaryColor": "#0f172a",
+        "secondaryColor": "#3b82f6"
+      }
+    },
+    {
+      "features": {
+        "wiper": true
+      },
+      "html_template": "<div class=\"modern-ticker\"><div class=\"ticker-label\">{{WIPER_TEXT}}</div><div class=\"ticker-content\"><div class=\"ticker-track\">{{#each ITEMS}}<div class=\"ticker-item\"><span class=\"dot\"></span>{{{this}}}</div>{{/each}}</div></div><div id=\"f-news-list\" style=\"display:none;\">{{{ITEMS_JSON}}}</div></div>",
+      "css_template": ".modern-ticker { position: absolute; bottom: 0; left: 0; width: 100%; min-height: var(--v-height, 60px); display: none; font-family: '{{FONT_FAMILY}}', sans-serif; box-shadow: {{BOX_SHADOW}}; opacity: 0; transform: translateY(100px); } .ticker-label { background: {{#if WIPER_BG}}{{WIPER_BG}}{{else}}#dc2626{{/if}}; color: {{WIPER_TEXT_COLOR}}; font-family: '{{WIPER_FONT}}', sans-serif; font-weight: {{WIPER_FONT_WEIGHT}}; font-size: {{WIPER_FONT_SIZE}}px; padding: 0 30px; display: none; align-items: center; text-transform: uppercase; z-index: 2; border-right: 4px solid rgba(0,0,0,0.2); white-space: nowrap; } .ticker-content { background: {{PRIMARY_BG}}; backdrop-filter: blur(10px); flex: 1; overflow: hidden; position: relative; display: none; align-items: center; } .ticker-track { display: none; white-space: nowrap; padding-left: 100%; } .ticker-item { color: {{TITLE_COLOR}}; font-family: '{{FONT_FAMILY}}', sans-serif; font-size: {{FONT_SIZE}}px; font-weight: {{TITLE_WEIGHT}}; display: none; align-items: center; margin-right: 80px; padding-top: {{PADDING_Y}}px; padding-bottom: {{PADDING_Y}}px; } .dot { display: inline-block; width: 10px; height: 10px; background: {{BORDER_COLOR}}; border-radius: 50%; margin-right: 15px; }",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector('.modern-ticker');\n    const tickerTrack = root.querySelector('.ticker-track');\n    const label = root.querySelector('.ticker-label');\n    const dataEl = root.querySelector('#f-news-list');\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { newsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(e) {}\n\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        \n        const labelText = (newsList.length > 0 && newsList[0].category) ? newsList[0].category : DEFAULT_WIPER;\n        if (label) {\n            label.style.display = labelText ? 'flex' : 'none';\n            label.innerText = labelText;\n        }\n\n        if (tickerTrack) {\n            tl.add(() => {\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const duration = trackWidth / speedPxPerSec;\n                    gsap.to(tickerTrack, {\n                        x: -trackWidth,\n                        duration: duration,\n                        ease: 'none',\n                        repeat: -1\n                    });\n                }\n            });\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        gsap.killTweensOf(tickerTrack);\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "items": [
+          "Welcome to the new Modern Ticker.",
+          "This is a breaking news update.",
+          "Live from the studio.",
+          "Additional information scrolling here."
+        ]
+      }
+    },
+    {
+      "features": {
+        "wiper": true
+      },
+      "html_template": "<div class=\"rep-container\">\n    <div class=\"rep-left-panel\">\n        <div class=\"rep-clock\">00:00</div>\n    </div>\n    <div class=\"rep-content-area\">\n        <div class=\"rep-top-bar\">\n            <div class=\"rep-title\">{{{TITLE}}}</div>\n            <div class=\"rep-side-graphic\"></div>\n        </div>\n        <div class=\"rep-bottom-bar\">\n            <div class=\"wiper-v8\">\n                <div class=\"wiper-v8-gleam\"></div>\n                <span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span>\n            </div>\n            <div class=\"ticker-track\">\n                {{#if ITEMS}}\n                    {{#each ITEMS}}\n                    <div class=\"ticker-item\">{{{this}}}</div>\n                    <div class=\"ticker-sep\"></div>\n                    {{/each}}\n                {{else}}\n                    <div class=\"ticker-item\">ŁADOWANIE...</div>\n                    <div class=\"ticker-sep\"></div>\n                {{/if}}\n            </div>\n            <div id=\"f-news-list\" style=\"display:none;\">{{{ITEMS_JSON}}}</div>\n        </div>\n    </div>\n</div>",
+      "css_template": "#{{ID}} .rep-container {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    display: none;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    line-height: {{LINE_HEIGHT}};\n    box-shadow: {{BOX_SHADOW}};\n    min-height: 120px;\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-left-panel {\n    width: 150px;\n    background: {{PRIMARY_BG}};\n    color: white;\n    display: none;\n    flex-direction: column;\n    z-index: 2;\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-clock {\n    height: 40px;\n    background: #000c24;\n    display: none;\n    align-items: center;\n    justify-content: center;\n    font-size: 28px;\n    font-weight: 700;\n    letter-spacing: 1px;\n}\n#{{ID}} .rep-content-area {\n    flex: 1;\n    display: none;\n    flex-direction: column;\n    overflow: hidden;\n}\n#{{ID}} .rep-top-bar {\n    flex: 1;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: none;\n    align-items: center;\n    padding: 0 30px;\n    position: relative;\n    overflow: hidden;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 300px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{SECONDARY_COLOR}} 0%, transparent 100%);\n}\n#{{ID}} .rep-bottom-bar {\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: none;\n    align-items: center;\n    position: relative;\n    overflow: hidden;\n}\n#{{ID}} .wiper-v8 {\n    position: absolute;\n    left: 0;\n    width: auto;\n    min-width: 150px;\n    padding: 0 40px;\n    height: 100%;\n    background: {{WIPER_BG}};\n    display: none;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5);\n    z-index: 10;\n    box-sizing: border-box;\n    overflow: hidden;\n}\n#{{ID}} .wiper-v8-gleam {\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 60%;\n    height: 100%;\n    display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{{WIPER_GLEAM_BG}}};\n    transform: skewX(-20deg);\n    pointer-events: none;\n    animation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .wiper-text-v8 {\n    font-weight: {{WIPER_FONT_WEIGHT}};\n    font-size: {{WIPER_FONT_SIZE}}px;\n    font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{{WIPER_TEXT_COLOR}}};\n    letter-spacing: {{WIPER_LETTER_SPACING}}px;\n    position: relative;\n    z-index: 11;\n    white-space: nowrap;\n}\n@keyframes sweep-gleam-v8 {\n    0% { left: -100%; }\n    100% { left: 200%; }\n}\n#{{ID}} .ticker-track {\n    display: none;\n    align-items: center;\n    white-space: nowrap;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: 24px;\n    font-weight: 600;\n    text-transform: uppercase;\n    padding: 0 20px;\n    margin-top: {{PADDING_Y}}px;\n}\n#{{ID}} .ticker-sep {\n    width: 12px;\n    height: 24px;\n    background: {{BORDER_COLOR}};\n    transform: skewX(-30deg);\n    margin: 0 10px;\n}\n@keyframes rep-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-container\");\n    const clockEl = root.querySelector(\".rep-clock\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    const wiper = root.querySelector(\".wiper-v8\");\n    const wiperTextEl = root.querySelector(\".wiper-text-v8\");\n    const dataEl = root.querySelector(\"#f-news-list\");\n    let timer;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { newsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(e) {}\n\n    const updateTime = () => {\n        const now = new Date();\n        const h = String(now.getHours());\n        const m = String(now.getMinutes()).padStart(2, \"0\");\n        if(clockEl) clockEl.textContent = h + \":\" + m;\n    };\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        \n        const labelText = (newsList.length > 0 && newsList[0].category) ? newsList[0].category : DEFAULT_WIPER;\n        if (wiper) {\n            wiper.style.display = labelText ? 'flex' : 'none';\n            if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        updateTime();\n        timer = setInterval(updateTime, 1000);\n\n        if (tickerTrack) {\n            tl.add(() => {\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const duration = trackWidth / speedPxPerSec;\n                    gsap.to(tickerTrack, {\n                        x: -trackWidth,\n                        duration: duration,\n                        ease: 'none',\n                        repeat: -1\n                    });\n                }\n            });\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        if (typeof timer !== \"undefined\") clearInterval(timer);\n        gsap.killTweensOf(tickerTrack);\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) tl.add(textTl, 0);\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "title": "MECHANIZM WARUNKOWOŚCI W RAMACH KREDYTU SAFE",
+        "primaryColor": "#c8102e"
+      },
+      "defaultLayout": {
+        "x": 96,
+        "y": 910
+      }
+    },
+    {
+      "id": "republika-lower-third",
+      "name": "Republika Lower Third",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
+      "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        if (textTl) tl.add(textTl, 0);\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "title": "MECHANIZM WARUNKOWOŚCI"
+      }
+    },
+    {
+      "id": "republika-ticker",
+      "name": "Republika Ticker",
+      "type": "TICKER",
+      "version": 1,
+      "features": {
+        "separator": true,
+        "wiper": true
+      },
+      "html_template": "<div class=\"rep-bottom-bar\">\n    <div class=\"wiper-v8\">\n        <div class=\"wiper-v8-gleam\"></div>\n        <span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span>\n    </div>\n    <div class=\"ticker-track\">\n        {{#if ITEMS}}\n            {{#each ITEMS}}\n            <div class=\"ticker-item\">{{this}}</div>\n            <div class=\"ticker-sep\"></div>\n            {{/each}}\n        {{else}}\n            <div class=\"ticker-item\">ŁADOWANIE...</div>\n            <div class=\"ticker-sep\"></div>\n        {{/if}}\n    </div>\n    <div id=\"f-news-list\" style=\"display:none;\">{{{ITEMS_JSON}}}</div>\n</div>",
+      "css_template": "#{{ID}} .rep-bottom-bar {\n    position: absolute;\n    bottom: 40px;\n    left: 96px;\n    width: var(--v-width, 1728px);\n    height: 60px;\n    background: {{{PRIMARY_BG}}};\n    display: none;\n    align-items: center;\n    overflow: hidden;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    z-index: 5;\n}\n#{{ID}} .ticker-track {\n    display: none;\n    align-items: center;\n    white-space: nowrap;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{{TITLE_COLOR}}};\n    font-size: {{FONT_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: uppercase;\n    padding: 0 20px;\n}\n#{{ID}} .ticker-sep {\n    {{SEPARATOR_CSS}}\n}\n#{{ID}} .wiper-v8 {\n    position: absolute;\n    left: 0;\n    width: auto;\n    min-width: 150px;\n    padding: 0 40px;\n    height: 100%;\n    background: {{{WIPER_BG}}};\n    display: none;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5);\n    z-index: 10;\n    box-sizing: border-box;\n    overflow: hidden;\n}\n#{{ID}} .wiper-v8-gleam {\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 60%;\n    height: 100%;\n    display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{{WIPER_GLEAM_BG}}};\n    transform: skewX(-20deg);\n    pointer-events: none;\n    animation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .wiper-text-v8 {\n    font-weight: {{WIPER_FONT_WEIGHT}};\n    font-size: {{WIPER_FONT_SIZE}}px;\n    font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{{WIPER_TEXT_COLOR}}};\n    letter-spacing: {{WIPER_LETTER_SPACING}}px;\n    position: relative;\n    z-index: 11;\n    white-space: nowrap;\n}\n@keyframes sweep-gleam-v8 {\n    0% { left: -100%; }\n    100% { left: 200%; }\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-bottom-bar\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    const wiper = root.querySelector(\".wiper-v8\");\n    const wiperTextEl = root.querySelector(\".wiper-text-v8\");\n    const dataEl = root.querySelector(\"#f-news-list\");\n    if(!container || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { newsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(e) {}\n\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n\n        // Initial wiper visibility\n        const firstItem = newsList[0];\n        const initialCategory = (typeof firstItem === 'object') ? (firstItem.category || \"\") : \"\";\n        const labelText = initialCategory || DEFAULT_WIPER;\n        if (wiper) {\n            wiper.style.display = labelText ? 'flex' : 'none';\n            if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        if (tickerTrack) {\n            tl.add(() => {\n                const items = Array.from(tickerTrack.querySelectorAll(\".ticker-item\"));\n                const itemData = items.map((el, idx) => ({\n                    el: el,\n                    offset: el.offsetLeft,\n                    category: newsList[idx]?.category || DEFAULT_WIPER\n                }));\n\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                const triggerPoint = wiper ? wiper.offsetWidth : 150;\n\n                let lastCategory = null;\n\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const duration = trackWidth / speedPxPerSec;\n                    gsap.to(tickerTrack, {\n                        x: -trackWidth,\n                        duration: duration,\n                        ease: 'none',\n                        repeat: -1,\n                        onUpdate: function() {\n                            const currentX = gsap.getProperty(tickerTrack, \"x\");\n                            let activeCategory = DEFAULT_WIPER;\n                            \n                            for (let i = 0; i < itemData.length; i++) {\n                                if (currentX + itemData[i].offset > triggerPoint) {\n                                    activeCategory = itemData[i].category || DEFAULT_WIPER;\n                                    break;\n                                }\n                            }\n\n                            if (activeCategory !== lastCategory) {\n                                lastCategory = activeCategory;\n                                if (wiper) {\n                                    wiper.style.display = activeCategory ? 'flex' : 'none';\n                                    if (wiperTextEl) wiperTextEl.innerText = activeCategory;\n                                }\n                            }\n                        }\n                    });\n                }\n            });\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        gsap.killTweensOf(tickerTrack);\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) tl.add(textTl, 0);\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "primaryColor": "#002d5e",
+        "secondaryColor": "#ff0000",
+        "titleColor": "#ffffff",
+        "fontFamily": "Bahnschrift",
+        "wiper": {
+          "bgColor": "#ff0000",
+          "textColor": "#ffffff",
+          "fontSize": 35
+        }
+      },
+      "defaultLayout": {
+        "x": 96,
+        "y": 1030
+      }
+    },
+    {
+      "id": "tpl-republika-ticker-cycling",
+      "name": "Republika Ticker (Cycling)",
+      "type": "TICKER",
+      "version": 1,
+      "features": {
+        "separator": true,
+        "wiper": true
+      },
+      "html_template": "<div class=\"rep-bottom-bar\">\n    <div class=\"wiper-v8\">\n        <div class=\"wiper-v8-gleam\"></div>\n        <span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span>\n    </div>\n    <div class=\"news-content-v8\">\n        <div class=\"news-text-v8\">{{{DEFAULT_TEXT}}}</div>\n    </div>\n    <div id=\"f-news-list\" style=\"display:none;\">{{{ITEMS_JSON}}}</div>\n</div>",
+      "css_template": "#{{ID}} .rep-bottom-bar {\n    position: absolute;\n    bottom: 40px;\n    left: 96px;\n    width: var(--v-width, 1728px);\n    height: 60px;\n    background: {{{PRIMARY_BG}}};\n    display: none;\n    align-items: center;\n    overflow: hidden;\n    font-family: '{{FONT_FAMILY}}', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    z-index: 5;\n}\n#{{ID}} .news-content-v8 {\n    flex: 1;\n    height: 100%;\n    display: none;\n    align-items: center;\n    padding-left: 170px;\n    overflow: hidden;\n}\n#{{ID}} .news-text-v8 {\n    color: {{{TITLE_COLOR}}};\n    font-size: {{FONT_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: uppercase;\n    white-space: nowrap;\n}\n#{{ID}} .wiper-v8 {\n    position: absolute;\n    left: 0;\n    width: auto;\n    min-width: 150px;\n    padding: 0 40px;\n    height: 100%;\n    background: {{{WIPER_BG}}};\n    display: none;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5);\n    z-index: 10;\n    box-sizing: border-box;\n    overflow: hidden;\n}\n#{{ID}} .wiper-v8-gleam {\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 60%;\n    height: 100%;\n    display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{{WIPER_GLEAM_BG}}};\n    transform: skewX(-20deg);\n    pointer-events: none;\n    animation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .wiper-text-v8 {\n    font-weight: {{WIPER_FONT_WEIGHT}};\n    font-size: {{WIPER_FONT_SIZE}}px;\n    font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{{WIPER_TEXT_COLOR}}};\n    letter-spacing: {{WIPER_LETTER_SPACING}}px;\n    position: relative;\n    z-index: 11;\n    white-space: nowrap;\n}\n@keyframes sweep-gleam-v8 {\n    0% { left: -100%; }\n    100% { left: 200%; }\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-bottom-bar\");\n    const newsTextEl = root.querySelector(\".news-text-v8\");\n    const wiper = root.querySelector(\".wiper-v8\");\n    const wiperTextEl = root.querySelector(\".wiper-text-v8\");\n    const dataEl = root.querySelector(\"#f-news-list\");\n    if(!container || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { newsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(e) {}\n\n    let currentIndex = 0;\n    let cycleTimer;\n    let isRunning = false;\n\n    const showNextItem = () => {\n        if (!isRunning || !newsTextEl) return;\n        \n        const item = newsList[currentIndex];\n        const text = typeof item === 'object' ? (item.text || \"\") : item;\n        const category = typeof item === 'object' ? (item.category || \"\") : \"\";\n\n        const labelText = DEFAULT_WIPER || category;\n        if (wiper) {\n            wiper.style.display = labelText ? 'flex' : 'none';\n            if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        gsap.to(newsTextEl, {\n            y: -20, opacity: 0, duration: 0.4, ease: \"power2.in\",\n            onComplete: () => {\n                newsTextEl.innerText = text.toUpperCase();\n                gsap.fromTo(newsTextEl, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: \"power2.out\" });\n                \n                currentIndex = (currentIndex + 1) % newsList.length;\n                const displayDuration = (parseFloat(\"{{TICKER_SPEED}}\") || 5) * 1000;\n                cycleTimer = setTimeout(showNextItem, displayDuration);\n            }\n        });\n    };\n\n    root.__slt_show = () => {\n        isRunning = true;\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        tl.add(() => showNextItem(), \"+ =0.1\");\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        isRunning = false;\n        if (cycleTimer) clearTimeout(cycleTimer);\n        return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n    };\n})();",
+      "defaultFields": {
+        "primaryColor": "#002d5e",
+        "textColor": "#ffffff",
+        "wiper": {
+          "bgColor": "#ff0000",
+          "fontSize": 35
+        }
+      }
+    },
+    {
+      "id": "tpl-ticker-st-scrolling",
+      "name": "Ticker zwykły (Scrolling)",
+      "type": "TICKER",
+      "version": 1,
+      "features": {
+        "separator": true,
+        "wiper": true
+      },
+      "html_template": "<div class=\"rep-bottom-bar\">\n    <div class=\"wiper-v8\">\n        <div class=\"wiper-v8-gleam\"></div>\n        <span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span>\n    </div>\n    <div class=\"ticker-track\">\n        {{#if ITEMS}}\n            {{#each ITEMS}}\n            <div class=\"ticker-item\">{{this}}</div>\n            <div class=\"ticker-sep\"></div>\n            {{/each}}\n        {{else}}\n            <div class=\"ticker-item\">ŁADOWANIE...</div>\n            <div class=\"ticker-sep\"></div>\n        {{/if}}\n    </div>\n    <div id=\"f-news-list\" style=\"display:none;\">{{{ITEMS_JSON}}}</div>\n</div>",
+      "css_template": "#{{ID}} .rep-bottom-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: var(--v-height, 60px);\n    background: {{PRIMARY_BG}};\n    display: none;\n    align-items: center;\n    overflow: hidden;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .ticker-track {\n    display: none;\n    align-items: center;\n    white-space: nowrap;\n    padding-left: 100%;\n}\n#{{ID}} .ticker-item {\n    color: {{TITLE_COLOR}};\n    font-size: {{FONT_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: uppercase;\n    padding: {{PADDING_Y}}px 20px;\n}\n#{{ID}} .ticker-sep {\n    {{SEPARATOR_CSS}}\n}\n#{{ID}} .wiper-v8 {\n    position: absolute;\n    left: 0;\n    width: auto;\n    min-width: 150px;\n    padding: 0 40px;\n    height: 100%;\n    background: {{{WIPER_BG}}};\n    display: none;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 5px 0 15px rgba(0,0,0,0.5);\n    z-index: 10;\n    box-sizing: border-box;\n    overflow: hidden;\n}\n#{{ID}} .wiper-v8-gleam {\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 60%;\n    height: 100%;\n    display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\n    background: {{{WIPER_GLEAM_BG}}};\n    transform: skewX(-20deg);\n    pointer-events: none;\n    animation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .wiper-text-v8 {\n    font-weight: {{WIPER_FONT_WEIGHT}};\n    font-size: {{WIPER_FONT_SIZE}}px;\n    font-family: {{WIPER_FONT}}, sans-serif;\n    color: {{{WIPER_TEXT_COLOR}}};\n    letter-spacing: {{WIPER_LETTER_SPACING}}px;\n    position: relative;\n    z-index: 11;\n    white-space: nowrap;\n}\n@keyframes sweep-gleam-v8 {\n    0% { left: -100%; }\n    100% { left: 200%; }\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-bottom-bar\");\n    const tickerTrack = root.querySelector(\".ticker-track\");\n    const wiper = root.querySelector(\".wiper-v8\");\n    const wiperTextEl = root.querySelector(\".wiper-text-v8\");\n    const dataEl = root.querySelector(\"#f-news-list\");\n    if(!container || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { newsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(e) {}\n\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n\n        // Initial wiper visibility\n        const firstItem = newsList[0];\n        const initialCategory = (typeof firstItem === 'object') ? (firstItem.category || \"\") : \"\";\n        const labelText = DEFAULT_WIPER || initialCategory;\n        if (wiper) {\n            wiper.style.display = labelText ? 'flex' : 'none';\n            if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        if (tickerTrack) {\n            tl.add(() => {\n                const items = Array.from(tickerTrack.querySelectorAll(\".ticker-item\"));\n                const itemData = items.map((el, idx) => ({\n                    el: el,\n                    offset: el.offsetLeft,\n                    category: newsList[idx]?.category || \"\"\n                }));\n\n                const trackWidth = tickerTrack.scrollWidth || 0;\n                const speedPxPerSec = (parseFloat(\"{{speed}}\") || parseFloat(\"{{TICKER_SPEED}}\") || 50);\n                const triggerPoint = wiper ? wiper.offsetWidth : 150;\n\n                let lastCategory = null;\n\n                if (speedPxPerSec > 0 && trackWidth > 0) {\n                    const duration = trackWidth / speedPxPerSec;\n                    gsap.to(tickerTrack, {\n                        x: -trackWidth,\n                        duration: duration,\n                        ease: 'none',\n                        repeat: -1,\n                        onUpdate: function() {\n                            const currentX = gsap.getProperty(tickerTrack, \"x\");\n                            let activeCategory = \"\";\n                            \n                            for (let i = 0; i < itemData.length; i++) {\n                                if (currentX + itemData[i].offset > triggerPoint) {\n                                    activeCategory = itemData[i].category || \"\";\n                                    break;\n                                }\n                            }\n                            const currentLabelText = DEFAULT_WIPER || activeCategory;\n\n                            if (currentLabelText !== lastCategory) {\n                                lastCategory = currentLabelText;\n                                if (wiper) {\n                                    wiper.style.display = currentLabelText ? 'flex' : 'none';\n                                    if (wiperTextEl) wiperTextEl.innerText = currentLabelText;\n                                }\n                            }\n                        }\n                    });\n                }\n            });\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        gsap.killTweensOf(tickerTrack);\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) tl.add(textTl, 0);\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "primaryColor": "#ffffff",
+        "titleColor": "#170d4a",
+        "wiper": {
+          "bgColor": "#ff0000",
+          "fontSize": 35
+        },
+        "speed": 200
+      }
+    },
+    {
+      "id": "republika-clock",
+      "name": "Republika Clock",
+      "type": "CLOCK",
+      "version": 1,
+      "html_template": "<div class=\"rep-left-panel\">\n    <div class=\"rep-clock\">00:00</div>\n</div>",
+      "css_template": "#{{ID}} .rep-left-panel {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 150px;\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    flex-direction: column;\n    overflow: hidden;\n    transform-origin: left center;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: 2px solid rgba(255,255,255,0.1);\n}\n#{{ID}} .rep-clock {\n    height: 40px;\n    background: {{PRIMARY_BG}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 28px;\n    font-weight: 700;\n    letter-spacing: 1px;\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-left-panel\");\n    const clockEl = root.querySelector(\".rep-clock\");\n    let timer;\n    const updateTime = () => {\n        const now = new Date();\n        const h = String(now.getHours());\n        const m = String(now.getMinutes()).padStart(2, \"0\");\n        if(clockEl) clockEl.textContent = h + \":\" + m;\n    };\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        updateTime();\n        timer = setInterval(updateTime, 1000);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        if (typeof timer !== \"undefined\") clearInterval(timer);\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+      "defaultFields": {},
+      "defaultLayout": {
+        "x": 96,
+        "y": 910
+      }
+    },
+    {
+      "id": "republika-logo",
+      "name": "Republika Logo",
+      "type": "IMAGE",
+      "version": 1,
+      "html_template": "<div class=\"rep-logo-box\">\n    <img class=\"rep-logo-img\" src=\"{{LOGO_URL}}\" alt=\"Logo\" />\n</div>",
+      "css_template": "#{{ID}} .rep-logo-box {\n    z-index: 50;\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: {{#if LOGO_WIDTH}}{{LOGO_WIDTH}}px{{else}}150px{{/if}};\n    height: {{#if LOGO_HEIGHT}}{{LOGO_HEIGHT}}px{{else}}80px{{/if}};\n    background: {{#if TRANSPARENT}}transparent{{else}}{{PRIMARY_BG}}{{/if}};\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 10px;\n    box-sizing: border-box;\n    box-shadow: {{#if TRANSPARENT}}none{{else}}{{BOX_SHADOW}}{{/if}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    border-right: {{#if TRANSPARENT}}none{{else}}2px solid rgba(255,255,255,0.1){{/if}};\n}\n#{{ID}} .rep-logo-img {\n    max-width: 90%;\n    max-height: 90%;\n    object-fit: contain;\n    filter: {{#if TRANSPARENT}}none{{else}}drop-shadow(0 2px 4px rgba(0,0,0,0.5)){{/if}};\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-logo-box\");\n    root.__slt_show = () => {\n        return GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n    };\n    root.__slt_hide = () => {\n        return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n    };\n})();",
+      "defaultFields": {
+        "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/TV_Republika_logo_2024.svg/200px-TV_Republika_logo_2024.svg.png"
+      },
+      "defaultLayout": {
+        "x": 96,
+        "y": 910
+      }
+    },
+    {
+      "id": "na-zywo-badge",
+      "name": "Plakietka NA ŻYWO",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"na-zywo-wrapper\">\n    <div class=\"na-zywo-container\">\n        <span class=\"na-zywo-dot\"></span>\n        <span class=\"na-zywo-text\">{{{TITLE}}}</span>\n    </div>\n</div>",
+      "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n#{{ID}} .na-zywo-dot {\n    width: 14px;\n    height: 14px;\n    background-color: #ffffff;\n    border-radius: 50%;\n    margin-right: 12px;\n    animation: pulse-dot 1s infinite alternate;\n    box-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n@keyframes pulse-dot {\n    0% { opacity: 1; transform: scale(1); }\n    100% { opacity: 0.3; transform: scale(0.9); }\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "title": "NA ŻYWO",
+        "primaryColor": "#b91c1c"
+      },
+      "defaultLayout": {
+        "x": 100,
+        "y": 100,
+        "layer": 99,
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "city-bar",
+      "name": "Belka Miasto",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"na-zywo-wrapper\">\n    <div class=\"na-zywo-container\">\n        \n        <span class=\"na-zywo-text\">{{{TITLE}}}</span>\n    </div>\n</div>",
+      "css_template": "#{{ID}} .na-zywo-wrapper {\n    display: inline-flex;\n    flex-direction: column;\n    align-items: stretch;\n    transform-origin: center center;\n    opacity: 0;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n    box-shadow: {{BOX_SHADOW}};\n    border-radius: 4px;\n    overflow: hidden;\n}\n#{{ID}} .na-zywo-container {\n    display: inline-flex;\n    align-items: center;\n    background: {{PRIMARY_BG}};\n    padding: 8px 16px;\n    border-radius: 4px;\n    font-family: '{{FONT_FAMILY}}', 'Arial', sans-serif;\n}\n\n#{{ID}} .na-zywo-text {\n    color: {{TITLE_COLOR}};\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    letter-spacing: 1px;\n    text-transform: uppercase;\n}\n",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".na-zywo-wrapper\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "title": "WARSZAWA",
+        "primaryColor": "#ffffff",
+        "titleColor": "#000000"
+      },
+      "defaultLayout": {
+        "x": 100,
+        "y": 150,
+        "layer": 99,
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "528dc35a-546a-4e7f-8da7-a0c365f81680",
+      "name": "belka exp",
+      "type": "LOWER_THIRD",
+      "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
+      "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "title": "Sample Title",
+        "primaryColor": "#ffffff"
+      },
+      "version": 1
+    },
+    {
+      "id": "belka-exp-graphic",
+      "name": "Belka EXP z Grafiką",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-main-content\">\n        <div class=\"rep-title\">{{{TITLE}}}</div>\n    </div>\n    {{#if SIDE_IMAGE}}\n        <div class=\"rep-right-image\">\n            <img src=\"{{SIDE_IMAGE}}\" alt=\"Graphic\" />\n        </div>\n    {{/if}}\n</div>",
+      "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-main-content {\n    flex: 1;\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-right-image {\n    margin-left: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    height: 100%;\n}\n#{{ID}} .rep-right-image img {\n    max-height: 80px;\n    max-width: 150px;\n    object-fit: contain;\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) tl.add(textTl, {{{TEXT_ANIM_SYNC}}} ? \">-0.1\" : 0);\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        if (textTl) {\n            const sync = {{{TEXT_ANIM_OUT_SYNC}}};\n            if (sync) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+      "defaultFields": {
+        "title": "Tytuł z grafiką",
+        "primaryColor": "#ffffff",
+        "primaryBg": "#c8102e",
+        "titleColor": "#ffffff",
+        "sideImage": ""
+      }
+    },
+    {
+      "id": "tpl-urgent-ocg-wiper",
+      "name": "Pasek Pilny (Wiper OCG)",
+      "type": "TICKER",
+      "version": 1,
+      "features": {
+        "wiper": true
+      },
+      "html_template": "<div class=\"news-container-v8\">\n    <div class=\"news-text-v8\">{{#if ITEMS}}{{{ITEMS.[0]}}}{{else}}ŁADOWANIE...{{/if}}</div>\n    <div class=\"wiper-v8\"><span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span></div>\n    <div id=\"f-news-list\" style=\"display:none;\">{{#if ITEMS}}{{{ITEMS_JSON}}}{{/if}}</div>\n</div>",
+      "css_template": "#{{ID}} .news-container-v8 {\nposition: absolute;\nbottom: 0;\nleft: 0;\nwidth: var(--v-width, 100%);\nmin-height: var(--v-height, 60px);\nbackground: {{PRIMARY_BG}};\ncolor: {{TITLE_COLOR}};\ndisplay: none;\nalign-items: center;\noverflow: hidden;\nborder: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\nborder-radius: {{BORDER_RADIUS}}px;\nbox-sizing: border-box;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nopacity: 0;\ntransform: translateY(100px);\nbox-shadow: {{BOX_SHADOW}};\n}\n#{{ID}} .news-text-v8 {\nposition: absolute;\nwidth: auto;\nleft: 0;\nwhite-space: nowrap;\ntext-align: left;\nfont-size: {{TITLE_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\npadding-left: var(--wiper-width, 170px);\npadding-right: 20px;\npadding-top: {{PADDING_Y}}px;\npadding-bottom: {{PADDING_Y}}px;\nbox-sizing: border-box;\nz-index: 1;\ntransition: opacity 0.4s ease-in-out;\nopacity: 0;\n}\n#{{ID}} .news-text-v8.visible {\nopacity: 1;\n}\n#{{ID}} .wiper-v8 {\nposition: absolute;\nleft: 0;\nwidth: auto;\nmin-width: 150px;\npadding: 0 40px;\nheight: 100%;\nbackground: {{WIPER_BG}};\ndisplay: none;\nalign-items: center;\njustify-content: center;\nbox-shadow: 5px 0 15px rgba(0,0,0,0.5);\nborder-radius: {{BORDER_RADIUS}}px;\nz-index: 2;\nbox-sizing: border-box;\noverflow: hidden;\n}\n#{{ID}} .wiper-v8::before {\ncontent: '';\nposition: absolute;\ntop: 0;\nleft: -100%;\nwidth: 60%;\nheight: 100%;\ndisplay: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}};\nbackground: {{WIPER_GLEAM_BG}};\ntransform: skewX(-20deg);\npointer-events: none;\nanimation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out;\n}\n#{{ID}} .wiper-text-v8 {\nfont-weight: {{WIPER_FONT_WEIGHT}};\nfont-size: {{WIPER_FONT_SIZE}}px;\nfont-family: {{WIPER_FONT}}, sans-serif;\ncolor: {{WIPER_TEXT_COLOR}};\nletter-spacing: {{WIPER_LETTER_SPACING}}px;\nposition: relative;\nz-index: 1;\nwhite-space: nowrap;\n}\n#{{ID}} .wiper-v8.move-right {\nanimation: slide-right-v8 1s linear forwards;\n}\n#{{ID}} .wiper-v8.snap-back {\nanimation: slide-back-v8 0.5s ease-in-out forwards;\n}\n@keyframes slide-right-v8 {\n0% { left: 0%; }\n100% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n}\n@keyframes slide-back-v8 {\n0% { left: calc(var(--v-width, 100%) - var(--wiper-width, 150px)); }\n100% { left: 0%; }\n}\n@keyframes sweep-gleam-v8 {\n0% { left: -100%; }\n100% { left: 200%; }\n}",
+      "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector('.news-container-v8');\n    const textElement = root.querySelector('.news-text-v8');\n    const wiper = root.querySelector('.wiper-v8');\n    const wiperTextEl = root.querySelector('.wiper-text-v8');\n    const gleamEl = root.querySelector('.wiper-v8-gleam');\n    const dataEl = root.querySelector('#f-news-list');\n    if(!textElement || !container || !wiper || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { \n        newsList = JSON.parse(dataEl.innerHTML || \"[]\"); \n    } catch(e) { \n        newsList = [\"BRAK DANYCH\"]; \n    }\n    if(newsList.length === 0) newsList = [\"BRAK WIADOMOŚCI\"];\n\n    let currentIndex = 0;\n    let activeTimeouts = [];\n    let cycleRunning = false;\n\n    function adjustFontSize() {\n        const baseFontSizeStr = \"{{TITLE_SIZE}}\";\n        const baseFontSize = parseFloat(baseFontSizeStr) || 40;\n        const wiperEl = root.querySelector('.wiper-v8');\n        const wiperWidth = (wiperEl && wiperEl.style.display !== 'none') ? wiperEl.offsetWidth : 0;\n        if (wiperEl) {\n            container.style.setProperty('--wiper-width', (wiperWidth || 20) + 'px');\n        }\n        const leftPadding = wiperWidth > 0 ? (wiperWidth + 20) : 20;\n        const maxWidth = container.offsetWidth - (leftPadding + 20);\n        \n        textElement.style.paddingLeft = leftPadding + 'px';\n        textElement.style.fontSize = baseFontSize + \"px\";\n        \n        let currentWidth = textElement.scrollWidth - leftPadding;\n        if (currentWidth > maxWidth && currentWidth > 0) {\n            const newSize = (maxWidth / currentWidth) * baseFontSize;\n            textElement.style.fontSize = Math.min(newSize, baseFontSize) + \"px\";\n        }\n    }\n\n    function runGleam() {\n        if (!cycleRunning || !{{WIPER_GLEAM_ENABLED}}) return;\n        if (!gleamEl) return;\n        \n        gsap.fromTo(gleamEl, \n            { left: '-150%' }, \n            { \n                left: '150%', \n                duration: {{WIPER_GLEAM_DURATION}} || 2, \n                ease: \"power1.inOut\",\n                onComplete: () => {\n                    activeTimeouts.push(setTimeout(runGleam, {{WIPER_GLEAM_FREQUENCY}} * 1000));\n                }\n            }\n        );\n    }\n\n    function runCycle() {\n        if (!cycleRunning) return;\n        textElement.classList.remove('visible');\n        const currentMsg = newsList[currentIndex];\n        const text = typeof currentMsg === 'object' ? (currentMsg.text || \"\") : currentMsg;\n        const category = typeof currentMsg === 'object' ? (currentMsg.category || \"\") : \"\";\n        \n        textElement.innerText = text;\n        \n        const labelText = DEFAULT_WIPER || category;\n        if (wiper) {\n             wiper.style.display = labelText ? 'flex' : 'none';\n             if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        adjustFontSize();\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.add('visible');\n        }, 100));\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!cycleRunning) return;\n            textElement.classList.remove('visible');\n            activeTimeouts.push(setTimeout(() => {\n                if(!cycleRunning) return;\n                if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 move-right';\n                activeTimeouts.push(setTimeout(() => {\n                    if(!cycleRunning) return;\n                    if(wiper && wiper.style.display !== 'none') wiper.className = 'wiper-v8 snap-back';\n                    activeTimeouts.push(setTimeout(() => {\n                        if(!cycleRunning) return;\n                        currentIndex = (currentIndex + 1) % newsList.length;\n                        runCycle();\n                    }, 500));\n                }, 1000));\n            }, 400));\n        }, 4000));\n    }\n\n    root.__slt_show = () => {\n        cycleRunning = true;\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 1, y: 0, duration: 0.6, ease: \"power2.out\" });\n        tl.add(() => {\n            runCycle();\n            runGleam();\n        }, \"+ =0.1\");\n        return tl;\n    };\n\n    root.__slt_hide = () => {\n        cycleRunning = false;\n        activeTimeouts.forEach(t => clearTimeout(t));\n        activeTimeouts = [];\n        if(window.gsap && gleamEl) gsap.killTweensOf(gleamEl);\n        const tl = gsap.timeline();\n        tl.to(container, { opacity: 0, y: 100, duration: 0.4, ease: \"power2.in\" });\n        return tl;\n    };\n\n    window.addEventListener('resize', adjustFontSize);\n})();",
+      "defaultFields": {
+        "items": [
+          "RZĄD WZYWA DO OPUSZCZENIA IRANU",
+          "KOLEJNA AFERA KORUPCYJNA WYKRYTA",
+          "PILNY KOMUNIKAT MSW: ZACHOWAJ OSTROŻNOŚĆ"
+        ],
+        "primaryColor": "#730000",
+        "secondaryColor": "linear-gradient(90deg, #ff0055 0%, #e30613 100%)",
+        "titleColor": "#ffffff",
+        "fontFamily": "Bahnschrift",
+        "introText": ""
+      }
+    },
+    {
+      "id": "vertical-ticker",
+      "name": "Ticker Pionowy",
+      "type": "TICKER",
+      "version": 1,
+      "features": {
+        "vertical": true
+      },
+      "html_template": "<div class=\"ticker-vert-container\"><div class=\"ticker-vert-label\">{{WIPER_TEXT}}</div><div class=\"ticker-vert-viewport\"></div><div class=\"ticker-vert-data\" style=\"display:none\">{{ITEMS_JSON}}</div></div>",
+      "css_template": "#{{ID}} .ticker-vert-container {\nposition: absolute;\ntop: 0;\nleft: 0;\nwidth: var(--v-width, 100%);\nheight: var(--v-height, 60px);\ndisplay: flex;\nalign-items: stretch;\nbackground: {{PRIMARY_BG}};\nborder: {{BORDER_WIDTH}}px solid {{BORDER_COLOR}};\nborder-radius: {{BORDER_RADIUS}}px;\nfont-family: '{{FONT_FAMILY}}', sans-serif;\nbox-shadow: {{BOX_SHADOW}};\nopacity: 0;\ntransform: {{ANIMATION_IN_TRANSFORM}};\ntransition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\noverflow: hidden;\n}\n#{{ID}} .ticker-vert-label {\nbackground: {{BORDER_COLOR}};\ncolor: {{TITLE_COLOR}};\npadding: 0 25px;\ndisplay: flex;\nalign-items: center;\nfont-weight: 800;\nfont-size: {{FONT_SIZE}}px;\ntext-transform: uppercase;\nletter-spacing: 1px;\nflex-shrink: 0;\nborder-right: 2px solid rgba(0,0,0,0.15);\n}\n#{{ID}} .ticker-vert-viewport {\nflex: 1;\nposition: relative;\noverflow: hidden;\n}\n#{{ID}} .ticker-vert-item {\nposition: absolute;\nwidth: 100%;\npadding: 0 25px;\nheight: 100%;\ndisplay: flex;\nalign-items: center;\ncolor: {{TITLE_COLOR}};\nfont-size: {{FONT_SIZE}}px;\nfont-weight: {{TITLE_WEIGHT}};\ntext-transform: {{TITLE_TRANSFORM}};\nwhite-space: nowrap;\nopacity: 0;\ntransform: translateY(100%);\n}\n#{{ID}} .ticker-vert-item.entering {\nanimation: ticker-vert-in 0.5s ease-out forwards;\n}\n#{{ID}} .ticker-vert-item.leaving {\nanimation: ticker-vert-out 0.5s ease-in forwards;\n}\n@keyframes ticker-vert-in {\nfrom { transform: translateY(100%); opacity: 0; }\nto { transform: translateY(0); opacity: 1; }\n}\n@keyframes ticker-vert-out {\nfrom { transform: translateY(0); opacity: 1; }\nto { transform: translateY(-100%); opacity: 0; }\n}",
+      "js_template": "(() => {\n  const root = document.getElementById(\"{{ID}}\");\n  const container = root.querySelector('.ticker-vert-container');\n  const viewport = root.querySelector('.ticker-vert-viewport');\n  const label = root.querySelector('.ticker-vert-label');\n  const dataEl = root.querySelector('.ticker-vert-data');\n  if (!container || !viewport || !dataEl) return;\n\n  const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n  let items = [];\n  try { items = JSON.parse(dataEl.textContent || '[]'); } catch(e) { items = ['BRAK DANYCH']; }\n  if (!items.length) items = ['BRAK WIADOMOŚCI'];\n\n  let currentIndex = 0;\n  let cycleRunning = false;\n  let cycleTimer = null;\n  const displayMs = Math.max(1000, (parseFloat(\"{{TICKER_SPEED}}\") || 5) * 1000);\n\n  function runCycle() {\n    if (!cycleRunning || !viewport) return;\n    const el = document.createElement('div');\n    el.className = 'ticker-vert-item';\n\n    const currentItem = items[currentIndex];\n    const text = typeof currentItem === 'object' ? (currentItem.text || \"\") : currentItem;\n    const category = typeof currentItem === 'object' ? (currentItem.category || \"\") : \"\";\n\n    el.textContent = text;\n    \n    const labelText = category || DEFAULT_WIPER;\n    if (label) {\n        label.style.display = labelText ? 'flex' : 'none';\n        label.innerText = labelText;\n    }\n\n    viewport.appendChild(el);\n    void el.offsetWidth;\n    el.classList.add('entering');\n\n    cycleTimer = setTimeout(() => {\n      if (!cycleRunning) { if (el.parentNode) el.parentNode.removeChild(el); return; }\n      el.classList.remove('entering');\n      el.classList.add('leaving');\n      currentIndex = (currentIndex + 1) % items.length;\n      setTimeout(() => {\n        if (el.parentNode) el.parentNode.removeChild(el);\n        if (cycleRunning) runCycle();\n      }, 500);\n    }, displayMs);\n  }\n\n  root.__slt_show = () => {\n    const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n    tl.add(() => { cycleRunning = true; setTimeout(runCycle, 100); });\n    return tl;\n  };\n\n  root.__slt_hide = () => {\n    cycleRunning = false;\n    if (cycleTimer) clearTimeout(cycleTimer);\n    viewport.querySelectorAll('.ticker-vert-item').forEach(i => i.parentNode && i.parentNode.removeChild(i));\n    return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n  };\n})();",
+      "defaultFields": {
+        "items": [
+          "Przykładowa wiadomość pionowa nr 1",
+          "Kolejna ważna informacja",
+          "Trzecia wiadomość tickera"
+        ],
+        "introText": ""
+      },
+      "defaultLayout": {
+        "side": "bottom-left",
+        "marginY": 50,
+        "marginX": 50,
+        "width": 800,
+        "height": 60
+      }
+    },
+    {
+      "id": "tpl-ocg-tag_nazywo",
+      "name": "OCG: TAG: NA ŻYWO",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div id=\"tag-nazywo-wrap\"><div class=\"live-tag\"><span class=\"live-text\" id=\"f-tag-nazywo\">{{{TITLE}}}</span></div></div>",
+      "css_template": "#tag-nazywo-wrap { position: relative;   width: var(--v-width, 190px); height: 40px; transform: translateX(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 9999; } .active #tag-nazywo-wrap { transform: translateX(0); opacity: 1; } #tag-nazywo-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: var(--v-width, 100%); height: 100%; background: linear-gradient(-45deg, #4a0404, #8b0000, #ff3333, #8b0000); background-size: 400% 400%; animation: liveGrad3 4s ease infinite; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; } #tag-nazywo-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 25px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin- } @keyframes liveGrad3 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }",
+      "js_template": "",
+      "defaultFields": {
+        "title": "NA ŻYWO",
+        "primaryColor": "#1e3a8a",
+        "secondaryColor": "#3b82f6",
+        "titleColor": "#ffffff"
+      }
+    },
+    {
+      "id": "tpl-ocg-tag_powtorka",
+      "name": "OCG: TAG: POWTÓRKA",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div id=\"tag-powtorka-wrap\"><div class=\"live-tag\"><span class=\"live-text\" id=\"f-tag-powtorka\">{{{TITLE}}}</span></div></div>",
+      "css_template": "#tag-powtorka-wrap { position: relative;   width: var(--v-width, 190px); height: 40px; transform: translateX(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 9999; } .active #tag-powtorka-wrap { transform: translateX(0); opacity: 1; } #tag-powtorka-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: var(--v-width, 100%); height: 100%; background: linear-gradient(-45deg, #ffffff, #808080, #404040); background-size: 400% 400%; animation: liveGrad2 4s ease infinite; border: 2px solid #020202; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; } #tag-powtorka-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 25px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin- } @keyframes liveGrad2 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }",
+      "js_template": "",
+      "defaultFields": {
+        "title": "POWTÓRKA",
+        "primaryColor": "#1e3a8a",
+        "secondaryColor": "#3b82f6",
+        "titleColor": "#ffffff"
+      }
+    },
+    {
+      "id": "tpl-ocg-tag_bialystok",
+      "name": "OCG: TAG: BIAŁYSTOK",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div id=\"tag-bialystok-wrap\"><div class=\"live-tag\"><span class=\"live-text\" id=\"f-tag-bialystok\">{{{TITLE}}}</span></div></div>",
+      "css_template": "#tag-bialystok-wrap { position: relative;   width: var(--v-width, 190px); height: 40px; transform: translateX(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 9999; } .active #tag-bialystok-wrap { transform: translateX(0); opacity: 1; } #tag-bialystok-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: var(--v-width, 100%); height: 100%; background: linear-gradient(-45deg, #ffffff, #808080, #404040); background-size: 400% 400%; animation: liveGrad1 4s ease infinite; box-shadow: 0 4px 10px rgba(0,0,0,0.5); } #tag-bialystok-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 25px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin- } @keyframes liveGrad1 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }",
+      "js_template": "",
+      "defaultFields": {
+        "title": "BIAŁYSTOK",
+        "primaryColor": "#1e3a8a",
+        "secondaryColor": "#3b82f6",
+        "titleColor": "#ffffff"
+      }
+    },
+    {
+      "id": "tpl-ocg-tag_specjalne_v7",
+      "name": "OCG: TAG: WYDANIE SPECJALNE",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div id=\"tag-spec-wrap\"><div class=\"live-tag\"><span class=\"live-text\" id=\"f-tag-spec\">{{{TITLE}}}</span></div></div>",
+      "css_template": "#tag-spec-wrap { position: relative;   width: var(--v-width, 380px); height: 40px; transform: translateX(-100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, bottom 0.5s cubic-bezier(0.25, 1, 0.5, 1); z-index: 9999; } .active #tag-spec-wrap { transform: translateX(0); opacity: 1; } #tag-spec-wrap .live-tag { display: flex; align-items: center; justify-content: center; width: var(--v-width, 100%); height: 100%; background: linear-gradient(-45deg, #e91e63, #f44336, #e91e63); background-size: 200% 200%; animation: specGrad 3s ease infinite; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; } #tag-spec-wrap .live-text { font-family: 'Bahnschrift', sans-serif; font-weight: bold; font-size: 24px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; margin- } @keyframes specGrad { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }",
+      "js_template": "(() => { \n                const root = {{DOM_CONTEXT}}; \n                if (!root) return;\n                const wrap = root.querySelector('#tag-spec-wrap'); \n                if (!wrap) return;\n                const container = root.parentElement || document.body;\n                \n                setInterval(() => {\n                    let lifted = false;\n                    if (container.querySelector('.lt-container')) {\n                        lifted = true;\n                    }\n                    wrap.style.bottom = lifted ? '285px' : '115px'; \n                }, 100);\n            })();",
+      "defaultFields": {
+        "title": "WYDANIE SPECJALNE",
+        "primaryColor": "#1e3a8a",
+        "secondaryColor": "#3b82f6",
+        "titleColor": "#ffffff"
+      }
+    },
+    {
+      "id": "tpl-ocg-wiper_news",
+      "name": "OCG: PASEK: WIADOMOŚCI ROTACYJNE (Wiper)",
+      "type": "TICKER",
+      "version": 1,
+      "html_template": "<div class=\"news-container-v8\"><div class=\"news-text-v8\">ŁADOWANIE...</div><div class=\"wiper-v8\"><div class=\"wiper-v8-gleam\"></div><span class=\"wiper-text-v8\">{{WIPER_TEXT}}</span></div><div id=\"f-news-list\" style=\"display:none;\">{{{ITEMS_JSON}}}</div></div>",
+      "css_template": ".news-container-v8 { position: absolute; bottom: 0; left: 0; width: var(--v-width, 100%); height: 60px; background: {{PRIMARY_BG}}; color: white; display: flex; align-items: center; overflow: hidden; border-top: 2px solid white; box-sizing: border-box; font-family: '{{FONT_FAMILY}}', sans-serif; transform: translateY(100px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 50; } .active .news-container-v8 { transform: translateY(0); opacity: 1; } .news-text-v8 { position: relative; width: auto; white-space: nowrap; text-align: left; font-size: {{FONT_SIZE}}px; font-weight: {{TITLE_WEIGHT}}; text-transform: uppercase; padding-left: 170px; padding-right: 20px; box-sizing: border-box; z-index: 1; transition: opacity 0.4s ease-in-out; opacity: 0; } .news-text-v8.visible { opacity: 1; } .wiper-v8 { position: absolute; left: 0; width: auto; min-width: 150px; padding: 0 40px; height: 100%; background: {{{WIPER_BG}}}; display: flex; align-items: center; justify-content: center; box-shadow: 5px 0 15px rgba(0,0,0,0.5); z-index: 10; box-sizing: border-box; overflow: hidden; } .wiper-v8-gleam { position: absolute; top: 0; left: -100%; width: 60%; height: 100%; display: {{#if WIPER_GLEAM_ENABLED}}block{{else}}none{{/if}}; background: {{{WIPER_GLEAM_BG}}}; transform: skewX(-20deg); pointer-events: none; animation: sweep-gleam-v8 {{WIPER_GLEAM_DURATION}}s infinite ease-in-out; } .wiper-text-v8 { font-weight: {{WIPER_FONT_WEIGHT}}; font-size: {{WIPER_FONT_SIZE}}px; font-family: {{WIPER_FONT}}, sans-serif; color: {{{WIPER_TEXT_COLOR}}}; letter-spacing: {{WIPER_LETTER_SPACING}}px; position: relative; z-index: 11; white-space: nowrap; } .wiper-v8.move-right { animation: slide-right-v8 1s linear forwards; } .wiper-v8.snap-back { animation: slide-back-v8 0.5s ease-in-out forwards; } @keyframes slide-right-v8 { 0% { left: 0%; } 100% { left: calc(100% - 150px); } } @keyframes slide-back-v8 { 0% { left: calc(100% - 150px); } 100% { left: 0%; } } @keyframes sweep-gleam-v8 { 0% { left: -100%; } 100% { left: 200%; } }",
+      "js_template": "(() => {\n    const root = {{DOM_CONTEXT}};\n    const textElement = root.querySelector('.news-text-v8');\n    const container = root.querySelector('.news-container-v8');\n    const wiper = root.querySelector('.wiper-v8');\n    const wiperTextEl = root.querySelector('.wiper-text-v8');\n    const dataEl = root.querySelector('#f-news-list');\n    if(!textElement || !container || !wiper || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let newsList = [];\n    try { newsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(e) {}\n    if(newsList.length === 0) newsList = [\"SYSTEM GOTOWY\"];\n\n    let currentIndex = 0;\n    let activeTimeouts = [];\n    let isRunning = true;\n\n    function adjustFontSize() {\n        const baseFontSize = parseFloat(\"{{FONT_SIZE}}\") || 40;\n        const wiperWidth = wiper.offsetWidth || 150;\n        const leftPadding = (labelText && labelText !== '') ? (wiperWidth + 20) : 20;\n        const maxWidth = container.offsetWidth - (leftPadding + 20);\n        \n        textElement.style.paddingLeft = leftPadding + 'px';\n        textElement.style.fontSize = baseFontSize + \"px\";\n        \n        let currentWidth = textElement.scrollWidth - leftPadding;\n        if (currentWidth > maxWidth && currentWidth > 0) {\n            const newSize = (maxWidth / currentWidth) * baseFontSize;\n            textElement.style.fontSize = Math.min(newSize, baseFontSize) + \"px\";\n        }\n    }\n\n    let labelText = \"\";\n\n    function runCycle() {\n        if(!isRunning || !document.contains(container)) return;\n        \n        textElement.classList.remove('visible');\n        \n        const item = newsList[currentIndex];\n        const text = typeof item === 'object' ? (item.text || \"\") : item;\n        const category = typeof item === 'object' ? (item.category || \"\") : \"\";\n\n        labelText = category || DEFAULT_WIPER;\n        if (wiper) {\n            wiper.style.display = labelText ? 'flex' : 'none';\n            if (wiperTextEl) wiperTextEl.innerText = labelText;\n        }\n\n        textElement.textContent = text.toUpperCase();\n        adjustFontSize();\n\n        activeTimeouts.push(setTimeout(() => { if(!isRunning) return; textElement.classList.add('visible'); }, 100));\n        \n        const displayDuration = (parseFloat(\"{{TICKER_SPEED}}\") || 5) * 1000;\n\n        activeTimeouts.push(setTimeout(() => {\n            if(!isRunning) return;\n            textElement.classList.remove('visible');\n            activeTimeouts.push(setTimeout(() => {\n                if(!isRunning) return;\n                if(wiper.style.display !== 'none') wiper.classList.add('move-right');\n                activeTimeouts.push(setTimeout(() => {\n                    if(!isRunning) return;\n                    if(wiper.style.display !== 'none') {\n                        wiper.classList.remove('move-right');\n                        wiper.classList.add('snap-back');\n                    }\n                    activeTimeouts.push(setTimeout(() => {\n                        if(!isRunning) return;\n                        wiper.classList.remove('snap-back');\n                        currentIndex = (currentIndex + 1) % newsList.length;\n                        runCycle();\n                    }, 500));\n                }, 1000));\n            }, 400));\n        }, displayDuration));\n    }\n\n    runCycle();\n    window.addEventListener('resize', adjustFontSize);\n\n    root.__slt_hide = () => {\n        isRunning = false;\n        activeTimeouts.forEach(t => clearTimeout(t));\n        return GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n    };\n})();",
+      "defaultFields": {
+        "items": [],
+        "primaryColor": "#4a0404",
+        "secondaryColor": "#ff0000",
+        "titleColor": "#ffffff"
+      }
+    },
+    {
+      "id": "tpl-ocg-crawl_ticker",
+      "name": "OCG: PASEK: SCROLL (Crawl)",
+      "type": "TICKER",
+      "version": 1,
+      "html_template": "<div class=\"sub-ticker-v8\"><div class=\"ticker-wrap-v8\"></div><div id=\"f-crawl-list\" style=\"display:none;\">{{{ITEMS_JSON}}}</div></div>",
+      "css_template": ".sub-ticker-v8 { position: relative;  width: var(--v-width, 100%); height: 50px; background: linear-gradient(180deg, #ffffff 0%, #dcdcdc 100%); color: #000000; display: flex; align-items: center; overflow: hidden; box-shadow: 0 -5px 10px rgba(0,0,0,0.1); box-sizing: border-box; white-space: nowrap; font-family: '{{FONT_FAMILY}}', sans-serif; transform: translateY(50px); opacity: 0; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; z-index: 49; } .active .sub-ticker-v8 { transform: translateY(0); opacity: 1; } .ticker-wrap-v8 { display: inline-flex; align-items: center; animation: scroll-left-v8 40s linear infinite; } .news-item-v8 { font-size: 30px; font-weight: 400; text-transform: uppercase; padding: 0 40px; display: flex; align-items: center; } .separator-v8 { display: inline-flex; align-items: center; justify-content: center; height: 50px; padding: 0 25px; background: linear-gradient(90deg, #7F0000 0%, #7F0000 100%); color: white; font-weight: 900; font-size: 30px; font-family: '{{WIPER_FONT}}', sans-serif; border-left: 2px solid white; border-right: 2px solid white; box-shadow: 2px 0 10px rgba(0,0,0,0.3); letter-spacing: -1px; } @keyframes scroll-left-v8 { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }",
+      "js_template": "(() => {\n    const root = {{DOM_CONTEXT}};\n    const tickerWrap = root.querySelector('.ticker-wrap-v8');\n    const dataEl = root.querySelector('#f-crawl-list');\n    if(!tickerWrap || !dataEl) return;\n\n    const DEFAULT_WIPER = \"{{WIPER_TEXT}}\";\n\n    let subNewsList = [];\n    try { subNewsList = JSON.parse(dataEl.innerHTML || \"[]\"); } catch(e) {}\n    if(subNewsList.length === 0) return;\n\n    let content = \"\";\n    subNewsList.forEach(item => {\n        const text = typeof item === 'object' ? (item.text || \"\") : item;\n        const category = typeof item === 'object' ? (item.category || \"\") : DEFAULT_WIPER;\n        \n        if (category && category !== \"\") {\n            content += '<span class=\"separator-v8\">' + category + '</span>';\n        }\n        content += '<span class=\"news-item-v8\">' + text.toUpperCase() + '</span>';\n    });\n    tickerWrap.innerHTML = content + content;\n})();",
+      "defaultFields": {
+        "items": [
+          "KGHM MA NOWEGO PREZESA",
+          "TRUMP ZAPOWIADA KOLEJNE CŁA"
+        ],
+        "primaryColor": "#1e3a8a",
+        "secondaryColor": "#3b82f6",
+        "titleColor": "#ffffff"
+      }
+    },
+    {
+      "id": "tpl-ocg-belka_biala_v7",
+      "name": "OCG: BELKA: BIAŁO-SZARA",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"lt-container-v8\"><div class=\"text-overlay\" style=\"color:{{TITLE_COLOR}};\">{{{TITLE}}}</div></div>",
+      "css_template": "\n.lt-container-v8 { position: relative; width: var(--v-width, 1575px); height: var(--v-height, 170px); background: linear-gradient(90deg, {{PRIMARY_COLOR}} 0%, {{SECONDARY_COLOR}} 50%, {{PRIMARY_COLOR}} 100%); display: flex; align-items: center; border-bottom: 4px solid rgba(0,0,0,0.1); transform: scaleX(0); transform-origin: left; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.lt-container-v8.active { transform: scaleX(1); }\n.text-overlay { margin-left: 30px; font-family: 'Bahnschrift', sans-serif; font-size: 80px; font-weight: bold; opacity: 0; white-space: nowrap; transition: opacity 0.4s ease 0.4s; }\n.lt-container-v8.active .text-overlay { opacity: 1; }\n        ",
+      "js_template": "",
+      "defaultFields": {
+        "title": "INFORMACJA DNIA",
+        "primaryColor": "#ffffff",
+        "secondaryColor": "#e0e0e0",
+        "titleColor": "#000000"
+      }
+    },
+    {
+      "id": "tpl-ocg-belka_czerwona_v7",
+      "name": "OCG: BELKA: CZERWONA",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"lt-container-v8\"><div class=\"text-overlay\" style=\"color:{{TITLE_COLOR}};\">{{{TITLE}}}</div></div>",
+      "css_template": "\n.lt-container-v8 { position: relative; width: var(--v-width, 1575px); height: var(--v-height, 170px); background: linear-gradient(90deg, {{PRIMARY_COLOR}} 0%, {{SECONDARY_COLOR}} 50%, {{PRIMARY_COLOR}} 100%); display: flex; align-items: center; border-bottom: 4px solid rgba(0,0,0,0.3); transform: scaleX(0); transform-origin: left; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.lt-container-v8.active { transform: scaleX(1); }\n.text-overlay { margin-left: 30px; font-family: 'Bahnschrift', sans-serif; font-size: 80px; font-weight: bold; opacity: 0; white-space: nowrap; transition: opacity 0.4s ease 0.4s; }\n.lt-container-v8.active .text-overlay { opacity: 1; }\n        ",
+      "js_template": "",
+      "defaultFields": {
+        "title": "PILNE INFORMACJE",
+        "primaryColor": "#4a0404",
+        "secondaryColor": "#ff0000",
+        "titleColor": "#ffffff"
+      }
+    },
+    {
+      "id": "tpl-ocg-belka_nazwiskowa_v7",
+      "name": "OCG: BELKA: GOŚĆ",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "\n<div class=\"lt-container-v8-nazwa\">\n    <div class=\"nazwa-row\"><div class=\"text-overlay\" style=\"color:{{TITLE_COLOR}};\">{{{TITLE}}}</div></div>\n    <div class=\"sub-row\"><div class=\"sub-text-overlay\" style=\"color:{{SUBTITLE_COLOR}};\">{{{SUBTITLE}}}</div></div>\n</div>",
+      "css_template": "\n.lt-container-v8-nazwa { position: relative; display:flex; flex-direction:column; justify-content:flex-end; width: var(--v-width, 1575px); height: var(--v-height, 170px); }\n.nazwa-row { height: 110px; width: 100%; background: linear-gradient(90deg, {{PRIMARY_COLOR}} 0%, {{SECONDARY_COLOR}} 50%, {{PRIMARY_COLOR}} 100%); display: flex; align-items: center; border-bottom: 4px solid rgba(0,0,0,0.1); transform: scaleX(0); transform-origin: left; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.sub-row { height: 60px; width: 54%; background: linear-gradient(90deg, {{PRIMARY_COLOR}} 0%, {{SECONDARY_COLOR}} 100%); display: flex; align-items: center; transform: scaleX(0); transform-origin: left; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s; }\n.lt-container-v8-nazwa.active .nazwa-row { transform: scaleX(1); }\n.lt-container-v8-nazwa.active .sub-row { transform: scaleX(1); }\n.text-overlay { margin-left: 30px; font-family: 'Bahnschrift', sans-serif; font-size: 80px; font-weight: bold; opacity: 0; white-space: nowrap; transition: opacity 0.4s ease 0.4s; }\n.sub-text-overlay { margin-left: 30px; font-family: 'Bahnschrift', sans-serif; font-size: 32px; font-weight: normal; opacity: 0; white-space: nowrap; transition: opacity 0.4s ease 0.6s; }\n.lt-container-v8-nazwa.active .text-overlay { opacity: 1; }\n.lt-container-v8-nazwa.active .sub-text-overlay { opacity: 1; }\n        ",
+      "js_template": "",
+      "defaultFields": {
+        "title": "JAN KOWALSKI",
+        "subtitle": "Ekspert ds. Geopolityki",
+        "primaryColor": "#1e3a8a",
+        "secondaryColor": "#3b82f6",
+        "titleColor": "#ffffff"
+      }
+    },
+    {
+      "id": "tpl-ocg-zegar_v2",
+      "name": "OCG: ZEGAR WIDGET",
+      "type": "LOWER_THIRD",
+      "version": 1,
+      "html_template": "<div class=\"widget-container\"><div class=\"clock-top\"><span id=\"current-time\"></span></div><div class=\"info-bottom\"><div class=\"info-text-wrapper\"><span class=\"btb-part\">BTB</span><span class=\"info-part\">INFO</span></div></div></div>",
+      "css_template": ".widget-container { position: relative;   width: var(--v-width, 190px); height: 170px; display: flex; flex-direction: column; background-color: #000000; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transform: translateX(50px) translateY(20px) scale(0.9); opacity: 0; transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 100; box-sizing: border-box; } .active .widget-container { transform: translateX(0) translateY(0) scale(1); opacity: 1; } .clock-top { display: flex; align-items: center; justify-content: center; flex: 1; background: linear-gradient(-45deg, #f0f0f0, #ffffff, #c0c0c0); background-size: 200% 200%; animation: liveGrad1 4s ease infinite; } #current-time { font-family: 'Bahnschrift', sans-serif !important; font-size: 65px !important; font-weight: 400 !important; color: #000000 !important; letter-spacing: 0px; line-height: 1; } .info-bottom { display: flex; align-items: center; justify-content: center; flex: 1; background: #8b0000; } .info-text-wrapper { font-family: system-ui, -apple-system, sans-serif !important; color: #ffffff; display: flex; align-items: center; } .btb-part { font-size: 38px; font-weight: bold; letter-spacing: 0px; } .info-part { font-size: 18px; font-weight: bold; margin- letter-spacing: 0px; } @keyframes liveGrad1 { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }",
+      "js_template": "(() => { const root = {{DOM_CONTEXT}}; const clockEl = root.querySelector('#current-time'); if(!clockEl) return; function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockEl.textContent = hours + ':' + minutes; } updateClock(); const timerId = setInterval(() => { if (!document.contains(clockEl)) return clearInterval(timerId); updateClock(); }, 1000); })();",
+      "defaultFields": {
+        "primaryColor": "#1e3a8a",
+        "secondaryColor": "#3b82f6",
+        "titleColor": "#ffffff"
+      }
+    }
+  ],
   "groups": [
     {
       "id": "8a6900f5-c9fb-410a-9cb8-f7e90ac308f2",

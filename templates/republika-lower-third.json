@@ -1,0 +1,736 @@
+{
+  "_exportVersion": 2,
+  "template": {
+    "id": "republika-lower-third",
+    "name": "Republika Lower Third",
+    "type": "LOWER_THIRD",
+    "version": 1,
+    "html_template": "<div class=\"rep-top-bar\">\n    <div class=\"rep-title\" style=\"padding:5px 0;box-sizing:border-box;width:100%;\">{{{TITLE}}}</div>\n    <div class=\"rep-side-graphic\"></div>\n</div>",
+    "css_template": "#{{ID}} .rep-top-bar {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: var(--v-width, 90%);\n    box-sizing: border-box;\n    min-height: auto;\n    background: {{PRIMARY_BG}};\n    color: {{TITLE_COLOR}};\n    display: block;\n    padding: 5px 30px;\n    font-family: '{{FONT_FAMILY}}', 'Roboto Condensed', sans-serif;\n    box-shadow: {{BOX_SHADOW}};\n    opacity: 0;\n    transform-origin: left center;\n    transform: {{ANIMATION_IN_TRANSFORM}};\n    transition: all {{ANIMATION_DURATION}}s {{ANIMATION_EASE}};\n}\n#{{ID}} .rep-title {\n    font-size: {{TITLE_SIZE}}px;\n    font-weight: {{TITLE_WEIGHT}};\n    text-transform: {{TITLE_TRANSFORM}};\n    white-space: pre-line;\n    z-index: 2;\n    letter-spacing: -0.5px;\n    color: {{TITLE_COLOR}};\n}\n#{{ID}} .rep-side-graphic {\n    position: absolute;\n    right: 0;\n    top: 0;\n    bottom: 0;\n    width: 400px;\n    background: url('{{SIDE_IMAGE}}') center/cover;\n    opacity: 0.8;\n}\n#{{ID}} .rep-side-graphic::before {\n    content: '';\n    position: absolute;\n    top: 0; left: 0; right: 0; bottom: 0;\n    background: linear-gradient(to right, {{PRIMARY_BG}} 0%, transparent 100%);\n}",
+    "js_template": "(() => {\n    const root = document.getElementById(\"{{ID}}\");\n    const container = root.querySelector(\".rep-top-bar\");\n    root.__slt_show = () => {\n        const tl = GSAPFX.standardIn(container, {{{ANIMATION_IN_JSON}}});\n        const textTl = GSAPFX.applyTextEffect(root, {{{TEXT_ANIM_JSON}}});\n        if (textTl) {\n            if ({{{TEXT_ANIM_SYNC}}}) {\n                tl.add(textTl, \">-0.1\");\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n    root.__slt_hide = () => {\n        const tl = GSAPFX.standardOut(container, {{{ANIMATION_OUT_JSON}}});\n        const textTl = GSAPFX.applyTextOutEffect(root, {{{TEXT_ANIM_OUT_JSON}}});\n        \n        \n        if (textTl) {\n            if ({{{TEXT_ANIM_OUT_SYNC}}}) {\n                const combined = gsap.timeline();\n                combined.add(textTl);\n                combined.add(tl, \">-0.1\");\n                return combined;\n            } else {\n                tl.add(textTl, 0);\n            }\n        }\n        return tl;\n    };\n})();",
+    "defaultFields": {
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "TITLE": "",
+      "SUBTITLE": ""
+    },
+    "ocgInputs": [
+      {
+        "id": "TITLE",
+        "label": "Tytuł / Imię Nazwisko",
+        "default": "",
+        "type": "text"
+      },
+      {
+        "id": "SUBTITLE",
+        "label": "Podtytuł / Funkcja",
+        "default": "",
+        "type": "text"
+      }
+    ]
+  },
+  "graphics": [
+    {
+      "id": "ce3ee2c7-a579-4404-8302-ac5ff6e178ed",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka glowna",
+      "title": "TEST BELEKFont size",
+      "subtitle": "CHOROSZCZ",
+      "variant": "standard",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "top",
+          "duration": 0.25,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "out": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.2,
+          "delay": 0,
+          "ease": ""
+        }
+      },
+      "style": {
+        "background": {
+          "color": "#000057",
+          "borderColor": "#030202",
+          "type": "gradient",
+          "color2": "#001a80",
+          "borderWidth": 1,
+          "borderRadius": 10,
+          "gradientAngle": 160
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Inter",
+          "fontSize": 0,
+          "fontWeight": "400"
+        },
+        "subtitleTypography": {
+          "color": "#ffffff"
+        }
+      },
+      "templateId": "republika-lower-third",
+      "layout": {
+        "width": 1650,
+        "x": 180,
+        "y": 855,
+        "layer": 1,
+        "scale": 1,
+        "side": "bottom-right",
+        "marginY": 105,
+        "marginX": 50
+      },
+      "showSubtitle": true,
+      "titleLines": [
+        {
+          "text": "BRUTALNY ATAK TUSKA NA WOLNOŚĆ SŁOWA",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        },
+        {
+          "text": "SŁUŻBY ŻURKA I TUSKA CHCĄ ODEBRAĆ REPUBLICE KONCESJĘ",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        },
+        {
+          "text": "",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        }
+      ],
+      "titleHtml": "<div style=\"line-height: 1;\"><span style=\"font-size: xxx-large; font-weight: bold; font-family: Bahnschrift;\">TEST BELEK</span></div><div style=\"line-height: 1;\"><span style=\"font-size: 24px;\"><span style=\"font-size: 32px;\"><span style=\"font-size: 24px; font-style: italic;\"><span style=\"line-height: 1; font-family: Bahnschrift;\">Font size</span></span></span></span></div>",
+      "sideImage": "",
+      "groupId": null
+    },
+    {
+      "id": "6f6d9625-5a3a-460f-9d45-07a44145a92b",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Belka pilne",
+      "title": "KCOM MNIE ZNISZCZYĆzmasowane ataki w stronę Barneja",
+      "subtitle": "CHOROSZCZ",
+      "variant": "standard",
+      "animation": {
+        "in": {
+          "type": "zoom",
+          "direction": "top",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        },
+        "out": {
+          "type": "zoom",
+          "direction": "right",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": ""
+        },
+        "text": {
+          "type": "reveal"
+        }
+      },
+      "style": {
+        "background": {
+          "color": "#c32222",
+          "borderColor": "#860404",
+          "type": "gradient",
+          "color2": "#7e0e02",
+          "borderWidth": 0,
+          "borderRadius": 10,
+          "gradientAngle": 160
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Inter",
+          "fontSize": 0,
+          "fontWeight": "400"
+        },
+        "subtitleTypography": {
+          "color": "#ffffff"
+        }
+      },
+      "templateId": "republika-lower-third",
+      "layout": {
+        "width": 1650,
+        "x": 180,
+        "y": 855,
+        "layer": 1,
+        "scale": 1,
+        "side": "bottom-right",
+        "marginY": 105,
+        "marginX": 50
+      },
+      "showSubtitle": true,
+      "titleLines": [
+        {
+          "text": "BRUTALNY ATAK TUSKA NA WOLNOŚĆ SŁOWA",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        },
+        {
+          "text": "SŁUŻBY ŻURKA I TUSKA CHCĄ ODEBRAĆ REPUBLICE KONCESJĘ",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        },
+        {
+          "text": "",
+          "fontSize": 25,
+          "fontFamily": "Inter",
+          "fontWeight": "400",
+          "color": "#ffffff",
+          "textTransform": "uppercase"
+        }
+      ],
+      "titleHtml": "<div style=\"line-height: 1;\"><span style=\"font-size: xxx-large; font-weight: bold; font-family: Bahnschrift;\">KCOM MNIE ZNISZCZYĆ</span></div><div style=\"line-height: 1;\"><span style=\"font-size: 24px;\"><span style=\"font-size: 32px;\"><span style=\"font-size: 24px; font-style: italic;\"><span style=\"line-height: 1; font-family: Bahnschrift;\">zmasowane ataki w stronę Barneja</span></span></span></span></div>",
+      "sideImage": "",
+      "groupId": null
+    },
+    {
+      "id": "4736499f-4140-4c85-9c75-b8aa4d09e49a",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (17:36:58)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "f3b191dc-4646-477e-95c6-bff222db1d24",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (17:55:53)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "3da42fcf-fe51-4f25-82e3-a2967e63b996",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (18:07:03)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "b4efc77e-a87e-4f0a-9f38-42a413f3ecd7",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (18:07:43)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Arial",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "ab70671a-4a6e-40df-b52a-e91b5c961651",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (16:03:38)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "bf8cfb56-ce70-4814-9595-d72364a8b264",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (20:32:16)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#c8102e",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "d5bcde21-2e8f-42a0-95dc-21fa69f0f05b",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (20:32:16) (kopia)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "solid",
+          "color": "#ffff00",
+          "color2": "#000000",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    },
+    {
+      "id": "9f44c724-e1ce-415e-a3e4-633b33981313",
+      "type": "LOWER_THIRD",
+      "visible": false,
+      "name": "Republika Lower Third (21:11:55)",
+      "title": "MECHANIZM WARUNKOWOŚCI",
+      "titleHtml": "MECHANIZM WARUNKOWOŚCI",
+      "subtitle": "Subtitle",
+      "introText": "PILNE",
+      "items": [
+        "Wiadomość 1",
+        "Wiadomość 2"
+      ],
+      "speed": 100,
+      "url": "",
+      "variant": "custom",
+      "templateId": "republika-lower-third",
+      "animation": {
+        "in": {
+          "type": "slide",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-out"
+        },
+        "out": {
+          "type": "fade",
+          "direction": "left",
+          "duration": 0.5,
+          "delay": 0,
+          "ease": "ease-in"
+        }
+      },
+      "style": {
+        "background": {
+          "type": "gradient",
+          "color": "#0000FF",
+          "color2": "#00FF00",
+          "gradientAngle": 135,
+          "opacity": 1,
+          "borderColor": "#ffffff",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "subtitleBackgroundColor": "#000000"
+        },
+        "typography": {
+          "color": "#ffffff",
+          "fontFamily": "Bahnschrift",
+          "fontSize": 30,
+          "fontWeight": "bold"
+        },
+        "subtitleTypography": {
+          "color": "#eeeeee",
+          "fontFamily": "Arial",
+          "fontSize": 20,
+          "fontWeight": "normal"
+        }
+      },
+      "groupId": null,
+      "layout": {
+        "x": 96,
+        "y": 950,
+        "scale": 1,
+        "layer": 1
+      }
+    }
+  ]
+}

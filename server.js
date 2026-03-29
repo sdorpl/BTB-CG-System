@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,7 +15,8 @@ const io = new Server(server, {
   }
 });
 
-const DB_FILE = process.env.DATABASE_URL || path.join(__dirname, 'database.sqlite');
+const appDataPath = process.env.APPDATA_PATH || __dirname;
+const DB_FILE = process.env.DATABASE_URL || path.join(appDataPath, 'database.sqlite');
 
 const dbExists = fs.existsSync(DB_FILE) && fs.statSync(DB_FILE).isFile();
 console.log(`[DB] Using database file: ${DB_FILE}`);
@@ -30,10 +32,27 @@ const db = new sqlite3.Database(DB_FILE, (err) => {
             ensureDatabaseInitialized();
         } else {
             console.log("[DB] Database file found. Loading state...");
-            loadStateFromDB();
+            loadStateFromDB(() => {
+                syncTemplateFilesToDB(() => {
+                    startServer();
+                });
+            });
         }
     }
 });
+
+// Konfiguracja uploadu plików (multer)
+const UPLOADS_DIR = path.join(appDataPath, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+    filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, unique + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // max 10MB
 
 // Funkcja automatycznej inicjalizacji bazy danych przy pierwszym uruchomieniu
 function ensureDatabaseInitialized() {
@@ -44,6 +63,7 @@ function ensureDatabaseInitialized() {
         db.run(`CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
         db.run(`CREATE TABLE IF NOT EXISTS groups (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
         db.run(`CREATE TABLE IF NOT EXISTS graphics (id TEXT PRIMARY KEY, templateId TEXT, name TEXT, groupId TEXT, visible INTEGER DEFAULT 0, data TEXT NOT NULL)`);
+        db.run(`CREATE TABLE IF NOT EXISTS presets (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at INTEGER NOT NULL, data TEXT NOT NULL)`);
 
         console.log("[DB] Schema ensured.");
 
@@ -65,8 +85,9 @@ function ensureDatabaseInitialized() {
                             }
                             
                             if (state.templates && state.templates.length > 0) {
-                                const stmt = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
+                                const stmt = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
                                 for (const t of state.templates) {
+                                    if (!t.id) continue;
                                     stmt.run(t.id, JSON.stringify(t));
                                 }
                                 stmt.finalize();
@@ -91,129 +112,162 @@ function ensureDatabaseInitialized() {
                             
                             db.run('COMMIT', () => {
                                 console.log("[DB] Seeding complete.");
-                                loadStateFromDB();
+                                loadStateFromDB(() => {
+                                    syncTemplateFilesToDB(() => {
+                                        startServer();
+                                    });
+                                });
                             });
                         });
                     } catch (e) {
                         console.error("[DB] Seeding failed:", e.message);
-                        loadStateFromDB();
+                        loadStateFromDB(() => {
+                            syncTemplateFilesToDB(() => {
+                                startServer();
+                            });
+                        });
                     }
                 } else {
                     console.log("[DB] No db.json found for seeding.");
-                    loadStateFromDB();
+                    loadStateFromDB(() => {
+                        syncTemplateFilesToDB(() => {
+                            startServer();
+                        });
+                    });
                 }
             } else {
-                loadStateFromDB();
+                loadStateFromDB(() => {
+                    syncTemplateFilesToDB(() => {
+                        startServer();
+                    });
+                });
             }
         });
     });
 }
 
-let appState = { settings: {}, templates: [], graphics: [], groups: [] };
+// Auto-sync template JSON files from templates/ directory into the DB on startup
+function syncTemplateFilesToDB(callback) {
+    const tplDir = path.join(__dirname, 'templates');
+    if (!fs.existsSync(tplDir)) { if (callback) callback(); return; }
+    const files = fs.readdirSync(tplDir).filter(f => f.endsWith('.json'));
+    if (files.length === 0) { if (callback) callback(); return; }
 
-// Funkcja ładująca stan z bazy SQLite do RAM,
-// żeby przy połączeniu nowego klienta od razu wysłać 'initialState' 
-// bez konieczności czekania na asynchroniczne zapytania w on('connection')
+    console.log(`[DB] Syncing ${files.length} template files from templates/ ...`);
+    db.serialize(() => {
+        const stmtTpl = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
+        const stmtGfx = db.prepare('INSERT OR REPLACE INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
+        for (const fn of files) {
+            try {
+                const raw = JSON.parse(fs.readFileSync(path.join(tplDir, fn), 'utf8'));
+
+                // Support v2 bundled format (template + graphics)
+                if (raw._exportVersion === 2 && raw.template) {
+                    const tpl = raw.template;
+                    if (!tpl.id) continue;
+                    stmtTpl.run(tpl.id, JSON.stringify(tpl));
+                    if (Array.isArray(raw.graphics)) {
+                        for (const g of raw.graphics) {
+                            if (!g.id) continue;
+                            stmtGfx.run(g.id, g.templateId || null, g.name || '', g.groupId || null, g.visible ? 1 : 0, JSON.stringify(g));
+                        }
+                    }
+                } else {
+                    // Legacy format — plain template object
+                    if (!raw.id) continue;
+                    stmtTpl.run(raw.id, JSON.stringify(raw));
+                }
+            } catch (e) {
+                console.warn(`[DB] Skipping ${fn}: ${e.message}`);
+            }
+        }
+        stmtTpl.finalize();
+        stmtGfx.finalize(() => {
+            console.log(`[DB] Template files synced.`);
+            // Reload state to pick up updated templates
+            loadStateFromDB(callback);
+        });
+    });
+}
+
+let appState = { settings: {}, templates: [], graphics: [], groups: [], presets: [] };
+
+// Funkcja ładująca stan z bazy SQLite do RAM (Promise.all pattern)
 function loadStateFromDB(callback) {
     console.log("[DB] Loading state from SQLite...");
-    let newState = { settings: {}, templates: [], graphics: [], groups: [] };
-    let queriesPending = 4;
+    // Ensure presets table exists (migration for existing databases)
+    db.run(`CREATE TABLE IF NOT EXISTS presets (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at INTEGER NOT NULL, data TEXT NOT NULL)`);
 
-    function checkDone() {
-        queriesPending--;
-        if (queriesPending === 0) {
-            appState = newState;
-            console.log(`[DB] State fully loaded. Graphics: ${newState.graphics.length}, Templates: ${newState.templates.length}`);
-            if (callback) callback();
-        }
-    }
+    const q = (fn) => new Promise((resolve) => fn(resolve));
 
-    // Settings
-    db.get("SELECT data FROM settings WHERE id = 1", (err, row) => {
-        if (!err && row) {
-            try { newState.settings = JSON.parse(row.data); } catch(e){}
-        }
-        checkDone();
-    });
+    const pSettings = q(resolve => db.get("SELECT data FROM settings WHERE id = 1", (err, row) => {
+        let settings = {};
+        if (!err && row) { try { settings = JSON.parse(row.data); } catch(e){} }
+        resolve(settings);
+    }));
 
-    // Templates
-    db.all("SELECT data FROM templates", (err, rows) => {
-        if (!err && rows) {
-            newState.templates = rows.map(r => {
-                try { return JSON.parse(r.data); } catch(e) { return null; }
-            }).filter(Boolean);
-        }
-        checkDone();
-    });
+    const pTemplates = q(resolve => db.all("SELECT data FROM templates", (err, rows) => {
+        const templates = (!err && rows)
+            ? rows.map(r => { try { return JSON.parse(r.data); } catch(e) { return null; } }).filter(Boolean)
+            : [];
+        resolve(templates);
+    }));
 
-    // Groups
-    db.all("SELECT data FROM groups", (err, rows) => {
-        if (!err && rows) {
-            newState.groups = rows.map(r => {
-                try { return JSON.parse(r.data); } catch(e) { return null; }
-            }).filter(Boolean);
-        }
-        checkDone();
-    });
+    const pGroups = q(resolve => db.all("SELECT data FROM groups", (err, rows) => {
+        const groups = (!err && rows)
+            ? rows.map(r => { try { return JSON.parse(r.data); } catch(e) { return null; } }).filter(Boolean)
+            : [];
+        resolve(groups);
+    }));
 
-    // Graphics
-    db.all("SELECT id, templateId, name, groupId, visible, data FROM graphics", (err, rows) => {
-        if (!err && rows) {
-            newState.graphics = rows.map(r => {
+    const pGraphics = q(resolve => db.all("SELECT id, templateId, name, groupId, visible, data FROM graphics", (err, rows) => {
+        const graphics = (!err && rows)
+            ? rows.map(r => {
                 let parsed = {};
                 try { parsed = JSON.parse(r.data); } catch(e){}
-                return {
-                    ...parsed,
-                    id: r.id,
-                    templateId: r.templateId,
-                    name: r.name,
-                    groupId: r.groupId,
-                    visible: r.visible === 1
-                };
-            });
-        }
-        checkDone();
+                return { ...parsed, id: r.id, templateId: r.templateId, name: r.name, groupId: r.groupId, visible: r.visible === 1 };
+            })
+            : [];
+        resolve(graphics);
+    }));
+
+    const pPresets = q(resolve => db.all("SELECT id, name, created_at, data FROM presets ORDER BY created_at ASC", (err, rows) => {
+        const presets = (!err && rows)
+            ? rows.map(r => { try { const d = JSON.parse(r.data); return { id: r.id, name: r.name, created_at: r.created_at, ...d }; } catch(e) { return null; } }).filter(Boolean)
+            : [];
+        resolve(presets);
+    }));
+
+    Promise.all([pSettings, pTemplates, pGroups, pGraphics, pPresets]).then(([settings, templates, groups, graphics, presets]) => {
+        appState = { settings, templates, groups, graphics, presets };
+        console.log(`[DB] State fully loaded. Graphics: ${graphics.length}, Templates: ${templates.length}, Presets: ${presets.length}`);
+        if (callback) callback();
     });
 }
 
-// Funkcja synchronizująca pojedynczy element 'graphics' w bazie
-function syncGraphicsToDB(graphicsArray) {
+// Pojedyncza funkcja synchronizująca cały stan (settings, templates, groups, graphics) w jednej transakcji.
+// Zastępuje poprzednie syncGraphicsToDB + syncStateToDB, eliminując ryzyko race condition przy dwóch BEGIN TRANSACTION.
+function syncFullStateToDB(state) {
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
-        db.run("DELETE FROM graphics"); // Czyścimy i wypełniamy od nowa w obrębie transakcji by zachować kolejność
-        
-        if (graphicsArray && graphicsArray.length > 0) {
-            const stmt = db.prepare('INSERT INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
-            for (const g of graphicsArray) {
-                const visibleInt = g.visible ? 1 : 0;
-                stmt.run(g.id, g.templateId || null, g.name || '', g.groupId || null, visibleInt, JSON.stringify(g));
-            }
-            stmt.finalize();
-        }
-        db.run("COMMIT");
-    });
-}
 
-// Podstawowa synchronizacja całej reszty (templates, groups, settings)
-function syncStateToDB(state) {
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-        
         // 1. Settings
         if (state.settings) {
             db.run("INSERT OR REPLACE INTO settings (id, data) VALUES (1, ?)", [JSON.stringify(state.settings)]);
         }
 
-        // 2. Templates
-        if (state.templates && state.templates.length > 0) {
+        // 2. Templates — pomijamy aktualizację tylko jeśli pole jest undefined (nie wysłane przez klienta),
+        //    ale zapisujemy nawet pustą tablicę gdy użytkownik świadomie usunął wszystkie szablony.
+        if (state.templates !== undefined) {
             db.run("DELETE FROM templates");
-            const stmtTpl = db.prepare('INSERT INTO templates (id, data) VALUES (?, ?)');
-            for (const t of state.templates) {
-                stmtTpl.run(t.id, JSON.stringify(t));
+            if (state.templates && state.templates.length > 0) {
+                const stmtTpl = db.prepare('INSERT OR REPLACE INTO templates (id, data) VALUES (?, ?)');
+                for (const t of state.templates) {
+                    if (!t.id) continue;
+                    stmtTpl.run(t.id, JSON.stringify(t));
+                }
+                stmtTpl.finalize();
             }
-            stmtTpl.finalize();
-        } else {
-            console.warn("[!] syncStateToDB: Skipping templates update - state.templates is empty or missing. (Prevention of wiping DB)");
         }
 
         // 3. Groups
@@ -226,6 +280,17 @@ function syncStateToDB(state) {
             stmtGrp.finalize();
         }
 
+        // 4. Graphics
+        db.run("DELETE FROM graphics");
+        if (state.graphics && state.graphics.length > 0) {
+            const stmtGfx = db.prepare('INSERT INTO graphics (id, templateId, name, groupId, visible, data) VALUES (?, ?, ?, ?, ?, ?)');
+            for (const g of state.graphics) {
+                const visibleInt = g.visible ? 1 : 0;
+                stmtGfx.run(g.id, g.templateId || null, g.name || '', g.groupId || null, visibleInt, JSON.stringify(g));
+            }
+            stmtGfx.finalize();
+        }
+
         db.run("COMMIT");
     });
 }
@@ -236,6 +301,16 @@ function syncStateToDB(state) {
 
 // Serve static files from the current directory
 app.use(express.static(__dirname));
+// Serwowanie katalogu z uploadami
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Endpoint do uploadu pliku (zastępuje osadzanie Base64 w grafice)
+app.post('/api/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const url = `/uploads/${req.file.filename}`;
+    console.log(`[UPLOAD] Saved: ${req.file.filename} (${req.file.size} bytes)`);
+    res.json({ url });
+});
 
 io.on('connection', (socket) => {
     console.log(`[+] Client connected: ${socket.id}`);
@@ -252,15 +327,62 @@ io.on('connection', (socket) => {
         }
 
         console.log(`[u] Received updateState from ${socket.id}. Graphics: ${newState.graphics?.length || 0}, Templates: ${newState.templates?.length || 0}`);
-        appState = newState;
+        // Preserve server-managed presets — clients don't own this list
+        appState = { ...newState, presets: appState.presets || [] };
         // Broadcast the updated state to ALL connected clients
         io.emit('stateUpdated', appState);
         
-        // Persist to disk
-        if (newState.graphics && newState.graphics.length > 0) {
-            syncGraphicsToDB(newState.graphics);
-        }
-        syncStateToDB(newState);
+        // Persist to disk — jedna atomowa transakcja dla całego stanu
+        syncFullStateToDB(newState);
+    });
+
+    // ── PRESET MANAGEMENT ──────────────────────────────────────
+    socket.on('savePreset', ({ id, name, graphics, groups }) => {
+        if (!id || !name) { console.error('[preset] savePreset: missing id or name'); return; }
+        const existing = appState.presets.find(p => p.id === id);
+        const created_at = existing ? existing.created_at : Date.now();
+        const data = JSON.stringify({ graphics, groups });
+        db.run('INSERT OR REPLACE INTO presets (id, name, created_at, data) VALUES (?, ?, ?, ?)',
+            [id, name, created_at, data], (err) => {
+            if (err) { console.error('[preset] Save error:', err); return; }
+            console.log(`[preset] Saved: "${name}" (${id})`);
+            // Update in-memory presets list without full DB reload
+            const presetObj = { id, name, created_at, graphics, groups };
+            const idx = appState.presets.findIndex(p => p.id === id);
+            if (idx >= 0) {
+                appState.presets[idx] = presetObj;
+            } else {
+                appState.presets.push(presetObj);
+            }
+            io.emit('stateUpdated', appState);
+        });
+    });
+
+    socket.on('deletePreset', (presetId) => {
+        db.run('DELETE FROM presets WHERE id = ?', [presetId], (err) => {
+            if (err) { console.error('[preset] Delete error:', err); return; }
+            console.log(`[preset] Deleted: ${presetId}`);
+            appState.presets = appState.presets.filter(p => p.id !== presetId);
+            io.emit('stateUpdated', appState);
+        });
+    });
+
+    socket.on('loadPreset', (presetId) => {
+        const preset = appState.presets.find(p => p.id === presetId);
+        if (!preset) { console.warn(`[preset] Not found: ${presetId}`); return; }
+        console.log(`[preset] Loading: "${preset.name}"`);
+        // Turn off all currently visible graphics before switching
+        const newGraphics = (preset.graphics || []).map(g => ({ ...g, visible: false }));
+        const newGroups = preset.groups || [];
+        const newState = { ...appState, graphics: newGraphics, groups: newGroups };
+        appState = newState;
+        io.emit('stateUpdated', appState);
+        syncFullStateToDB(newState);
+    });
+
+    socket.on('set_background', (color) => {
+        console.log(`[bg] Background set to: ${color}`);
+        io.emit('set_background', color);
     });
 
     socket.on('disconnect', () => {
@@ -271,23 +393,25 @@ io.on('connection', (socket) => {
 const os = require('os');
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, '0.0.0.0', () => {
-    const networkInterfaces = os.networkInterfaces();
-    let lanIp = 'localhost';
-    for (const name of Object.keys(networkInterfaces)) {
-        for (const net of networkInterfaces[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                lanIp = net.address;
-                break;
+function startServer() {
+    server.listen(PORT, '0.0.0.0', () => {
+        const networkInterfaces = os.networkInterfaces();
+        let lanIp = 'localhost';
+        for (const name of Object.keys(networkInterfaces)) {
+            for (const net of networkInterfaces[name]) {
+                if (net.family === 'IPv4' && !net.internal) {
+                    lanIp = net.address;
+                    break;
+                }
             }
         }
-    }
 
-    console.log(`========================================`);
-    console.log(`  CG Server running on port ${PORT} (SQLite)`);
-    console.log(`  Control Panel (Local): http://localhost:${PORT}/`);
-    console.log(`  Control Panel (LAN):   http://${lanIp}:${PORT}/`);
-    console.log(`  Output URL (Local):    http://localhost:${PORT}/output.html`);
-    console.log(`  Output URL (LAN):      http://${lanIp}:${PORT}/output.html`);
-    console.log(`========================================`);
-});
+        console.log(`========================================`);
+        console.log(`  CG Server running on port ${PORT} (SQLite)`);
+        console.log(`  Control Panel (Local): http://localhost:${PORT}/`);
+        console.log(`  Control Panel (LAN):   http://${lanIp}:${PORT}/`);
+        console.log(`  Output URL (Local):    http://localhost:${PORT}/output.html`);
+        console.log(`  Output URL (LAN):      http://${lanIp}:${PORT}/output.html`);
+        console.log(`========================================`);
+    });
+}
