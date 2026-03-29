@@ -88,7 +88,7 @@ try { initialDrafts = JSON.parse(localStorage.getItem('cg_drafts')) || {}; } cat
 window._draftGraphics = new Proxy(initialDrafts, draftsProxyHandler);
 
 const urlParams = new URLSearchParams(window.location.search);
-const panelMode = urlParams.get('panel'); // 'bank' | 'inspector' | null
+const panelMode = urlParams.get('panel'); // 'bank' | 'inspector' | 'preview' | null
 const uiChannel = new BroadcastChannel('cg_ui_sync');
 
 let selectedGraphicId = null;   // graphic being inspected
@@ -419,6 +419,69 @@ async function init() {
                 inspector.classList.remove('w-72');
                 inspector.classList.add('w-full');
             }
+        } else if (panelMode === 'preview') {
+            // === CLEAN PREVIEW MODE (like output.html) ===
+            // Hide header
+            const header = document.querySelector('header');
+            if (header) header.style.display = 'none';
+
+            // Hide program monitor, shotbox and inspector
+            const programWrap = document.getElementById('program-monitor-wrap');
+            if (programWrap) programWrap.style.display = 'none';
+            const shotboxSection = document.querySelector('#dashboard-left > .flex.flex-col.flex-1');
+            if (shotboxSection) shotboxSection.style.display = 'none';
+            const inspector = document.getElementById('inspector-panel');
+            if (inspector) inspector.style.display = 'none';
+
+            // Hide preview label bar and controls bar (keep only the viewport)
+            const previewWrap = document.getElementById('preview-monitor-wrap');
+            if (previewWrap) {
+                // Label bar (PREVIEW header) and controls bar
+                const labelBar = previewWrap.querySelector('.h-7');
+                const controlsBar = previewWrap.querySelector('.h-10');
+                if (labelBar) labelBar.style.display = 'none';
+                if (controlsBar) controlsBar.style.display = 'none';
+
+                previewWrap.classList.remove('w-1/2');
+                previewWrap.classList.add('w-full');
+                previewWrap.style.flex = '1 1 0';
+                previewWrap.style.minHeight = '0';
+            }
+
+            // Make monitors row fill full height
+            const monitorsRow = previewWrap?.closest('.flex.gap-4');
+            if (monitorsRow) {
+                monitorsRow.classList.remove('shrink-0');
+                monitorsRow.classList.add('flex-1', 'min-h-0');
+                monitorsRow.style.padding = '0';
+                monitorsRow.style.gap = '0';
+            }
+
+            // Remove aspect-ratio constraint — fill by height
+            const monitorInner = document.getElementById('preview-monitor-inner');
+            if (monitorInner) {
+                monitorInner.classList.remove('aspect-video');
+                monitorInner.style.flex = '1 1 0';
+                monitorInner.style.minHeight = '0';
+                monitorInner.style.border = 'none';
+            }
+
+            // Dashboard container: remove overflow hidden issues
+            const dashLeft = document.getElementById('dashboard-left');
+            if (dashLeft) {
+                dashLeft.style.flex = '1 1 0';
+                dashLeft.style.minHeight = '0';
+            }
+
+            // Body: black bg like output
+            document.body.style.backgroundColor = '#000';
+
+            // Toggle safe area with 'S' key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 's' || e.key === 'S') {
+                    document.querySelectorAll('.ebu-safe-area').forEach(el => el.classList.toggle('hidden'));
+                }
+            });
         }
 
         // --- NEW GLOBAL ACTIONS ---
@@ -1271,7 +1334,9 @@ function openInspector(id) {
     refreshPreviewMonitor();
     refreshPreviewControls();
 
-    document.getElementById('inspector-panel').style.display = 'flex';
+    if (panelMode !== 'preview') {
+        document.getElementById('inspector-panel').style.display = 'flex';
+    }
     document.getElementById('inspector-empty').classList.add('hidden');
     document.getElementById('inspector-content').classList.remove('hidden');
     document.getElementById('inspector-content').classList.add('flex');

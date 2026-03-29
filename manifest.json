@@ -1,0 +1,17 @@
+{
+  "name": "CG Control Pro",
+  "short_name": "CG Control",
+  "description": "CG Control Pro Panel",
+  "start_url": "/",
+  "display": "minimal-ui",
+  "background_color": "#0d1320",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

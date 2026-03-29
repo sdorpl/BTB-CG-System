@@ -15,7 +15,8 @@ const io = new Server(server, {
   }
 });
 
-const DB_FILE = process.env.DATABASE_URL || path.join(__dirname, 'database.sqlite');
+const appDataPath = process.env.APPDATA_PATH || __dirname;
+const DB_FILE = process.env.DATABASE_URL || path.join(appDataPath, 'database.sqlite');
 
 const dbExists = fs.existsSync(DB_FILE) && fs.statSync(DB_FILE).isFile();
 console.log(`[DB] Using database file: ${DB_FILE}`);
@@ -41,7 +42,7 @@ const db = new sqlite3.Database(DB_FILE, (err) => {
 });
 
 // Konfiguracja uploadu plików (multer)
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const UPLOADS_DIR = path.join(appDataPath, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
 const storage = multer.diskStorage({
