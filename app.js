@@ -408,10 +408,15 @@ async function init() {
 
         // ==== STANDALONE PANELS SETUP ====
         if (panelMode === 'bank') {
+            // Keep the full header/menu — only hide monitors and inspector
             document.getElementById('preview-monitor-wrap').parentElement.style.display = 'none';
             const inspector = document.getElementById('inspector-panel');
             if (inspector) inspector.style.display = 'none';
         } else if (panelMode === 'inspector') {
+            const header = document.getElementById('app-header');
+            if (header) header.style.display = 'none';
+            const strip = document.getElementById('header-show-strip');
+            if (strip) strip.style.display = 'none';
             document.getElementById('dashboard-left').style.display = 'none';
             const inspector = document.getElementById('inspector-panel');
             if (inspector) {
@@ -422,8 +427,10 @@ async function init() {
         } else if (panelMode === 'preview') {
             // === CLEAN PREVIEW MODE (like output.html) ===
             // Hide header
-            const header = document.querySelector('header');
+            const header = document.getElementById('app-header');
             if (header) header.style.display = 'none';
+            const strip = document.getElementById('header-show-strip');
+            if (strip) strip.style.display = 'none';
 
             // Hide program monitor, shotbox and inspector
             const programWrap = document.getElementById('program-monitor-wrap');
