@@ -112,6 +112,9 @@ uiChannel.onmessage = (e) => {
     } else if (e.data.action === 'preview_graphic_update') {
         previewGraphic = e.data.previewGraphic;
         refreshPreviewMonitor(true);
+    } else if (e.data.action === 'request_preview_state' && panelMode !== 'preview') {
+        // Popup poprosił o aktualny stan — wyślij natychmiast
+        uiChannel.postMessage({ action: 'preview_graphic_update', previewGraphic });
     }
 };
 
@@ -443,20 +446,19 @@ async function init() {
             // Hide preview label bar and controls bar (keep only the viewport)
             const previewWrap = document.getElementById('preview-monitor-wrap');
             if (previewWrap) {
-                // Label bar (PREVIEW header) and controls bar
-                const labelBar = previewWrap.querySelector('.h-7');
-                const controlsBar = previewWrap.querySelector('.h-10');
+                const labelBar = document.getElementById('preview-label-bar');
+                const controlsBar = document.getElementById('preview-controls-bar');
                 if (labelBar) labelBar.style.display = 'none';
                 if (controlsBar) controlsBar.style.display = 'none';
 
-                previewWrap.classList.remove('w-1/2');
+                previewWrap.classList.remove('w-1/2', 'lg:w-1/2');
                 previewWrap.classList.add('w-full');
                 previewWrap.style.flex = '1 1 0';
                 previewWrap.style.minHeight = '0';
             }
 
             // Make monitors row fill full height
-            const monitorsRow = previewWrap?.closest('.flex.gap-4');
+            const monitorsRow = previewWrap?.parentElement;
             if (monitorsRow) {
                 monitorsRow.classList.remove('shrink-0');
                 monitorsRow.classList.add('flex-1', 'min-h-0');
@@ -465,6 +467,14 @@ async function init() {
             }
 
             // Remove aspect-ratio constraint — fill by height
+            // #preview-monitor-collapsible jest teraz wrapperem — musi być flex żeby dzieci mogły rosnąć
+            const collapsibleWrap = document.getElementById('preview-monitor-collapsible');
+            if (collapsibleWrap) {
+                collapsibleWrap.style.flex = '1 1 0';
+                collapsibleWrap.style.minHeight = '0';
+                collapsibleWrap.style.display = 'flex';
+                collapsibleWrap.style.flexDirection = 'column';
+            }
             const monitorInner = document.getElementById('preview-monitor-inner');
             if (monitorInner) {
                 monitorInner.classList.remove('aspect-video');
@@ -489,6 +499,14 @@ async function init() {
                     document.querySelectorAll('.ebu-safe-area').forEach(el => el.classList.toggle('hidden'));
                 }
             });
+
+            // Poproś główne okno o aktualny stan podglądu
+            // Retry kilka razy — główne okno może jeszcze się ładować
+            const _requestPreview = () => uiChannel.postMessage({ action: 'request_preview_state' });
+            _requestPreview();
+            setTimeout(_requestPreview, 300);
+            setTimeout(_requestPreview, 800);
+            setTimeout(_requestPreview, 1500);
         }
 
         // --- NEW GLOBAL ACTIONS ---
@@ -502,7 +520,7 @@ async function init() {
         // --- Background control (color picker + checkerboard) ---
         function changeBg(color) {
             // Update monitors with checkerboard for transparent
-            document.querySelectorAll('#preview-monitor-inner, #program-monitor-wrap .relative.bg-black').forEach(m => {
+            document.querySelectorAll('#preview-monitor-inner, #program-monitor-inner').forEach(m => {
                 if (color === 'transparent') {
                     m.style.backgroundImage = 'linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%)';
                     m.style.backgroundSize = '20px 20px';
@@ -547,6 +565,20 @@ async function init() {
             });
             e.currentTarget.classList.toggle('text-white');
             e.currentTarget.classList.toggle('bg-blue-600');
+        });
+
+        document.getElementById('btn-toggle-safe-area-program')?.addEventListener('click', (e) => {
+            document.querySelectorAll('.ebu-safe-area').forEach(el => {
+                el.classList.toggle('hidden');
+            });
+            e.currentTarget.classList.toggle('text-white');
+            e.currentTarget.classList.toggle('bg-blue-600');
+            // Sync stan z przyciskiem preview
+            const previewBtn = document.getElementById('btn-toggle-safe-area');
+            if (previewBtn) {
+                previewBtn.classList.toggle('text-white');
+                previewBtn.classList.toggle('bg-blue-600');
+            }
         });
 
         const btnImport = document.getElementById('btn-import-template');
@@ -5303,6 +5335,23 @@ function bindPresetEvents() {
         });
     }
 }
+
+// ===========================================================
+// MONITOR COLLAPSE TOGGLE
+// ===========================================================
+const _monitorState = { preview: true, program: true };
+
+window.toggleMonitor = function(which) {
+    const collapsible = document.getElementById(which + '-monitor-collapsible');
+    const chevron = document.getElementById('chevron-' + which);
+    if (!collapsible) return;
+    _monitorState[which] = !_monitorState[which];
+    const open = _monitorState[which];
+    collapsible.style.display = open ? '' : 'none';
+    if (chevron) {
+        chevron.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+};
 
 // ===========================================================
 // START
