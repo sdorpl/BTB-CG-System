@@ -71,15 +71,24 @@ function _cmSetOpacity(val) {
     if (el) el.style.opacity = val;
 }
 
+// Debounced localStorage flush — prevents blocking the main thread on every keystroke
+let _draftSaveTimer = null;
+function _flushDrafts(target) {
+    clearTimeout(_draftSaveTimer);
+    _draftSaveTimer = setTimeout(() => {
+        try { localStorage.setItem('cg_drafts', JSON.stringify(target)); } catch(e){}
+    }, 300);
+}
+
 const draftsProxyHandler = {
     set(target, prop, val) {
         target[prop] = val;
-        try { localStorage.setItem('cg_drafts', JSON.stringify(target)); } catch(e){}
+        _flushDrafts(target);
         return true;
     },
     deleteProperty(target, prop) {
         delete target[prop];
-        try { localStorage.setItem('cg_drafts', JSON.stringify(target)); } catch(e){}
+        _flushDrafts(target);
         return true;
     }
 };
@@ -106,7 +115,7 @@ uiChannel.onmessage = (e) => {
     if (e.data.action === 'select_graphic') {
         const gfx = state.graphics.find(g => g.id === e.data.id);
         if (gfx) {
-            setPreviewGraphic(JSON.parse(JSON.stringify(gfx)), true);
+            setPreviewGraphic(structuredClone(gfx), true);
             openInspector(e.data.id);
         }
     } else if (e.data.action === 'preview_graphic_update') {
@@ -405,6 +414,7 @@ async function init() {
             bindWysiwygModalEvents();
             bindTickerEditorEvents();
             bindPresetEvents();
+            initShotboxDelegation();
             _globalEventsBound = true;
         }
         document.getElementById('loading-overlay').classList.add('hidden');
@@ -863,6 +873,121 @@ function getGroupForGraphic(graphic) {
 // Global toggle state
 if (typeof window._groupCollapseState === 'undefined') window._groupCollapseState = {};
 
+// --- Shotbox event delegation (set up once, handles all card/button interactions) ---
+function initShotboxDelegation() {
+    const grid = document.getElementById('shotbox-grid');
+    if (!grid) return;
+
+    grid.addEventListener('click', (e) => {
+        // Preview button
+        const prevBtn = e.target.closest('[data-preview-id]');
+        if (prevBtn) {
+            e.stopPropagation();
+            const g = state.graphics.find(g => g.id === prevBtn.dataset.previewId);
+            if (g) setPreviewGraphic(structuredClone(g));
+            return;
+        }
+        // Take button
+        const takeBtn = e.target.closest('[data-take-id]');
+        if (takeBtn) {
+            e.stopPropagation();
+            const id = takeBtn.dataset.takeId;
+            const g = state.graphics.find(g => g.id === id);
+            if (g) {
+                g.visible = !g.visible;
+                saveState();
+                renderShotbox();
+                updateProgramMonitor();
+                if (previewGraphic?.id === id) { previewGraphic.visible = g.visible; refreshPreviewControls(); }
+                if (selectedGraphicId === id) openInspector(id);
+            }
+            return;
+        }
+        // Off button
+        const offBtn = e.target.closest('[data-off-id]');
+        if (offBtn) {
+            e.stopPropagation();
+            const id = offBtn.dataset.offId;
+            const g = state.graphics.find(gx => gx.id === id);
+            if (g && g.visible) {
+                g.visible = false;
+                saveState();
+                renderShotbox();
+                updateProgramMonitor();
+                if (previewGraphic?.id === id) { previewGraphic.visible = false; refreshPreviewControls(); }
+                if (selectedGraphicId === id) openInspector(id);
+            }
+            return;
+        }
+        // Delete button
+        const delBtn = e.target.closest('[data-delete-id]');
+        if (delBtn) {
+            e.stopPropagation();
+            const id = delBtn.dataset.deleteId;
+            const g = state.graphics.find(gx => gx.id === id);
+            const name = g ? g.name : 'tę grafikę';
+            if (confirm(`Czy na pewno chcesz usunąć grafikę "${name}"?`)) {
+                state.graphics = state.graphics.filter(g => g.id !== id);
+                if (selectedGraphicId === id) { selectedGraphicId = null; closeInspector(); }
+                if (previewGraphic?.id === id) setPreviewGraphic(null);
+                saveState();
+                renderShotbox();
+                updateProgramMonitor();
+            }
+            return;
+        }
+        // Copy button
+        const copyBtn = e.target.closest('[data-copy-id]');
+        if (copyBtn) {
+            e.stopPropagation();
+            copyGraphic(copyBtn.dataset.copyId);
+            return;
+        }
+        // Hotkey assign button
+        const hkBtn = e.target.closest('[data-hotkey-assign]');
+        if (hkBtn) {
+            e.stopPropagation();
+            openHotkeyAssignModal(hkBtn.dataset.hotkeyAssign);
+            return;
+        }
+        // Group take-all button
+        const grpTakeBtn = e.target.closest('[data-group-take]');
+        if (grpTakeBtn) {
+            e.stopPropagation();
+            const gid = grpTakeBtn.dataset.groupTake;
+            const anyOn = state.graphics.filter(g => g.groupId === gid).some(g => g.visible);
+            groupTakeAll(gid, !anyOn);
+            return;
+        }
+        // Card background click (select for preview/inspector)
+        const card = e.target.closest('[data-card-id]');
+        if (card && !e.target.closest('button') && !e.target.closest('select')) {
+            const id = card.dataset.cardId;
+            const gfx = window._draftGraphics[id] || state.graphics.find(g => g.id === id);
+            if (gfx) {
+                setPreviewGraphic(structuredClone(gfx));
+                if (panelMode !== 'inspector') uiChannel.postMessage({ action: 'select_graphic', id });
+            }
+        }
+    });
+
+    grid.addEventListener('change', (e) => {
+        const sel = e.target.closest('[data-group-assign]');
+        if (!sel) return;
+        e.stopPropagation();
+        const gfxId = sel.dataset.groupAssign;
+        const val = sel.value;
+        if (val === '__new__') {
+            const name = prompt('Nazwa nowej grupy:');
+            if (!name) { renderShotbox(); return; }
+            const grp = createGroup(name);
+            assignToGroup(gfxId, grp.id);
+        } else {
+            assignToGroup(gfxId, val || null);
+        }
+    });
+}
+
 // --- Render Shotbox ---
 function renderShotbox() {
     ensureGroups();
@@ -889,6 +1014,7 @@ function renderShotbox() {
         const grp = getGroupForGraphic(graphic);
 
         const card = document.createElement('div');
+        card.dataset.cardId = graphic.id;
         card.className = `shotbox-card cursor-pointer rounded border p-2 relative group flex flex-col gap-2 transition-all duration-200
             ${isActive ? 'border-red-600 bg-red-900/20 shadow-[0_0_15px_rgba(229,57,53,0.3)] ring-1 ring-red-500' :
                 isPreview ? 'border-yellow-500 bg-yellow-900/10 shadow-[0_0_10px_rgba(251,192,45,0.2)]' :
@@ -975,17 +1101,6 @@ function renderShotbox() {
             ` : ''}
         `;
 
-        card.addEventListener('click', (e) => {
-            if (e.target.closest('button') || e.target.closest('select')) return;
-            const gfx = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
-            if (gfx) {
-                setPreviewGraphic(JSON.parse(JSON.stringify(gfx)));
-                if (panelMode !== 'inspector') {
-                    uiChannel.postMessage({ action: 'select_graphic', id: graphic.id });
-                }
-            }
-        });
-
         return card;
     };
 
@@ -1020,18 +1135,22 @@ function renderShotbox() {
             </button>
         `;
 
-        header.querySelector('[data-group-toggle]').addEventListener('click', (e) => {
-            window._groupCollapseState[grp.id] = !window._groupCollapseState[grp.id];
-            renderShotbox();
-        });
-
-        groupWrapper.appendChild(header);
-
         const innerGrid = document.createElement('div');
         innerGrid.className = 'group-inner-grid grid gap-2 p-2 pt-2 transition-all duration-300 min-h-[10px]';
         if (isCollapsed) {
             innerGrid.style.display = 'none';
         }
+
+        // Toggle collapse without full re-render — directly mutate DOM
+        header.querySelector('[data-group-toggle]').addEventListener('click', (e) => {
+            const nowCollapsed = !window._groupCollapseState[grp.id];
+            window._groupCollapseState[grp.id] = nowCollapsed;
+            innerGrid.style.display = nowCollapsed ? 'none' : '';
+            const chevron = header.querySelector('[data-group-toggle] svg');
+            if (chevron) chevron.style.transform = nowCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+        });
+
+        groupWrapper.appendChild(header);
 
         groupGraphics.forEach(graphic => {
             innerGrid.appendChild(createCardElement(graphic));
@@ -1045,118 +1164,7 @@ function renderShotbox() {
         grid.appendChild(createCardElement(graphic));
     });
 
-    // ---- Bind all shotbox events ----
-
-    grid.querySelectorAll('[data-preview-id]').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            const g = state.graphics.find(g => g.id === btn.getAttribute('data-preview-id'));
-            if (g) setPreviewGraphic(JSON.parse(JSON.stringify(g)));
-        });
-    });
-
-    grid.querySelectorAll('[data-take-id]').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            const id = btn.getAttribute('data-take-id');
-            const g = state.graphics.find(g => g.id === id);
-            if (g) {
-                g.visible = !g.visible;
-                saveState();
-                renderShotbox();
-                updateProgramMonitor();
-                if (previewGraphic?.id === id) {
-                    previewGraphic.visible = g.visible;
-                    refreshPreviewControls();
-                }
-                if (selectedGraphicId === id) {
-                    openInspector(id);
-                }
-            }
-        });
-    });
-
-    grid.querySelectorAll('[data-off-id]').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            const id = btn.getAttribute('data-off-id');
-            const g = state.graphics.find(gx => gx.id === id);
-            if (g && g.visible) {
-                g.visible = false;
-                saveState();
-                renderShotbox();
-                updateProgramMonitor();
-                if (previewGraphic?.id === id) {
-                    previewGraphic.visible = false;
-                    refreshPreviewControls();
-                }
-                if (selectedGraphicId === id) {
-                    openInspector(id);
-                }
-            }
-        });
-    });
-
-    grid.querySelectorAll('[data-delete-id]').forEach(btn => {
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            const id = btn.getAttribute('data-delete-id');
-            const g = state.graphics.find(gx => gx.id === id);
-            const name = g ? g.name : 'tę grafikę';
-            if (confirm(`Czy na pewno chcesz usunąć grafikę "${name}"?`)) {
-                state.graphics = state.graphics.filter(g => g.id !== id);
-                if (selectedGraphicId === id) {
-                    selectedGraphicId = null;
-                    closeInspector();
-                }
-                if (previewGraphic?.id === id) {
-                    setPreviewGraphic(null);
-                }
-                saveState();
-                renderShotbox();
-                updateProgramMonitor();
-            }
-        };
-    });
-
-    grid.querySelectorAll('[data-copy-id]').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            copyGraphic(btn.getAttribute('data-copy-id'));
-        });
-    });
-
-    grid.querySelectorAll('[data-hotkey-assign]').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            openHotkeyAssignModal(btn.getAttribute('data-hotkey-assign'));
-        });
-    });
-
-    grid.querySelectorAll('[data-group-take]').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            const gid = btn.getAttribute('data-group-take');
-            const anyOn = state.graphics.filter(g => g.groupId === gid).some(g => g.visible);
-            groupTakeAll(gid, !anyOn);
-        });
-    });
-
-    grid.querySelectorAll('[data-group-assign]').forEach(sel => {
-        sel.addEventListener('change', e => {
-            e.stopPropagation();
-            const gfxId = sel.getAttribute('data-group-assign');
-            const val = sel.value;
-            if (val === '__new__') {
-                const name = prompt('Nazwa nowej grupy:');
-                if (!name) { renderShotbox(); return; }
-                const grp = createGroup(name);
-                assignToGroup(gfxId, grp.id);
-            } else {
-                assignToGroup(gfxId, val || null);
-            }
-        });
-    });
+    // ---- Event handling via delegation (see initShotboxDelegation) ----
 
     if (window.Sortable) {
         if (window._shotboxSortables) {
@@ -1266,7 +1274,7 @@ window.syncDraftGraphic = function(id) {
         const idx = state.graphics.findIndex(g => g.id === id);
         if (idx !== -1) {
             const isVisible = state.graphics[idx].visible;
-            const saved = JSON.parse(JSON.stringify(draft));
+            const saved = structuredClone(draft);
             delete saved._codeTab;
             state.graphics[idx] = saved;
             state.graphics[idx].visible = isVisible;
@@ -1298,7 +1306,7 @@ window._openGraphicInspector = function(id) {
             uiChannel.postMessage({ action: 'select_graphic', id });
         }, 900);
     } else {
-        setPreviewGraphic(JSON.parse(JSON.stringify(g)));
+        setPreviewGraphic(structuredClone(g));
         openInspector(id);
     }
 };
@@ -1362,14 +1370,14 @@ function openInspector(id) {
     if (!graphicRaw) return;
 
     // Fallback: if graphic doesn't have an explicit type, get it from the template
-    const graphic = JSON.parse(JSON.stringify(graphicRaw));
+    const graphic = structuredClone(graphicRaw);
     if (!graphic.type) {
         const tpl = state.templates.find(t => t.id === graphic.templateId);
         if (tpl) graphic.type = tpl.type;
     }
 
     // AUTO-PREVIEW: always show/refresh the selected graphic in PREVIEW monitor during editing
-    previewGraphic = JSON.parse(JSON.stringify(graphic));
+    previewGraphic = structuredClone(graphic);
     refreshPreviewMonitor();
     refreshPreviewControls();
 
@@ -2102,7 +2110,7 @@ function renderInspectorBody(graphic) {
                     const res = await uploadFile(file);
                     let g = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
                     if (g) {
-                        g = JSON.parse(JSON.stringify(g));
+                        g = structuredClone(g);
                         g.url = res.url;
                         window._draftGraphics[graphic.id] = g;
                         if (previewGraphic?.id === graphic.id) Object.assign(previewGraphic, g);
@@ -2128,7 +2136,7 @@ function renderInspectorBody(graphic) {
                     const res = await uploadFile(file);
                     let g = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
                     if (g) {
-                        g = JSON.parse(JSON.stringify(g));
+                        g = structuredClone(g);
                         g.sideImage = res.url;
                         window._draftGraphics[graphic.id] = g;
                         if (previewGraphic?.id === graphic.id) Object.assign(previewGraphic, g);
@@ -2151,7 +2159,7 @@ function renderInspectorBody(graphic) {
             e.stopPropagation();
             let g = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
             if (g) {
-                g = JSON.parse(JSON.stringify(g));
+                g = structuredClone(g);
                 g.sideImage = '';
                 window._draftGraphics[graphic.id] = g;
                 if (previewGraphic?.id === graphic.id) Object.assign(previewGraphic, g);
@@ -2167,7 +2175,7 @@ function renderInspectorBody(graphic) {
         btn.addEventListener('click', () => {
             let g = window._draftGraphics[selectedGraphicId] || state.graphics.find(g => g.id === selectedGraphicId);
             if (!g) return;
-            g = JSON.parse(JSON.stringify(g));
+            g = structuredClone(g);
             deepSet(g, btn.getAttribute('data-dir-field'), btn.getAttribute('data-dir-value'));
             window._draftGraphics[selectedGraphicId] = g;
             if (previewGraphic?.id === selectedGraphicId) Object.assign(previewGraphic, g);
@@ -2267,7 +2275,7 @@ function handleInspectorChange(el, graphic) {
     refreshPreviewMonitor();
     
     // Commit to persistent draft
-    window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(g));
+    window._draftGraphics[graphic.id] = structuredClone(g);
 
     // Re-render inspector when background type changes (shows/hides gradient fields), layout side changes, or wiper visibility toggles
     if (field === 'style.background.type' || field === 'layout.side' || field === 'wiper.show') {
@@ -2379,9 +2387,9 @@ function saveWysiwyg(editorEl, graphicId) {
         }
     }
     
-    window._draftGraphics[g.id] = JSON.parse(JSON.stringify(g));
+    window._draftGraphics[g.id] = structuredClone(g);
     refreshPreviewMonitor();
-    
+
     clearTimeout(window._shotboxSyncTimer);
     window._shotboxSyncTimer = setTimeout(() => renderShotbox(), 300);
 }
@@ -2478,7 +2486,7 @@ function openWysiwygModal(graphicId) {
     if (!g) return;
     // Ensure previewGraphic is set for live drafting
     if (!previewGraphic || previewGraphic.id !== graphicId) {
-        previewGraphic = JSON.parse(JSON.stringify(g));
+        previewGraphic = structuredClone(g);
         refreshPreviewMonitor();
         refreshPreviewControls();
     }
@@ -2492,7 +2500,7 @@ function openWysiwygModal(graphicId) {
     }
 
     // Backup current draft to allow revert on cancel
-    _wmInitialDraft = JSON.parse(JSON.stringify(window._draftGraphics[graphicId] || state.graphics.find(gx => gx.id === graphicId)));
+    _wmInitialDraft = structuredClone(window._draftGraphics[graphicId] || state.graphics.find(gx => gx.id === graphicId));
 
     _wmOpenModal(g);
 }
@@ -2501,7 +2509,7 @@ function openWysiwygModalForField(graphicId, fieldId, currentHtml) {
     const g = window._draftGraphics[graphicId] || state.graphics.find(g => g.id === graphicId);
     if (!g) return;
     if (!previewGraphic || previewGraphic.id !== graphicId) {
-        previewGraphic = JSON.parse(JSON.stringify(g));
+        previewGraphic = structuredClone(g);
         refreshPreviewMonitor();
         refreshPreviewControls();
     }
@@ -2510,7 +2518,7 @@ function openWysiwygModalForField(graphicId, fieldId, currentHtml) {
     _wmSavedHtml = currentHtml || '';
 
     // Backup current draft to allow revert on cancel
-    _wmInitialDraft = JSON.parse(JSON.stringify(window._draftGraphics[graphicId] || state.graphics.find(gx => gx.id === graphicId)));
+    _wmInitialDraft = structuredClone(window._draftGraphics[graphicId] || state.graphics.find(gx => gx.id === graphicId));
 
     _wmOpenModal(g);
 }
@@ -3575,7 +3583,7 @@ function _saveCurrentCodeEditorContent() {
         const field = fieldMap[currentTemplateTab];
         if (!field) return; // vars tab — nothing to save here
         graphic[field] = _cmGetValue();
-        window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(graphic));
+        window._draftGraphics[graphic.id] = structuredClone(graphic);
         if (previewGraphic?.id === graphic.id) {
             Object.assign(previewGraphic, graphic);
             refreshPreviewMonitor();
@@ -3616,7 +3624,7 @@ function saveCurrentTemplate() {
         if (draft) {
             const idx = state.graphics.findIndex(g => g.id === draft.id);
             if (idx !== -1) {
-                const saved = JSON.parse(JSON.stringify(draft));
+                const saved = structuredClone(draft);
                 delete saved._codeTab;
                 const wasVisible = state.graphics[idx].visible;
                 state.graphics[idx] = saved;
@@ -3978,7 +3986,7 @@ function createGraphicFromTemplate(templateIdOrTpl) {
     state.graphics.push(newG);
     saveState();
     renderShotbox();
-    setPreviewGraphic(JSON.parse(JSON.stringify(newG)));
+    setPreviewGraphic(structuredClone(newG));
     openInspector(newG.id);
 }
 
@@ -4287,10 +4295,10 @@ function bindGlobalEvents() {
             // we do sync but keep previewGraphic as is
             const draft = window._draftGraphics[previewGraphic.id];
             const idx = state.graphics.findIndex(g => g.id === draft.id);
-            if (idx !== -1) state.graphics[idx] = JSON.parse(JSON.stringify(draft));
+            if (idx !== -1) state.graphics[idx] = structuredClone(draft);
             delete window._draftGraphics[previewGraphic.id];
         }
-        
+
         const g = state.graphics.find(g => g.id === previewGraphic.id);
         if (g) {
             if (!g.visible) g.visible = true;
@@ -4357,7 +4365,7 @@ function bindGlobalEvents() {
         if (draft) {
             const idx = state.graphics.findIndex(x => x.id === draft.id);
             if (idx !== -1) {
-                const saved = JSON.parse(JSON.stringify(draft));
+                const saved = structuredClone(draft);
                 delete saved._codeTab; // UI-only state, don't persist
                 state.graphics[idx] = saved;
                 state.graphics[idx].visible = false;
@@ -4605,7 +4613,7 @@ function bindGlobalEvents() {
                 graphic.css_override = tpl?.css_template || '';
                 graphic.js_override = tpl?.js_template || '';
             }
-            window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(graphic));
+            window._draftGraphics[graphic.id] = structuredClone(graphic);
             if (previewGraphic?.id === graphic.id) {
                 Object.assign(previewGraphic, graphic);
                 refreshPreviewMonitor();
@@ -4642,7 +4650,7 @@ function bindGlobalEvents() {
             const field = fieldMap[currentTemplateTab];
             if (!field) return;
             graphic[field] = editorValue;
-            window._draftGraphics[graphic.id] = JSON.parse(JSON.stringify(graphic));
+            window._draftGraphics[graphic.id] = structuredClone(graphic);
             if (previewGraphic?.id === graphic.id) {
                 previewGraphic[field] = editorValue;
                 previewGraphic.useCodeOverride = true;
@@ -4803,7 +4811,7 @@ function bindGlobalEvents() {
             }
             const nextGraphic = visibleCards[nextIdx];
             if (nextGraphic) {
-                setPreviewGraphic(JSON.parse(JSON.stringify(nextGraphic)));
+                setPreviewGraphic(structuredClone(nextGraphic));
                 openInspector(nextGraphic.id);
             }
             return;
@@ -4928,7 +4936,7 @@ window.openTickerEditor = function(id) {
     const graphic = window._draftGraphics[id] || state.graphics.find(g => g.id === id);
     if (!graphic) return;
     
-    tickerEditorGraphic = JSON.parse(JSON.stringify(graphic)); // Deep copy for editing
+    tickerEditorGraphic = structuredClone(graphic); // Deep copy for editing
     
     const modal = document.getElementById('modal-ticker-editor');
     const subtitle = document.getElementById('ticker-editor-subtitle');
@@ -5127,7 +5135,7 @@ window.saveTickerEditor = function() {
     let g = window._draftGraphics[realId] || state.graphics.find(gx => gx.id === realId);
     
     if (g) {
-        g = JSON.parse(JSON.stringify(g));
+        g = structuredClone(g);
         g.items = newItems;
         window._draftGraphics[realId] = g;
         

@@ -16,24 +16,26 @@
         if (!root) return;
         const enabled = root.getAttribute('data-squash-enabled') !== 'false';
         if (!enabled) {
-            // If disabled, reset any existing transforms on squashing targets
             root.querySelectorAll('.slt-squash').forEach(t => t.style.transform = 'none');
             return;
         }
-        const targets = root.querySelectorAll('.slt-squash');
-        targets.forEach(target => {
-            const container = target.parentElement;
-            if (!container) return;
-            
-            // Reset scale to measure natural width
-            target.style.transform = 'none';
-            
-            const containerWidth = container.clientWidth;
-            const textWidth = target.scrollWidth;
-            
+        const targets = Array.from(root.querySelectorAll('.slt-squash'));
+        if (targets.length === 0) return;
+
+        // Phase 1: Reset all transforms in one batch (single write pass)
+        targets.forEach(t => { t.style.transform = 'none'; });
+
+        // Phase 2: Read all dimensions in one batch — avoids per-element forced reflow
+        const measurements = targets.map(target => ({
+            target,
+            containerWidth: target.parentElement ? target.parentElement.clientWidth : 0,
+            textWidth: target.scrollWidth,
+        }));
+
+        // Phase 3: Apply transforms in one batch (single write pass)
+        measurements.forEach(({ target, containerWidth, textWidth }) => {
             if (textWidth > containerWidth && containerWidth > 0) {
-                const scale = containerWidth / textWidth;
-                target.style.transform = `scaleX(${scale})`;
+                target.style.transform = `scaleX(${containerWidth / textWidth})`;
             }
         });
     }
@@ -44,6 +46,7 @@
 
     let activeGraphics = {}; // Map of graphic.id -> DOM element metadata
     let templates = [];
+    const _hbsCache = new Map(); // Cache compiled Handlebars template functions
 
     function getLayoutTransform(layout, autoScale = 1, offsetY = 0, offsetX = 0) {
         const isCustom = !layout?.side || layout.side === 'custom';
@@ -148,7 +151,9 @@
 
         const prepareStr = (str) => {
             try {
-                return Handlebars.compile(str)(ctx);
+                let fn = _hbsCache.get(str);
+                if (!fn) { fn = Handlebars.compile(str); _hbsCache.set(str, fn); }
+                return fn(ctx);
             } catch (e) {
                 console.error(e); return str;
             }
