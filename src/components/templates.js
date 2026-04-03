@@ -669,6 +669,8 @@ export function saveCurrentTemplate() {
 
         saveState();
         renderTemplateList();
+        // Purge compiled Handlebars cache so stale template strings don't linger
+        if (window.__cgRenderer?.clearHbsCache) window.__cgRenderer.clearHbsCache();
     }
 
     btn.textContent = '✓ Zapisano!';

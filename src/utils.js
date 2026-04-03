@@ -6,6 +6,12 @@ export function escAttr(str) {
     return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// Validate that a string looks like a safe UUID (used before injecting IDs into HTML attributes)
+const _uuidRe = /^[a-f0-9\-]{1,64}$/i;
+export function isSafeId(id) {
+    return typeof id === 'string' && _uuidRe.test(id);
+}
+
 export function deepSet(obj, path, value) {
     const keys = path.split('.');
     let current = obj;

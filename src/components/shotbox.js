@@ -160,6 +160,41 @@ export function initShotboxDelegation() {
             groupTakeAll(gid, !anyOn);
             return;
         }
+        // Inspector settings button
+        const insBtn = e.target.closest('[data-inspector-id]');
+        if (insBtn) {
+            e.stopPropagation();
+            window._openGraphicInspector(insBtn.dataset.inspectorId);
+            return;
+        }
+        // Ticker editor button
+        const tickerBtn = e.target.closest('[data-ticker-edit]');
+        if (tickerBtn) {
+            e.stopPropagation();
+            window.openTickerEditor(tickerBtn.dataset.tickerEdit);
+            return;
+        }
+        // WYSIWYG editor button
+        const wysiwygBtn = e.target.closest('[data-wysiwyg-edit]');
+        if (wysiwygBtn) {
+            e.stopPropagation();
+            window.openWysiwygModal(wysiwygBtn.dataset.wysiwygEdit);
+            return;
+        }
+        // Sync draft button
+        const syncBtn = e.target.closest('[data-sync-draft]');
+        if (syncBtn) {
+            e.stopPropagation();
+            window.syncDraftGraphic(syncBtn.dataset.syncDraft);
+            return;
+        }
+        // Revert draft button
+        const revertBtn = e.target.closest('[data-revert-draft]');
+        if (revertBtn) {
+            e.stopPropagation();
+            window.revertDraftGraphic(revertBtn.dataset.revertDraft);
+            return;
+        }
         // Card background click (select for preview/inspector)
         const card = e.target.closest('[data-card-id]');
         if (card && !e.target.closest('button') && !e.target.closest('select')) {
@@ -273,16 +308,16 @@ export function renderShotbox() {
                 <button data-off-id="${graphic.id}" class="flex-1 text-[10px] py-1.5 rounded font-black uppercase bg-black text-red-500 border border-red-900/50 hover:bg-red-900 hover:text-white transition-all">
                     OFF
                 </button>` : ''}
-                <button onclick="window._openGraphicInspector('${graphic.id}')" title="Ustawienia grafiki" class="w-7 shrink-0 flex items-center justify-center py-1.5 rounded bg-[#1a1a2a] hover:bg-blue-900/60 text-gray-500 hover:text-blue-300 border border-gray-800 hover:border-blue-700 transition-all">
+                <button data-inspector-id="${graphic.id}" title="Ustawienia grafiki" class="w-7 shrink-0 flex items-center justify-center py-1.5 rounded bg-[#1a1a2a] hover:bg-blue-900/60 text-gray-500 hover:text-blue-300 border border-gray-800 hover:border-blue-700 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
             </div>
 
             <div class="flex gap-1 mt-1">
                  ${graphic.type === 'TICKER' ? `
-                    <button onclick="openTickerEditor('${graphic.id}')" class="flex-1 bg-orange-950/30 hover:bg-orange-900/50 text-[8px] font-black text-orange-500 py-1 rounded border border-orange-900/40 uppercase tracking-tighter transition-all">Szybka Edycja</button>
+                    <button data-ticker-edit="${graphic.id}" class="flex-1 bg-orange-950/30 hover:bg-orange-900/50 text-[8px] font-black text-orange-500 py-1 rounded border border-orange-900/40 uppercase tracking-tighter transition-all">Szybka Edycja</button>
                  ` : `
-                    <button onclick="openWysiwygModal('${graphic.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edytuj Treść</button>
+                    <button data-wysiwyg-edit="${graphic.id}" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edytuj Treść</button>
                  `}
                  <select data-group-assign="${graphic.id}" class="flex-[1.5] bg-black border border-gray-800 rounded text-[8px] text-gray-500 py-1 px-1 focus:outline-none focus:border-blue-500" title="Grupa">
                     <option value="">— NO GROUP —</option>
@@ -292,10 +327,10 @@ export function renderShotbox() {
             </div>
             ${window._draftGraphics[graphic.id] ? `
             <div class="flex gap-1 mt-1 p-1 bg-yellow-900/40 border border-yellow-700/50 rounded animate-pulse">
-                <button onclick="window.syncDraftGraphic('${graphic.id}')" class="flex-[2] bg-green-700 hover:bg-green-600 text-white text-[9px] font-black uppercase py-1 rounded shadow-md border-t border-green-500">
+                <button data-sync-draft="${graphic.id}" class="flex-[2] bg-green-700 hover:bg-green-600 text-white text-[9px] font-black uppercase py-1 rounded shadow-md border-t border-green-500">
                     SYNC NA ANTENĘ
                 </button>
-                <button onclick="window.revertDraftGraphic('${graphic.id}')" class="flex-[1] bg-red-900/80 hover:bg-red-700 text-red-200 text-[8px] font-bold uppercase py-1 rounded border-t border-red-800">
+                <button data-revert-draft="${graphic.id}" class="flex-[1] bg-red-900/80 hover:bg-red-700 text-red-200 text-[8px] font-bold uppercase py-1 rounded border-t border-red-800">
                     ODRZUĆ
                 </button>
             </div>

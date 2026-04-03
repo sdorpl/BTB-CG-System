@@ -47,6 +47,18 @@
     let activeGraphics = {}; // Map of graphic.id -> DOM element metadata
     let templates = [];
     const _hbsCache = new Map(); // Cache compiled Handlebars template functions
+    const _HBS_CACHE_MAX = 200;
+    const _pendingShowTimers = {}; // graphic.id -> timeoutId for pending re-show after hide
+
+    // Fast string hash (djb2) — replaces expensive JSON.stringify comparison
+    function _quickHash(obj) {
+        const str = JSON.stringify(obj);
+        let hash = 5381;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+        }
+        return hash;
+    }
 
     function getLayoutTransform(layout, autoScale = 1, offsetY = 0, offsetX = 0) {
         const isCustom = !layout?.side || layout.side === 'custom';
@@ -108,7 +120,7 @@
                 // For now, if text is edited live, we re-render it. 
                 // In a pro system we'd diff text and update DOM, but re-rendering is easier for GSAP
                 const existingHash = activeGraphics[graphic.id].hash;
-                const newHash = JSON.stringify({
+                const newHash = _quickHash({
                     title: graphic.title, subtitle: graphic.subtitle,
                     titleHtml: graphic.titleHtml, titleLines: graphic.titleLines,
                     layout: graphic.layout, animation: graphic.animation,
@@ -120,18 +132,25 @@
                 });
 
                 if (existingHash !== newHash) {
+                    // Cancel any pending re-show from a previous rapid toggle
+                    if (_pendingShowTimers[graphic.id]) {
+                        clearTimeout(_pendingShowTimers[graphic.id]);
+                        delete _pendingShowTimers[graphic.id];
+                    }
+
                     const oldMeta = activeGraphics[graphic.id];
                     let durationMs = 550;
-                    try {
-                        const dataHash = JSON.parse(oldMeta.hash);
-                        durationMs = ((dataHash.animation?.out?.duration) || 0.5) * 1000 + 50;
-                    } catch(e) {}
+                    const animOut = graphic.animation?.out;
+                    if (animOut?.duration) {
+                        durationMs = animOut.duration * 1000 + 50;
+                    }
 
                     // Trigger OUT animation of old graphic
                     hideGraphic(graphic.id);
                     
                     // Trigger IN animation of new graphic after the OUT animation completes
-                    setTimeout(() => {
+                    _pendingShowTimers[graphic.id] = setTimeout(() => {
+                        delete _pendingShowTimers[graphic.id];
                         showGraphic(graphic, settings, graphics);
                     }, durationMs + 50);
                 }
@@ -152,7 +171,14 @@
         const prepareStr = (str) => {
             try {
                 let fn = _hbsCache.get(str);
-                if (!fn) { fn = Handlebars.compile(str); _hbsCache.set(str, fn); }
+                if (!fn) {
+                    if (_hbsCache.size >= _HBS_CACHE_MAX) {
+                        const oldest = _hbsCache.keys().next().value;
+                        _hbsCache.delete(oldest);
+                    }
+                    fn = Handlebars.compile(str);
+                    _hbsCache.set(str, fn);
+                }
                 return fn(ctx);
             } catch (e) {
                 console.error(e); return str;
@@ -314,7 +340,7 @@
         activeGraphics[data.id] = {
             el: layoutStyleWrapper,
             instanceId: instanceId,
-            hash: JSON.stringify({
+            hash: _quickHash({
                 title: data.title, subtitle: data.subtitle,
                 titleHtml: data.titleHtml, titleLines: data.titleLines,
                 layout: data.layout, animation: data.animation,
@@ -323,6 +349,7 @@
                 fields: data.fields,
                 activeGlobalFontFamily: (settings && settings.globalFontGraphics && settings.globalFontGraphics.includes(data.id)) ? settings.globalFontFamily : null
             }),
+            animationOut: data.animation?.out || null,
             isHiding: false
         };
 
@@ -390,9 +417,7 @@
         if (rootEl && rootEl.__slt_hide && typeof rootEl.__slt_hide === 'function') {
             try {
                 const hideResult = rootEl.__slt_hide();
-                // Parse duration from hash (default 0.5s + 50ms buffer)
-                const dataHash = JSON.parse(meta.hash);
-                const durationMs = ((dataHash.animation?.out?.duration) || 0.5) * 1000 + 50;
+                const durationMs = ((meta.animationOut?.duration) || 0.5) * 1000 + 50;
 
                 // GSAP/Promise check
                 if (hideResult && typeof hideResult.then === 'function') {
@@ -482,6 +507,7 @@
     const previewInstances = new WeakMap();
 
     window.__cgRenderer = {
+        clearHbsCache() { _hbsCache.clear(); },
         renderPreview(containerEl, graphics, tpls, settings = {}, options = {}) {
             if (!containerEl) return;
             let instances = previewInstances.get(containerEl);

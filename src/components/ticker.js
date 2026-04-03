@@ -11,11 +11,11 @@ import { openInspector } from './inspector.js';
 
 let tickerEditorGraphic = null;
 
-window.openTickerEditor = function(id) {
+export function openTickerEditor(id) {
     const graphic = window._draftGraphics[id] || state.graphics.find(g => g.id === id);
     if (!graphic) return;
 
-    tickerEditorGraphic = structuredClone(graphic); // Deep copy for editing
+    tickerEditorGraphic = structuredClone(graphic);
 
     const modal = document.getElementById('modal-ticker-editor');
     const subtitle = document.getElementById('ticker-editor-subtitle');
@@ -25,10 +25,12 @@ window.openTickerEditor = function(id) {
     subtitle.textContent = `${graphic.name} // ${graphic.id}`;
     modal.classList.remove('hidden');
 
-    window.renderTickerEditorBody();
-};
+    renderTickerEditorBody();
+}
+// Keep window alias for inline onclick in shotbox cards (will be migrated later)
+window.openTickerEditor = openTickerEditor;
 
-window.renderTickerEditorBody = function() {
+function renderTickerEditorBody() {
     const body = document.getElementById('ticker-editor-body');
     if (!body) return;
     body.innerHTML = '';
@@ -58,9 +60,8 @@ window.renderTickerEditorBody = function() {
             <div class="ticker-group-header cursor-move">
                 <div class="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
                 <input type="text" class="ticker-group-title-input transition-all focus:pl-3" value="${catName === 'BRAK KATEGORII' ? '' : catName}"
-                    placeholder="NAZWA KATEGORII (np. PILNE, SPORT, POGODA)"
-                    oninput="updateTickerGroupName(this)">
-                <button onclick="removeTickerGroup(this)" class="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="Usuń grupę">
+                    placeholder="NAZWA KATEGORII (np. PILNE, SPORT, POGODA)">
+                <button data-ticker-action="remove-group" class="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="Usuń grupę">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                 </button>
             </div>
@@ -69,11 +70,11 @@ window.renderTickerEditorBody = function() {
                     <div class="ticker-message-item group items-start">
                         <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 mt-3 group-hover:scale-125 transition-transform shadow-[0_0_5px_#3b82f6]"></div>
                         <textarea class="ticker-message-input custom-scrollbar resize-y max-h-48 whitespace-pre-wrap" rows="2" placeholder="Wpisz treść wiadomości...">${text}</textarea>
-                        <button class="ticker-item-remove p-1 mt-1 hover:bg-red-500/20 rounded transition-all" onclick="removeTickerMessageItem(this)" title="Usuń wiadomość">&times;</button>
+                        <button class="ticker-item-remove p-1 mt-1 hover:bg-red-500/20 rounded transition-all" data-ticker-action="remove-message" title="Usuń wiadomość">&times;</button>
                     </div>
                 `).join('')}
                 <div class="pt-2 flex justify-center add-message-btn-wrapper">
-                    <button class="add-message-btn w-full py-2 border-dashed border-2 opacity-60 hover:opacity-100 transition-opacity" onclick="addMessageToGroup(this)">+ DODAJ WIADOMOŚĆ</button>
+                    <button class="add-message-btn w-full py-2 border-dashed border-2 opacity-60 hover:opacity-100 transition-opacity" data-ticker-action="add-message">+ DODAJ WIADOMOŚĆ</button>
                 </div>
             </div>
         `;
@@ -102,17 +103,9 @@ window.renderTickerEditorBody = function() {
             ghostClass: 'opacity-20'
         });
     }
-};
+}
 
-window.updateTickerGroupName = function(input) {
-    const card = input.closest('.ticker-group-card');
-    const list = card.querySelector('.ticker-item-list');
-    const newName = input.value.trim();
-    card.dataset.category = newName;
-    list.dataset.group = newName;
-};
-
-window.addMessageToGroup = function(btn) {
+function addMessageToGroup(btn) {
     const wrapper = btn.closest('.add-message-btn-wrapper');
     const list = btn.closest('.ticker-item-list');
 
@@ -121,23 +114,13 @@ window.addMessageToGroup = function(btn) {
     newItem.innerHTML = `
         <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 mt-3 group-hover:scale-125 transition-transform shadow-[0_0_5px_#3b82f6]"></div>
         <textarea class="ticker-message-input custom-scrollbar resize-y max-h-48 whitespace-pre-wrap" rows="2" placeholder="Wpisz treść wiadomości..."></textarea>
-        <button class="ticker-item-remove p-1 mt-1 hover:bg-red-500/20 rounded transition-all" onclick="removeTickerMessageItem(this)" title="Usuń wiadomość">&times;</button>
+        <button class="ticker-item-remove p-1 mt-1 hover:bg-red-500/20 rounded transition-all" data-ticker-action="remove-message" title="Usuń wiadomość">&times;</button>
     `;
     list.insertBefore(newItem, wrapper);
     newItem.querySelector('textarea').focus();
-};
+}
 
-window.removeTickerMessageItem = function(el) {
-    el.closest('.ticker-message-item').remove();
-};
-
-window.removeTickerGroup = function(el) {
-    if (confirm('Czy na pewno chcesz usunąć całą grupę wraz z wiadomościami?')) {
-        el.closest('.ticker-group-card').remove();
-    }
-};
-
-window.addTickerGroup = function() {
+function addTickerGroup() {
     const body = document.getElementById('ticker-editor-body');
     if (!body) return;
     const catName = "NOWA KATEGORIA";
@@ -150,15 +133,14 @@ window.addTickerGroup = function() {
         <div class="ticker-group-header cursor-move">
             <div class="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-lg shadow-orange-900/40"></div>
             <input type="text" class="ticker-group-title-input" value="${catName}"
-                placeholder="NAZWA KATEGORII"
-                oninput="updateTickerGroupName(this)">
-            <button onclick="removeTickerGroup(this)" class="p-2 text-gray-600 hover:text-red-500 rounded-lg transition-all">
+                placeholder="NAZWA KATEGORII">
+            <button data-ticker-action="remove-group" class="p-2 text-gray-600 hover:text-red-500 rounded-lg transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
             </button>
         </div>
         <div class="ticker-item-list space-y-2 mt-2" data-group="${catName}">
             <div class="pt-2 flex justify-center add-message-btn-wrapper">
-                <button class="add-message-btn w-full py-2 border-dashed border-2 opacity-60 hover:opacity-100 transition-opacity" onclick="addMessageToGroup(this)">+ DODAJ WIADOMOŚĆ</button>
+                <button class="add-message-btn w-full py-2 border-dashed border-2 opacity-60 hover:opacity-100 transition-opacity" data-ticker-action="add-message">+ DODAJ WIADOMOŚĆ</button>
             </div>
         </div>
     `;
@@ -177,15 +159,15 @@ window.addTickerGroup = function() {
     const input = groupCard.querySelector('input');
     input.select();
     body.scrollTop = body.scrollHeight;
-};
+}
 
-window.closeTickerEditor = function() {
+function closeTickerEditor() {
     const modal = document.getElementById('modal-ticker-editor');
     if (modal) modal.classList.add('hidden');
     tickerEditorGraphic = null;
-};
+}
 
-window.saveTickerEditor = function() {
+function saveTickerEditor() {
     if (!tickerEditorGraphic) return;
 
     const body = document.getElementById('ticker-editor-body');
@@ -230,15 +212,43 @@ window.saveTickerEditor = function() {
         }
     }
 
-    window.closeTickerEditor();
-};
+    closeTickerEditor();
+}
 
 export function bindTickerEditorEvents() {
     const btnCancel = document.getElementById('ticker-editor-cancel');
     const btnSave = document.getElementById('ticker-editor-save');
     const btnAddGroup = document.getElementById('ticker-editor-add-group');
 
-    if (btnCancel) btnCancel.onclick = window.closeTickerEditor;
-    if (btnSave) btnSave.onclick = window.saveTickerEditor;
-    if (btnAddGroup) btnAddGroup.onclick = window.addTickerGroup;
+    if (btnCancel) btnCancel.onclick = closeTickerEditor;
+    if (btnSave) btnSave.onclick = saveTickerEditor;
+    if (btnAddGroup) btnAddGroup.onclick = addTickerGroup;
+
+    // Event delegation for all ticker editor interactions
+    const body = document.getElementById('ticker-editor-body');
+    if (body) {
+        body.addEventListener('click', (e) => {
+            const action = e.target.closest('[data-ticker-action]');
+            if (!action) return;
+            const type = action.dataset.tickerAction;
+            if (type === 'remove-message') {
+                action.closest('.ticker-message-item').remove();
+            } else if (type === 'remove-group') {
+                if (confirm('Czy na pewno chcesz usunąć całą grupę wraz z wiadomościami?')) {
+                    action.closest('.ticker-group-card').remove();
+                }
+            } else if (type === 'add-message') {
+                addMessageToGroup(action);
+            }
+        });
+        body.addEventListener('input', (e) => {
+            if (e.target.classList.contains('ticker-group-title-input')) {
+                const card = e.target.closest('.ticker-group-card');
+                const list = card.querySelector('.ticker-item-list');
+                const newName = e.target.value.trim();
+                card.dataset.category = newName;
+                list.dataset.group = newName;
+            }
+        });
+    }
 }
