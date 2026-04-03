@@ -456,6 +456,3 @@ export function renderShotbox() {
 
     window._cgModules.updateProgramMonitor();
 }
-
-// Expose for animTypeSelect inline handler
-window.renderShotbox = renderShotbox;

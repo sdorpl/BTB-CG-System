@@ -50,6 +50,10 @@
     const _HBS_CACHE_MAX = 200;
     const _pendingShowTimers = {}; // graphic.id -> timeoutId for pending re-show after hide
 
+    // Validate graphic IDs before injecting into DOM attributes
+    const _safeIdRe = /^[a-f0-9\-]{1,64}$/i;
+    function _isSafeId(id) { return typeof id === 'string' && _safeIdRe.test(id); }
+
     // Fast string hash (djb2) — replaces expensive JSON.stringify comparison
     function _quickHash(obj) {
         const str = JSON.stringify(obj);
@@ -163,6 +167,7 @@
     function showGraphic(data, settings = {}, allGraphics = []) {
         const tpl = templates.find(t => t.id === data.templateId);
         if (!tpl) return;
+        if (!_isSafeId(data.id)) { console.warn('showGraphic: invalid graphic id', data.id); return; }
 
         const instanceId = `lt_${data.id.replace(/-/g, '')}`;
         const df = tpl.defaultFields || {};
@@ -360,17 +365,8 @@
             const jsCode = prepareStr(jsSource);
 
             try {
-                const wrappedCode = [
-                    '(function(root, gsap) {',
-                    '    try {',
-                    jsCode,
-                    '    } catch (e) {',
-                    '        console.error("INNER TEMPLATE ERROR:", e);',
-                    '    }',
-                    `})(document.getElementById("${instanceId}"), window.gsap);`
-                ].join('\n');
-                // eslint-disable-next-line no-eval
-                eval(wrappedCode);
+                // new Function avoids leaking local closure scope (safer than eval)
+                new Function('root', 'gsap', jsCode)(rootEl, window.gsap);
 
                 // Allow DOM repaints before executing GSAP show animations logic
                 setTimeout(() => {
@@ -673,17 +669,8 @@
                 if (rootEl && jsSourcePrev) {
                     const jsCode = prepareStr(jsSourcePrev);
                     try {
-                        const wrappedCode = [
-                            '(function(root, gsap) {',
-                            '    try {',
-                            jsCode,
-                            '    } catch (e) {',
-                            '        console.error("PREVIEW INNER TEMPLATE ERROR:", e);',
-                            '    }',
-                            `})(document.getElementById("${instanceId}"), window.gsap);`
-                        ].join('\n');
-                        // eslint-disable-next-line no-eval
-                        eval(wrappedCode);
+                        // new Function avoids leaking local closure scope (safer than eval)
+                        new Function('root', 'gsap', jsCode)(rootEl, window.gsap);
                     } catch (e) {
                         console.error("Vinci JS error", e);
                     }

@@ -176,7 +176,6 @@ export async function init() {
             }
             socket.emit('set_background', color);
         }
-        window.changeBg = changeBg;
 
         document.getElementById('hex-bg-picker')?.addEventListener('input', (e) => {
             document.getElementById('hex-bg').value = e.target.value;
@@ -950,13 +949,13 @@ function bindGlobalEvents() {
 
         if (key === 'b' || key === 'B') {
             e.preventDefault();
-            window.changeBg(document.getElementById('hex-bg')?.value || '#000000');
+            changeBg(document.getElementById('hex-bg')?.value || '#000000');
             return;
         }
 
         if (key === 't' || key === 'T') {
             e.preventDefault();
-            window.changeBg('transparent');
+            changeBg('transparent');
             return;
         }
 

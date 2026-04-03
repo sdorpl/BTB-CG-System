@@ -9,6 +9,7 @@ import {
 import { refreshPreviewMonitor, refreshPreviewControls, updateProgramMonitor } from './monitor.js';
 import { renderShotbox } from './shotbox.js';
 import { openInspector, renderInspectorBody } from './inspector.js';
+import { sanitizeHtml } from '../utils.js';
 
 // ===========================================================
 // Normalize HTML: flatten redundant nested spans (same CSS property)
@@ -108,7 +109,7 @@ function saveWysiwygLegacy(editorEl, graphicId) {
             g.titleHtml = html;
             g.title = editorEl.textContent || editorEl.innerText || '';
             const previewBox = document.getElementById('title-preview-content');
-            if (previewBox) previewBox.innerHTML = html || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>';
+            if (previewBox) previewBox.innerHTML = sanitizeHtml(html) || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>';
         }
     }
 
@@ -118,82 +119,6 @@ function saveWysiwygLegacy(editorEl, graphicId) {
     clearTimeout(window._shotboxSyncTimer);
     window._shotboxSyncTimer = setTimeout(() => renderShotbox(), 300);
 }
-
-// Helpers for Ticker Messages Manager UI
-window.updateTickerMessage = function(graphicId, index, value, field = 'text') {
-    if (!previewGraphic || previewGraphic.id !== graphicId || !previewGraphic.items) return;
-
-    let item = previewGraphic.items[index];
-    if (typeof item === 'string') {
-        item = { text: item, category: "" };
-    } else {
-        item = { ...item };
-    }
-
-    if (field === 'text') item.text = value;
-    else if (field === 'category') item.category = value;
-
-    previewGraphic.items[index] = item;
-    refreshPreviewMonitor();
-};
-
-window.removeTickerMessage = function(graphicId, index) {
-    if (!previewGraphic || previewGraphic.id !== graphicId || !previewGraphic.items) return;
-    previewGraphic.items.splice(index, 1);
-    refreshPreviewMonitor();
-    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
-};
-
-window.addTickerMessage = function(graphicId) {
-    if (!previewGraphic || previewGraphic.id !== graphicId) return;
-    const input = document.getElementById(`new-ticker-msg-${graphicId}`);
-    const catInput = document.getElementById(`new-ticker-cat-${graphicId}`);
-    if (!input || !input.value.trim()) return;
-    if (!previewGraphic.items) previewGraphic.items = [];
-
-    previewGraphic.items.push({
-        text: input.value.trim(),
-        category: catInput ? catInput.value.trim() : ""
-    });
-
-    refreshPreviewMonitor();
-    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
-    setTimeout(() => {
-        const resetInput = document.getElementById(`new-ticker-msg-${graphicId}`);
-        if(resetInput) resetInput.focus();
-    }, 50);
-};
-
-// --- OCG Field Helpers ---
-window.updateOcgField = function(graphicId, fieldId, index, value) {
-    if (!previewGraphic || previewGraphic.id !== graphicId || !previewGraphic.fields || !Array.isArray(previewGraphic.fields[fieldId])) return;
-    previewGraphic.fields[fieldId][index] = value;
-    refreshPreviewMonitor();
-};
-
-window.removeOcgField = function(graphicId, fieldId, index) {
-    if (!previewGraphic || previewGraphic.id !== graphicId || !previewGraphic.fields || !Array.isArray(previewGraphic.fields[fieldId])) return;
-    previewGraphic.fields[fieldId].splice(index, 1);
-    refreshPreviewMonitor();
-    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
-};
-
-window.addOcgField = function(graphicId, fieldId) {
-    if (!previewGraphic || previewGraphic.id !== graphicId) return;
-    const input = document.getElementById(`new-ocg-val-${fieldId}-${graphicId}`);
-    if (!input || !input.value.trim()) return;
-
-    if (!previewGraphic.fields) previewGraphic.fields = {};
-    if (!Array.isArray(previewGraphic.fields[fieldId])) previewGraphic.fields[fieldId] = [];
-
-    previewGraphic.fields[fieldId].push(input.value.trim());
-    refreshPreviewMonitor();
-    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
-    setTimeout(() => {
-        const resetInput = document.getElementById(`new-ocg-val-${fieldId}-${graphicId}`);
-        if(resetInput) resetInput.focus();
-    }, 50);
-};
 
 // ===========================================================
 // WYSIWYG MODAL

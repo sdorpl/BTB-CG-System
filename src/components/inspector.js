@@ -9,7 +9,7 @@ import {
     currentInspectorTab, setCurrentInspectorTab,
     panelMode, saveState, uploadFile
 } from '../store.js';
-import { escAttr, ctrlLabel, colorPickerHtml, animTypeSelect, directionBtns, easingSelect, deepSet } from '../utils.js';
+import { escAttr, ctrlLabel, colorPickerHtml, animTypeSelect, directionBtns, easingSelect, deepSet, sanitizeHtml, isSafeId } from '../utils.js';
 
 // ===========================================================
 // 8. INSPECTOR PANEL
@@ -63,6 +63,21 @@ export function openInspector(id) {
     });
     // If user was on 'code' tab (removed), reset to 'main'
     if (currentInspectorTab === 'code') setCurrentInspectorTab('main');
+}
+
+function _addOcgFieldItem(graphicId, fieldId) {
+    if (!previewGraphic || previewGraphic.id !== graphicId) return;
+    const input = document.getElementById(`new-ocg-val-${fieldId}-${graphicId}`);
+    if (!input || !input.value.trim()) return;
+    if (!previewGraphic.fields) previewGraphic.fields = {};
+    if (!Array.isArray(previewGraphic.fields[fieldId])) previewGraphic.fields[fieldId] = [];
+    previewGraphic.fields[fieldId].push(input.value.trim());
+    window._cgModules.refreshPreviewMonitor();
+    if (selectedGraphicId === graphicId) renderInspectorBody(previewGraphic);
+    setTimeout(() => {
+        const resetInput = document.getElementById(`new-ocg-val-${fieldId}-${graphicId}`);
+        if (resetInput) resetInput.focus();
+    }, 50);
 }
 
 export function renderInspectorBody(graphic) {
@@ -130,7 +145,7 @@ export function renderInspectorBody(graphic) {
                         <div>
                             ${ctrlLabel('Tytuł')}
                             <div style="background:#111827;border:1px solid #374151;border-radius:6px;padding:10px 12px;min-height:44px;cursor:pointer;position:relative;" id="title-preview-box">
-                                <div style="color:#fff;font-size:13px;line-height:1.4;max-height:80px;overflow:hidden;" id="title-preview-content">${graphic.titleHtml || graphic.title || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>'}</div>
+                                <div style="color:#fff;font-size:13px;line-height:1.4;max-height:80px;overflow:hidden;" id="title-preview-content">${sanitizeHtml(graphic.titleHtml) || escAttr(graphic.title) || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>'}</div>
                                 <button id="btn-open-wysiwyg" title="Edytuj tekst" style="position:absolute;top:6px;right:6px;width:26px;height:26px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:4px;color:#60a5fa;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;">&#9999;</button>
                             </div>
                         </div>
@@ -168,7 +183,7 @@ export function renderInspectorBody(graphic) {
                         </div>
 
                         <div class="mb-4">
-                            <button onclick="openTickerEditor('${graphic.id}')" class="w-full bg-orange-950/40 hover:bg-orange-900/60 text-orange-500 py-3 rounded border border-orange-900/50 uppercase tracking-wider font-bold transition-all shadow-lg shadow-orange-900/20 text-xs flex items-center justify-center gap-2">
+                            <button data-open-ticker="${escAttr(graphic.id)}" class="w-full bg-orange-950/40 hover:bg-orange-900/60 text-orange-500 py-3 rounded border border-orange-900/50 uppercase tracking-wider font-bold transition-all shadow-lg shadow-orange-900/20 text-xs flex items-center justify-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 OTWÓRZ SZYBKĄ EDYCJĘ WIADOMOŚCI
                             </button>
@@ -711,14 +726,14 @@ export function renderInspectorBody(graphic) {
                                 <div class="space-y-1 bg-gray-900 border border-gray-800 rounded p-1 mb-2 max-h-48 overflow-y-auto" id="ocg-list-${input.id}-${graphic.id}">
                                     ${(Array.isArray(val) ? val : []).map((item, idx) => `
                                         <div class="flex items-center gap-1 group">
-                                            <input type="text" value="${escAttr(item)}" onchange="window.updateOcgField('${graphic.id}', '${input.id}', ${idx}, this.value)" class="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[10px] focus:border-blue-500 focus:outline-none text-white">
-                                            <button onclick="window.removeOcgField('${graphic.id}', '${input.id}', ${idx})" class="w-6 h-6 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs shrink-0">&times;</button>
+                                            <input type="text" value="${escAttr(item)}" data-ocg-update="${escAttr(graphic.id)}" data-ocg-field="${escAttr(input.id)}" data-ocg-idx="${idx}" class="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[10px] focus:border-blue-500 focus:outline-none text-white">
+                                            <button data-ocg-remove="${escAttr(graphic.id)}" data-ocg-field="${escAttr(input.id)}" data-ocg-idx="${idx}" class="w-6 h-6 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs shrink-0">&times;</button>
                                         </div>
                                     `).join('')}
                                 </div>
                                 <div class="flex gap-1">
-                                    <input type="text" id="new-ocg-val-${input.id}-${graphic.id}" placeholder="Dodaj element..." class="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[10px] focus:border-blue-500 focus:outline-none text-white" onkeydown="if(event.key === 'Enter') window.addOcgField('${graphic.id}', '${input.id}')">
-                                    <button onclick="window.addOcgField('${graphic.id}', '${input.id}')" class="px-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold h-6 flex items-center justify-center">DODAJ</button>
+                                    <input type="text" id="new-ocg-val-${escAttr(input.id)}-${escAttr(graphic.id)}" data-ocg-add-input="${escAttr(graphic.id)}" data-ocg-field="${escAttr(input.id)}" placeholder="Dodaj element..." class="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-[10px] focus:border-blue-500 focus:outline-none text-white">
+                                    <button data-ocg-add="${escAttr(graphic.id)}" data-ocg-field="${escAttr(input.id)}" class="px-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold h-6 flex items-center justify-center">DODAJ</button>
                                 </div>
                             ` : input.type === 'richtext' ? `
                                 <textarea data-field="fields.${input.id}" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-xs focus:border-blue-500 focus:outline-none text-white font-mono leading-tight">${escAttr(val)}</textarea>
@@ -864,6 +879,69 @@ export function renderInspectorBody(graphic) {
         });
     });
 
+    // ---- Open Ticker Editor (replaces inline onclick) ----
+    const openTickerBtn = body.querySelector('[data-open-ticker]');
+    if (openTickerBtn) {
+        openTickerBtn.addEventListener('click', () => {
+            window._cgModules.openTickerEditor(openTickerBtn.dataset.openTicker);
+        });
+    }
+
+    // ---- OCG field list delegation (replaces inline onchange/onclick/onkeydown) ----
+    body.addEventListener('change', (e) => {
+        const el = e.target.closest('[data-ocg-update]');
+        if (!el) return;
+        const gId = el.dataset.ocgUpdate;
+        const fieldId = el.dataset.ocgField;
+        const idx = parseInt(el.dataset.ocgIdx, 10);
+        if (!previewGraphic || previewGraphic.id !== gId || !previewGraphic.fields || !Array.isArray(previewGraphic.fields[fieldId])) return;
+        previewGraphic.fields[fieldId][idx] = el.value;
+        window._cgModules.refreshPreviewMonitor();
+    });
+
+    body.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('[data-ocg-remove]');
+        if (removeBtn) {
+            const gId = removeBtn.dataset.ocgRemove;
+            const fieldId = removeBtn.dataset.ocgField;
+            const idx = parseInt(removeBtn.dataset.ocgIdx, 10);
+            if (!previewGraphic || previewGraphic.id !== gId || !previewGraphic.fields || !Array.isArray(previewGraphic.fields[fieldId])) return;
+            previewGraphic.fields[fieldId].splice(idx, 1);
+            window._cgModules.refreshPreviewMonitor();
+            if (selectedGraphicId === gId) renderInspectorBody(previewGraphic);
+            return;
+        }
+        const addBtn = e.target.closest('[data-ocg-add]');
+        if (addBtn) {
+            const gId = addBtn.dataset.ocgAdd;
+            const fieldId = addBtn.dataset.ocgField;
+            _addOcgFieldItem(gId, fieldId);
+        }
+    });
+
+    body.addEventListener('keydown', (e) => {
+        const el = e.target.closest('[data-ocg-add-input]');
+        if (el && e.key === 'Enter') {
+            _addOcgFieldItem(el.dataset.ocgAddInput, el.dataset.ocgField);
+        }
+    });
+
+    // ---- Animation type redirect (replaces animTypeSelect inline onchange) ----
+    body.querySelectorAll('[data-anim-redir]').forEach(sel => {
+        sel.addEventListener('change', () => {
+            const field = sel.dataset.animRedir;
+            let g = window._draftGraphics[selectedGraphicId] || state.graphics.find(gx => gx.id === selectedGraphicId);
+            if (!g) return;
+            g = structuredClone(g);
+            deepSet(g, field, sel.value);
+            window._draftGraphics[selectedGraphicId] = g;
+            if (previewGraphic?.id === selectedGraphicId) Object.assign(previewGraphic, g);
+            window._cgModules.refreshPreviewMonitor();
+            window._cgModules.renderShotbox();
+            openInspector(g.id);
+        });
+    });
+
     // ---- Accordion toggles ----
     body.querySelectorAll('.accordion-toggle').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -941,6 +1019,3 @@ export function handleInspectorChange(el, graphic) {
         return;
     }
 }
-
-// Expose for animTypeSelect inline handler
-window.openInspector = openInspector;

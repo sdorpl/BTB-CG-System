@@ -12,6 +12,19 @@ export function isSafeId(id) {
     return typeof id === 'string' && _uuidRe.test(id);
 }
 
+// Strip dangerous HTML: <script>, event attributes (onerror, onclick…), javascript: URIs
+// Keeps safe tags/formatting from TipTap (spans, divs, br, etc.)
+const _dangerousTagRe = /<\s*\/?\s*(script|iframe|object|embed|form|base|meta|link)\b[^>]*>/gi;
+const _eventAttrRe = /\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
+const _jsUriRe = /\b(href|src|action)\s*=\s*["']?\s*javascript\s*:/gi;
+export function sanitizeHtml(html) {
+    if (!html || typeof html !== 'string') return html || '';
+    return html
+        .replace(_dangerousTagRe, '')
+        .replace(_eventAttrRe, '')
+        .replace(_jsUriRe, '$1=""');
+}
+
 export function deepSet(obj, path, value) {
     const keys = path.split('.');
     let current = obj;
@@ -41,9 +54,9 @@ export function animTypeSelect(field, value, animDir = '') {
         ['wipe', '▶ Wipe'],
         ['none', '✕ Brak (Cut)'],
     ];
-    // onchange re-opens inspector so direction buttons update
-    const onChange = animDir ? `onchange="(function(sel){var g=window._draftGraphics[selectedGraphicId]||state.graphics.find(g=>g.id===selectedGraphicId);if(g){g=JSON.parse(JSON.stringify(g));deepSet(g, '${field}', sel.value);window._draftGraphics[selectedGraphicId]=g;if(previewGraphic?.id===selectedGraphicId)Object.assign(previewGraphic,g);window.refreshPreviewMonitor();window.renderShotbox();window.openInspector(g.id);};})(this)"` : '';
-    return `<select data-field="${field}" ${onChange} class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
+    // data-anim-redir signals inspector.js delegation to re-render on change
+    const redirAttr = animDir ? `data-anim-redir="${field}"` : '';
+    return `<select data-field="${field}" ${redirAttr} class="w-full bg-gray-800 border border-gray-700 rounded h-7 text-[10px] px-2 focus:border-blue-500 focus:outline-none">
             ${opts.map(([v, l]) => `<option value="${v}" ${value === v ? 'selected' : ''}>${l}</option>`).join('')}
         </select>`;
 }

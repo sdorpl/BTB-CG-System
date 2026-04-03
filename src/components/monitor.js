@@ -166,6 +166,3 @@ export function updateProgramMonitor() {
         programEmpty?.classList.add('hidden');
     }
 }
-
-// Expose for use in animTypeSelect inline handler
-window.refreshPreviewMonitor = refreshPreviewMonitor;
