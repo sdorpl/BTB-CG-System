@@ -24,6 +24,9 @@
     "afterPack": "./electron-builder-hooks.js",
     "files": [
       "main.js",
+      "preload.js",
+      "preload-connect.js",
+      "connect.html",
       "splash.html",
       "package.json",
       "icon.svg",

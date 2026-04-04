@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>BTB CG System — Połącz</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d1320;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-app-region: drag;
+  }
+  .container {
+    width: 380px;
+    text-align: center;
+    -webkit-app-region: no-drag;
+  }
+  .logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 32px;
+  }
+  .section {
+    background: #1a2030;
+    border: 1px solid #2d3748;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .section:hover { border-color: #4a5568; }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #e2e8f0;
+  }
+  .section-desc {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 14px;
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 24px;
+    transition: all 0.15s;
+    outline: none;
+  }
+  .btn-primary {
+    background: #6366f1;
+    color: white;
+    width: 100%;
+  }
+  .btn-primary:hover { background: #818cf8; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary {
+    background: #2d3748;
+    color: #e2e8f0;
+    width: 100%;
+  }
+  .btn-secondary:hover { background: #4a5568; }
+  .btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  input[type="text"] {
+    width: 100%;
+    background: #0d1320;
+    border: 1px solid #2d3748;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace, system-ui;
+    color: #e2e8f0;
+    outline: none;
+    margin-bottom: 10px;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { border-color: #6366f1; }
+  input[type="text"]::placeholder { color: #4a5568; }
+  .error {
+    color: #f87171;
+    font-size: 11px;
+    margin-top: 6px;
+    min-height: 16px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">BTB CG System</div>
+    <p class="subtitle">Wybierz tryb połączenia</p>
+
+    <div class="section">
+      <div class="section-title">Serwer lokalny</div>
+      <div class="section-desc">Uruchom wbudowany serwer na tym komputerze</div>
+      <button class="btn-primary" id="btn-local">Uruchom lokalnie</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Serwer zdalny</div>
+      <div class="section-desc">Połącz się z serwerem działającym w sieci</div>
+      <input type="text" id="remote-url" placeholder="http://192.168.1.100:3000" spellcheck="false" autocomplete="off">
+      <button class="btn-secondary" id="btn-remote" disabled>Połącz</button>
+      <div class="error" id="error-msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const btnLocal = document.getElementById('btn-local');
+    const btnRemote = document.getElementById('btn-remote');
+    const remoteInput = document.getElementById('remote-url');
+    const errorMsg = document.getElementById('error-msg');
+
+    // Populate last used remote URL
+    window.connectAPI.onInitConfig((config) => {
+      if (config.lastRemoteUrl) {
+        remoteInput.value = config.lastRemoteUrl;
+        btnRemote.disabled = false;
+      }
+    });
+
+    // Enable/disable connect button based on input
+    remoteInput.addEventListener('input', () => {
+      btnRemote.disabled = !remoteInput.value.trim();
+      errorMsg.textContent = '';
+    });
+
+    // Enter key in input triggers connect
+    remoteInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !btnRemote.disabled) {
+        btnRemote.click();
+      }
+    });
+
+    btnLocal.addEventListener('click', () => {
+      btnLocal.disabled = true;
+      btnLocal.textContent = 'Uruchamianie…';
+      window.connectAPI.connectLocal();
+    });
+
+    btnRemote.addEventListener('click', () => {
+      let url = remoteInput.value.trim();
+      if (!url) return;
+
+      // Basic URL validation
+      try {
+        if (!/^https?:\/\//i.test(url)) url = 'http://' + url;
+        const parsed = new URL(url);
+        if (!parsed.hostname) throw new Error('No hostname');
+        url = parsed.origin; // normalize
+      } catch {
+        errorMsg.textContent = 'Nieprawidłowy adres URL';
+        return;
+      }
+
+      errorMsg.textContent = '';
+      btnRemote.disabled = true;
+      btnRemote.textContent = 'Łączenie…';
+      window.connectAPI.connectRemote(url);
+    });
+  </script>
+</body>
+</html>

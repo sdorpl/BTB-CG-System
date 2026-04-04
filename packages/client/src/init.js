@@ -46,7 +46,38 @@ uiChannel.onmessage = (e) => {
     }
 };
 
+// ── Connection status indicator ─────────────────────────
+function updateConnectionStatus(connected) {
+    const dot = document.getElementById('cloud-status');
+    const urlLabel = document.getElementById('server-url-label');
+    if (dot) {
+        if (connected) {
+            dot.className = 'w-2 h-2 rounded-full bg-green-500 border border-green-400/50 shadow-sm shadow-green-900/60';
+            dot.title = t('ui.connected');
+        } else {
+            dot.className = 'w-2 h-2 rounded-full bg-red-500 border border-red-400/50 shadow-sm shadow-red-900/60 animate-pulse';
+            dot.title = t('ui.disconnected');
+        }
+    }
+    if (urlLabel) {
+        const serverUrl = window.__CG_SERVER_URL || window.location.origin;
+        urlLabel.textContent = serverUrl;
+        urlLabel.title = serverUrl + ' — ' + t('ui.clickToCopy');
+        urlLabel.classList.remove('hidden');
+        urlLabel.onclick = () => {
+            navigator.clipboard.writeText(serverUrl).then(() => {
+                const prev = urlLabel.textContent;
+                urlLabel.textContent = '✓ ' + t('ui.copied');
+                setTimeout(() => { urlLabel.textContent = prev; }, 1200);
+            });
+        };
+    }
+}
+
 export async function init() {
+    socket.on('connect', () => updateConnectionStatus(true));
+    socket.on('disconnect', () => updateConnectionStatus(false));
+
     socket.on('initialState', (serverState) => {
         setState(serverState);
         renderShotbox();

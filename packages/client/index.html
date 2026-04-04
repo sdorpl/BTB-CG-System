@@ -166,10 +166,11 @@
   <header id="app-header" class="bg-black border-b border-gray-800 shrink-0">
     <!-- Top bar: always visible -->
     <div class="h-10 flex items-center justify-between px-3">
-      <!-- Left: icon + hamburger + status -->
+      <!-- Left: icon + status + server URL -->
       <div class="flex items-center gap-2">
         <img src="/icon.svg" alt="CG" class="w-6 h-6 rounded">
         <div id="cloud-status" class="w-2 h-2 rounded-full bg-red-500 border border-red-400/50 shadow-sm shadow-red-900/60" title="Status połączenia: łączenie..." data-i18n="ui.connectionStatus" data-i18n-attr="title"></div>
+        <span id="server-url-label" class="text-[10px] text-gray-500 font-mono truncate max-w-[200px] cursor-pointer hover:text-cyan-400 transition-colors hidden" title="Kliknij aby skopiować"></span>
       </div>
 
       <!-- Right: key actions always visible + hamburger + hide -->

@@ -1,5 +1,6 @@
-const { app, BrowserWindow, nativeTheme, screen } = require('electron');
+const { app, BrowserWindow, nativeTheme, screen, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { spawn } = require('child_process');
 
 // ── Linux AppImage / Snap sandbox fix ────────────────────
@@ -14,6 +15,22 @@ let serverProcess = null;
 let serverPort = null;
 let mainWindow = null;
 let splashWindow = null;
+let connectWindow = null;
+let activeServerUrl = null; // The URL the app connected to (local or remote)
+
+// ── Persistent config (simple JSON in userData) ─────────
+const CONFIG_FILE = path.join(app.getPath('userData'), 'cg-config.json');
+
+function loadConfig() {
+    try {
+        return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    } catch { return {}; }
+}
+
+function saveConfig(data) {
+    const existing = loadConfig();
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ ...existing, ...data }, null, 2));
+}
 
 // ── Resolve paths (dev vs packaged) ─────────────────────
 function getServerScript() {
@@ -31,15 +48,10 @@ function getClientRoot() {
 }
 
 // ── Locate system Node.js binary ────────────────────────
-// We use spawn('node', ...) instead of fork() because fork() would use
-// Electron's built-in Node (different NODE_MODULE_VERSION), causing native
-// module (better-sqlite3) load failures. Spawn uses the system Node.
 function getNodeBinary() {
-    // In packaged builds, bundle Node alongside or rely on system Node
     if (app.isPackaged) {
         const bundled = path.join(process.resourcesPath, 'node',
             process.platform === 'win32' ? 'node.exe' : 'node');
-        const fs = require('fs');
         if (fs.existsSync(bundled)) return bundled;
     }
     return 'node'; // system PATH
@@ -56,27 +68,25 @@ function startServer() {
             ...process.env,
             APPDATA_PATH: userDataPath,
             CLIENT_ROOT: getClientRoot(),
-            // PORT not set → server will listen on a random free port (0)
         },
         stdio: ['pipe', 'pipe', 'pipe'],
         windowsHide: true,
     });
 
-    // Parse port from server stdout (looks for "__PORT__:12345")
     let stdoutBuffer = '';
     serverProcess.stdout.on('data', (data) => {
         const text = data.toString();
         process.stdout.write(`[server] ${text}`);
 
-        // Accumulate and scan for port announcement
         if (!serverPort) {
             stdoutBuffer += text;
             const match = stdoutBuffer.match(/__PORT__:(\d+)/);
             if (match) {
                 serverPort = parseInt(match[1], 10);
                 console.log(`[Electron] Server ready on port ${serverPort}`);
-                onServerReady(serverPort);
-                stdoutBuffer = ''; // free memory
+                activeServerUrl = `http://localhost:${serverPort}`;
+                onServerReady();
+                stdoutBuffer = '';
             }
         }
     });
@@ -119,11 +129,45 @@ function createSplash() {
     splashWindow.on('closed', () => { splashWindow = null; });
 }
 
+// ── Connect Dialog ───────────────────────────────────────
+function showConnectDialog() {
+    const config = loadConfig();
+    const lastRemote = config.lastRemoteUrl || '';
+
+    connectWindow = new BrowserWindow({
+        width: 460,
+        height: 340,
+        frame: false,
+        resizable: false,
+        center: true,
+        backgroundColor: '#0d1320',
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload-connect.js'),
+        }
+    });
+
+    connectWindow.loadFile(path.join(__dirname, 'connect.html'));
+
+    connectWindow.webContents.on('did-finish-load', () => {
+        connectWindow.webContents.send('init-config', { lastRemoteUrl: lastRemote });
+    });
+
+    connectWindow.on('closed', () => {
+        connectWindow = null;
+        // If user closed dialog without choosing, quit
+        if (!mainWindow) app.quit();
+    });
+}
+
 // ── Main Window ──────────────────────────────────────────
-function createWindow() {
+function createMainWindow() {
     const { width: screenW, height: screenH } = screen.getPrimaryDisplay().workAreaSize;
     const winW = Math.round(Math.sqrt(0.7 * screenW * screenH * 16 / 10));
     const winH = Math.round(winW * 10 / 16);
+
+    const preloadPath = path.join(__dirname, 'preload.js');
 
     mainWindow = new BrowserWindow({
         width: Math.min(winW, screenW),
@@ -138,6 +182,7 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
+            preload: preloadPath,
         }
     });
 
@@ -171,33 +216,67 @@ function createWindow() {
 }
 
 // ── Server Ready → load app ──────────────────────────────
-function onServerReady(port) {
-    // Signal splash to show 100%
+function onServerReady() {
     if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.webContents.executeJavaScript('window.__splashReady && window.__splashReady()').catch(() => {});
     }
 
     setTimeout(() => {
         if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.loadURL(`http://localhost:${port}`);
+            mainWindow.loadURL(activeServerUrl);
         }
     }, 400);
 }
 
-// ── App Lifecycle ────────────────────────────────────────
-app.whenReady().then(() => {
+// ── Connect to remote server ─────────────────────────────
+function connectToRemote(url) {
+    activeServerUrl = url;
+    saveConfig({ lastRemoteUrl: url });
+
+    if (connectWindow && !connectWindow.isDestroyed()) {
+        connectWindow.close();
+    }
+
+    createMainWindow();
+    mainWindow.loadURL(url);
+    mainWindow.show();
+}
+
+// ── Launch local server flow ─────────────────────────────
+function launchLocal() {
+    if (connectWindow && !connectWindow.isDestroyed()) {
+        connectWindow.close();
+    }
+
     createSplash();
-    createWindow();
+    createMainWindow();
     startServer();
 
-    // Fallback: if server was already ready before windows were created
     if (serverPort && mainWindow) {
         mainWindow.loadURL(`http://localhost:${serverPort}`);
     }
+}
+
+// ── IPC Handlers ─────────────────────────────────────────
+ipcMain.on('connect-local', () => {
+    launchLocal();
+});
+
+ipcMain.on('connect-remote', (_event, url) => {
+    connectToRemote(url);
+});
+
+ipcMain.handle('get-server-url', () => {
+    return activeServerUrl || '';
+});
+
+// ── App Lifecycle ────────────────────────────────────────
+app.whenReady().then(() => {
+    showConnectDialog();
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
+            showConnectDialog();
         }
     });
 });

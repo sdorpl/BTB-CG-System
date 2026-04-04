@@ -551,6 +551,10 @@ const translations = {
     // ── HTML static extras ──
     'ui.onAirPrefix':        { pl: 'NA ŻYWO:', en: 'ON AIR:', de: 'ON AIR:' },
     'ui.connectionStatus':   { pl: 'Status połączenia: łączenie...', en: 'Connection status: connecting...', de: 'Verbindungsstatus: verbinden...' },
+    'ui.connected':          { pl: 'Połączono z serwerem', en: 'Connected to server', de: 'Mit Server verbunden' },
+    'ui.disconnected':       { pl: 'Rozłączono z serwerem', en: 'Disconnected from server', de: 'Vom Server getrennt' },
+    'ui.clickToCopy':        { pl: 'Kliknij aby skopiować', en: 'Click to copy', de: 'Klicken zum Kopieren' },
+    'ui.copied':             { pl: 'Skopiowano', en: 'Copied', de: 'Kopiert' },
     'ui.collapseExpand':     { pl: 'Zwiń / Rozwiń', en: 'Collapse / Expand', de: 'Ein-/Ausklappen' },
     'ui.toggleSafeArea':     { pl: 'Przełącz bezpieczny obszar EBU', en: 'Toggle EBU safe area', de: 'EBU-Sicherheitsbereich umschalten' },
     'wysiwyg.textColor':     { pl: 'Kolor tekstu', en: 'Text color', de: 'Textfarbe' },
