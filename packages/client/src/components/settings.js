@@ -140,7 +140,7 @@ function fetchNetworkInfo() {
     const container = document.getElementById('network-info-container');
     if (!container) return;
 
-    fetch('/api/server-info')
+    fetch(`${window.__CG_SERVER_URL || ''}/api/server-info`)
         .then(r => r.json())
         .then(info => {
             const port = info.port;

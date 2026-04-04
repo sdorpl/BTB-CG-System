@@ -2,7 +2,7 @@
 module.exports = {
   content: [
     "./*.{html,js}",
-    "./templates/**/*.{html,js}",
+    "./src/**/*.{html,js}",
     "./renderer.js",
     "./app.js"
   ],

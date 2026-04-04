@@ -1,107 +1,29 @@
 {
   "name": "btb-cg-system",
   "version": "1.1.0",
+  "private": true,
   "description": "BTB CG System — Profesjonalny system sterowania grafiką emisyjną z renderowaniem w czasie rzeczywistym przez Socket.io.",
-  "main": "main.js",
+  "workspaces": [
+    "packages/client",
+    "packages/server",
+    "packages/desktop"
+  ],
   "scripts": {
-    "start:electron": "electron . --no-sandbox",
-    "postinstall": "electron-builder install-app-deps",
-    "dist:win": "electron-builder --win",
-    "dist:mac": "electron-builder --mac",
-    "dist:mac:arm": "electron-builder --mac --arm64",
-    "dist:mac:universal": "electron-builder --mac --universal",
-    "dist:linux": "electron-builder --linux",
-    "dist:all": "electron-builder -mwl",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "init-db": "node init-db.js",
-    "build:css": "npx tailwindcss -i ./input.css -o ./tailwind.css",
-    "dev": "npx tailwindcss -i ./input.css -o ./tailwind.css --watch & node server.js"
+    "start": "npm run start --workspace=packages/server",
+    "dev": "npm run dev --workspace=packages/server",
+    "start:electron": "npm run start --workspace=packages/desktop",
+    "build:css": "npm run build:css --workspace=packages/client",
+    "dev:css": "npm run dev:css --workspace=packages/client",
+    "init-db": "npm run init-db --workspace=packages/server",
+    "dist:win": "npm run dist:win --workspace=packages/desktop",
+    "dist:mac": "npm run dist:mac --workspace=packages/desktop",
+    "dist:linux": "npm run dist:linux --workspace=packages/desktop",
+    "dist:all": "npm run dist:all --workspace=packages/desktop"
   },
   "keywords": [],
   "author": {
     "name": "BTB",
     "email": "btb@cgmaster.local"
   },
-  "license": "ISC",
-  "dependencies": {
-    "better-sqlite3": "^12.8.0",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "gsap": "^3.14.2",
-    "multer": "^2.1.1",
-    "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3"
-  },
-  "devDependencies": {
-    "autoprefixer": "^10.4.27",
-    "daisyui": "^5.5.19",
-    "electron": "^41.1.0",
-    "electron-builder": "^26.8.1",
-    "postcss": "^8.5.8",
-    "tailwindcss": "^4.2.2"
-  },
-  "build": {
-    "appId": "com.btb.cgsystem",
-    "productName": "BTB CG System",
-    "asar": false,
-    "afterPack": "./electron-builder-hooks.js",
-    "files": [
-      "main.js",
-      "server.js",
-      "splash.html",
-      "app.js",
-      "renderer.js",
-      "gsap-fx.js",
-      "index.html",
-      "output.html",
-      "style.css",
-      "tailwind.css",
-      "input.css",
-      "tailwind.config.js",
-      "manifest.json",
-      "sw.js",
-      "init-db.js",
-      "export-db.js",
-      "db.json",
-      "package.json",
-      "src/**",
-      "font/**",
-      "templates/**",
-      "node_modules/**",
-      "icon.svg",
-      "icon.png"
-    ],
-    "extraResources": [
-      {
-        "from": "uploads/",
-        "to": "uploads/",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ]
-    },
-    "win": {
-      "target": [
-        "nsis",
-        "portable"
-      ]
-    },
-    "linux": {
-      "icon": "icon.png",
-      "target": [
-        "AppImage",
-        "deb"
-      ]
-    },
-    "directories": {
-      "output": "dist"
-    }
-  }
+  "license": "ISC"
 }

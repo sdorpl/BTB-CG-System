@@ -2,7 +2,9 @@
 // src/store.js — Shared state, proxy, socket, channels
 // ======================================================
 
-export const socket = io();
+// Server URL: injected by Electron/config, or empty for same-origin (standalone/Docker)
+const serverUrl = window.__CG_SERVER_URL || '';
+export const socket = io(serverUrl);
 
 export let state = { templates: [], graphics: [], groups: [], settings: {} };
 export function setState(newState) { state = newState; }
@@ -78,7 +80,7 @@ export function saveState() {
 export async function uploadFile(file) {
     const formData = new FormData();
     formData.append('file', file);
-    const resp = await fetch('/api/upload', {
+    const resp = await fetch(`${serverUrl}/api/upload`, {
         method: 'POST',
         body: formData
     });

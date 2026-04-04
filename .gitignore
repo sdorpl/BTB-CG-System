@@ -12,6 +12,19 @@ dist
 dist-ssr
 *.local
 
+# Database files (generated at runtime)
+database.sqlite
+database.sqlite-shm
+database.sqlite-wal
+packages/server/database.sqlite*
+
+# Uploads (user data, not source)
+packages/server/uploads/*
+!packages/server/uploads/.gitkeep
+
+# Build artifacts
+packages/client/tailwind.css
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

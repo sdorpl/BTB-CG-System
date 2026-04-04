@@ -6,7 +6,6 @@ const path = require('path');
 const Database = require('better-sqlite3');
 const multer = require('multer');
 const os = require('os');
-const EventEmitter = require('events');
 
 // Suppress EPIPE / ECONNRESET crashes when clients disconnect mid-write
 process.on('uncaughtException', (err) => {
@@ -14,10 +13,6 @@ process.on('uncaughtException', (err) => {
     console.error('[FATAL]', err);
     process.exit(1);
 });
-
-// Event emitter for signaling server readiness (used by Electron main process)
-const serverEvents = new EventEmitter();
-module.exports = { serverEvents };
 
 const app = express();
 const server = http.createServer(app);
@@ -29,8 +24,11 @@ const io = new Server(server, {
 });
 
 const appDataPath = process.env.APPDATA_PATH || __dirname;
-const PORT = process.env.PORT || 3000;
+// PORT=0 → OS assigns a free port (used by Electron); explicit PORT for standalone/Docker
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 0;
 const DB_FILE = process.env.DATABASE_URL || path.join(appDataPath, 'database.sqlite');
+// Client static files root — set by Electron or default to sibling package
+const CLIENT_ROOT = process.env.CLIENT_ROOT || path.join(__dirname, '..', 'client');
 
 const dbExists = fs.existsSync(DB_FILE) && fs.statSync(DB_FILE).isFile();
 console.log(`[DB] Using database file: ${DB_FILE}`);
@@ -241,17 +239,10 @@ const syncFullStateToDB = db.transaction((state) => {
 // Start
 // Usunięto loadStateFromDB() stąd, jest wywoływane wewnątrz ensureDatabaseInitialized()
 
-// Serve static files — handle ASAR packaging in Electron
-// When packaged, __dirname points inside app.asar; use app.asar.unpacked or extraResources
-const staticRoot = (() => {
-    // If running inside ASAR, serve from the unpacked directory
-    if (__dirname.includes('app.asar')) {
-        const unpacked = __dirname.replace('app.asar', 'app.asar.unpacked');
-        if (fs.existsSync(unpacked)) return unpacked;
-    }
-    return __dirname;
-})();
-app.use(express.static(staticRoot));
+// Serve client static files from the client package
+if (fs.existsSync(CLIENT_ROOT)) {
+    app.use(express.static(CLIENT_ROOT));
+}
 // Serwowanie katalogu z uploadami
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -266,7 +257,8 @@ app.get('/api/server-info', (req, res) => {
             }
         }
     }
-    res.json({ port: PORT, lanIps });
+    const actualPort = server.address().port;
+    res.json({ port: actualPort, lanIps });
 });
 
 // Endpoint do uploadu pliku (zastępuje osadzanie Base64 w grafice)
@@ -359,6 +351,7 @@ io.on('connection', (socket) => {
 
 function startServer() {
     server.listen(PORT, '0.0.0.0', () => {
+        const actualPort = server.address().port;
         const networkInterfaces = os.networkInterfaces();
         let lanIp = 'localhost';
         for (const name of Object.keys(networkInterfaces)) {
@@ -371,14 +364,18 @@ function startServer() {
         }
 
         console.log(`========================================`);
-        console.log(`  CG Server running on port ${PORT} (SQLite)`);
-        console.log(`  Control Panel (Local): http://localhost:${PORT}/`);
-        console.log(`  Control Panel (LAN):   http://${lanIp}:${PORT}/`);
-        console.log(`  Output URL (Local):    http://localhost:${PORT}/output.html`);
-        console.log(`  Output URL (LAN):      http://${lanIp}:${PORT}/output.html`);
+        console.log(`  CG Server running on port ${actualPort} (SQLite)`);
+        console.log(`  Control Panel (Local): http://localhost:${actualPort}/`);
+        console.log(`  Control Panel (LAN):   http://${lanIp}:${actualPort}/`);
+        console.log(`  Output URL (Local):    http://localhost:${actualPort}/output.html`);
+        console.log(`  Output URL (LAN):      http://${lanIp}:${actualPort}/output.html`);
+        console.log(`  Client root:           ${CLIENT_ROOT}`);
         console.log(`========================================`);
 
-        // Signal readiness for Electron main process
-        serverEvents.emit('ready', PORT);
+        // Signal readiness to parent process (Electron) via stdout marker + IPC
+        console.log(`__PORT__:${actualPort}`);
+        if (process.send) {
+            process.send({ type: 'ready', port: actualPort });
+        }
     });
 }
