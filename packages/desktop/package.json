@@ -37,7 +37,8 @@
       "splash.html",
       "package.json",
       "icon.svg",
-      "icon.png"
+      "icon.png",
+      "icon.ico"
     ],
     "extraResources": [
       {
@@ -67,6 +68,7 @@
       "target": ["dmg", "zip"]
     },
     "win": {
+      "icon": "icon.ico",
       "target": ["dir"]
     },
     "linux": {
