@@ -30,6 +30,10 @@ const DB_FILE = process.env.DATABASE_URL || path.join(appDataPath, 'database.sql
 // Client static files root — set by Electron or default to sibling package
 const CLIENT_ROOT = process.env.CLIENT_ROOT || path.join(__dirname, '..', 'client');
 
+// Ensure the directory for the database file exists (needed in packaged mode)
+const dbDir = path.dirname(DB_FILE);
+if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+
 const dbExists = fs.existsSync(DB_FILE) && fs.statSync(DB_FILE).isFile();
 console.log(`[DB] Using database file: ${DB_FILE}`);
 console.log(`[DB] Valid file exists on start: ${dbExists} (${dbExists ? fs.statSync(DB_FILE).size : 0} bytes)`);
