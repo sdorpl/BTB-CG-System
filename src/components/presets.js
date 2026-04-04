@@ -3,6 +3,7 @@
 // ======================================================
 
 import { state, socket, saveState } from '../store.js';
+import { t } from '../i18n.js';
 
 function getActivePresetId() { return state.settings?.activePresetId || null; }
 
@@ -16,7 +17,7 @@ export function renderPresetSelect() {
     const sel = document.getElementById('preset-select');
     if (!sel) return;
     const currentVal = sel.value;
-    sel.innerHTML = '<option value="">— brak —</option>';
+    sel.innerHTML = `<option value="">${t('presets.none')}</option>`;
     const presets = state.presets || [];
     presets.forEach(p => {
         const opt = document.createElement('option');
@@ -48,7 +49,7 @@ function savePreset() {
         });
         setActivePresetId(selectedId);
     } else {
-        const name = prompt('Nazwa nowego presetu:', 'Program A');
+        const name = prompt(t('presets.newPresetName'), 'Program A');
         if (!name || !name.trim()) return;
         const newId = 'preset-' + Date.now();
         socket.emit('savePreset', {
@@ -64,13 +65,13 @@ function savePreset() {
 function loadPreset() {
     const sel = document.getElementById('preset-select');
     const id = sel?.value;
-    if (!id) { alert('Wybierz preset z listy.'); return; }
+    if (!id) { alert(t('presets.selectFromList')); return; }
     const preset = (state.presets || []).find(p => p.id === id);
     if (!preset) return;
 
     const onAir = state.graphics.some(g => g.visible);
     if (onAir) {
-        if (!confirm(`Załadować preset "${preset.name}"?\n\nWszystkie aktywne grafiki zostaną wyłączone.`)) return;
+        if (!confirm(t('presets.confirmLoad', preset.name))) return;
     }
 
     setActivePresetId(id);
@@ -80,10 +81,10 @@ function loadPreset() {
 function deletePreset() {
     const sel = document.getElementById('preset-select');
     const id = sel?.value;
-    if (!id) { alert('Wybierz preset do usunięcia.'); return; }
+    if (!id) { alert(t('presets.selectToDelete')); return; }
     const preset = (state.presets || []).find(p => p.id === id);
     if (!preset) return;
-    if (!confirm(`Usunąć preset "${preset.name}"? Tej operacji nie można cofnąć.`)) return;
+    if (!confirm(t('presets.confirmDelete', preset.name))) return;
     if (getActivePresetId() === id) setActivePresetId(null);
     socket.emit('deletePreset', id);
 }
@@ -108,7 +109,7 @@ function exportPreset() {
             groups: preset.groups || []
         };
     } else {
-        const name = prompt('Nazwa eksportowanego presetu:', 'Preset Export');
+        const name = prompt(t('presets.exportName'), 'Preset Export');
         if (!name) return;
         exportData = {
             _exportVersion: 1,
@@ -137,10 +138,10 @@ function importPreset(file) {
         try {
             const data = JSON.parse(e.target.result);
             if (data._type !== 'preset' || !data.graphics) {
-                alert('Nieprawidłowy plik presetu.');
+                alert(t('presets.invalidFile'));
                 return;
             }
-            const name = prompt('Nazwa presetu po imporcie:', data.name || 'Importowany preset');
+            const name = prompt(t('presets.importName'), data.name || t('presets.importedDefault'));
             if (!name) return;
             const newId = 'preset-' + Date.now();
             socket.emit('savePreset', {
@@ -151,7 +152,7 @@ function importPreset(file) {
             });
             setActivePresetId(newId);
         } catch (err) {
-            alert('Błąd odczytu pliku: ' + err.message);
+            alert(t('presets.fileReadError', err.message));
         }
     };
     reader.readAsText(file);
@@ -174,6 +175,11 @@ export function bindPresetEvents() {
             }
         });
     }
+
+    // Monitor collapse buttons (data-toggle-monitor="preview|program")
+    document.querySelectorAll('[data-toggle-monitor]').forEach(btn => {
+        btn.addEventListener('click', () => toggleMonitor(btn.dataset.toggleMonitor));
+    });
 }
 
 // ===========================================================
@@ -181,7 +187,7 @@ export function bindPresetEvents() {
 // ===========================================================
 const _monitorState = { preview: true, program: true };
 
-window.toggleMonitor = function(which) {
+export function toggleMonitor(which) {
     const collapsible = document.getElementById(which + '-monitor-collapsible');
     const chevron = document.getElementById('chevron-' + which);
     if (!collapsible) return;
@@ -191,4 +197,4 @@ window.toggleMonitor = function(which) {
     if (chevron) {
         chevron.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
     }
-};
+}

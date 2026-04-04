@@ -1,7 +1,7 @@
 {
-  "name": "CG Control Pro",
-  "short_name": "CG Control",
-  "description": "CG Control Pro Panel",
+  "name": "BTB CG System",
+  "short_name": "BTB CG",
+  "description": "BTB CG System Panel",
   "start_url": "/",
   "display": "minimal-ui",
   "background_color": "#0d1320",

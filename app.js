@@ -5,10 +5,11 @@
 // ======================================================
 
 import './src/store.js';
+import { applyStaticTranslations, t, lang, LANGUAGES } from './src/i18n.js';
 import { ensurePreviewRenderer } from './src/utils.js';
 import {
     setPreviewGraphic, refreshPreviewMonitor, refreshPreviewControls,
-    updateProgramMonitor
+    updateProgramMonitor, syncDraftGraphic, revertDraftGraphic, openGraphicInspector
 } from './src/components/monitor.js';
 import { renderShotbox } from './src/components/shotbox.js';
 import {
@@ -17,6 +18,7 @@ import {
 import { openInspector, closeInspector } from './src/components/inspector.js';
 import { openHotkeyAssignModal } from './src/components/hotkeys.js';
 import { openWysiwygModal, openWysiwygModalForField } from './src/components/wysiwyg.js';
+import { openTickerEditor } from './src/components/ticker.js';
 import { switchPage } from './src/components/settings.js';
 import { setSelectedGraphicId } from './src/store.js';
 import { init } from './src/init.js';
@@ -40,8 +42,16 @@ window._cgModules = {
     createGraphicFromTemplate,
     switchPage,
     setSelectedGraphicId,
+    openTickerEditor,
+    syncDraftGraphic,
+    revertDraftGraphic,
+    openGraphicInspector,
 };
 
+// ── i18n bridge ─────────────────────────────────────────
+window._cgI18n = { t, lang, LANGUAGES, applyStaticTranslations };
+
 // ── Boot ────────────────────────────────────────────────
+applyStaticTranslations();
 ensurePreviewRenderer();
 init();

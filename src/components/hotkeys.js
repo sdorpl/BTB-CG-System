@@ -5,6 +5,7 @@
 import { state, previewGraphic, selectedGraphicId } from '../store.js';
 import { escAttr } from '../utils.js';
 import { saveState } from '../store.js';
+import { t } from '../i18n.js';
 
 // ===========================================================
 // HOTKEY ASSIGNMENT FOR GRAPHICS
@@ -27,25 +28,25 @@ export function openHotkeyAssignModal(graphicId) {
     overlay.id = 'hotkey-assign-overlay';
     overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/80';
 
-    const currentLabel = g.hotkey ? g.hotkey.label : 'brak';
+    const currentLabel = g.hotkey ? g.hotkey.label : t('hotkeys.none');
     overlay.innerHTML = `
         <div class="bg-gray-900 border border-purple-700 rounded-lg shadow-2xl p-6 max-w-sm w-full mx-4 text-center">
-            <h2 class="text-white font-bold text-lg mb-2">Przypisz skrót klawiszowy</h2>
-            <p class="text-gray-400 text-sm mb-1">Grafika: <span class="text-white font-bold">${escAttr(g.name)}</span></p>
-            <p class="text-gray-500 text-xs mb-4">Obecny skrót: <span class="text-purple-400 font-mono font-bold">${escAttr(currentLabel)}</span></p>
+            <h2 class="text-white font-bold text-lg mb-2">${t('hotkeys.assignTitle')}</h2>
+            <p class="text-gray-400 text-sm mb-1">${t('hotkeys.graphicLabel')} <span class="text-white font-bold">${escAttr(g.name)}</span></p>
+            <p class="text-gray-500 text-xs mb-4">${t('hotkeys.currentShortcut')} <span class="text-purple-400 font-mono font-bold">${escAttr(currentLabel)}</span></p>
             <div id="hotkey-mod-row" class="flex justify-center gap-2 mb-3">
                 <span id="hk-ctrl"  class="px-2 py-0.5 rounded text-xs font-mono font-bold border border-gray-700 text-gray-600 transition-all">Ctrl</span>
                 <span id="hk-alt"   class="px-2 py-0.5 rounded text-xs font-mono font-bold border border-gray-700 text-gray-600 transition-all">Alt</span>
                 <span id="hk-shift" class="px-2 py-0.5 rounded text-xs font-mono font-bold border border-gray-700 text-gray-600 transition-all">Shift</span>
             </div>
             <div id="hotkey-capture-box" tabindex="0" class="border-2 border-dashed border-purple-600 rounded-lg p-6 mb-3 text-purple-300 text-lg font-mono font-bold animate-pulse outline-none">
-                Naciśnij kombinację klawiszy...
+                ${t('hotkeys.pressKeyCombination')}
             </div>
-            <p id="hotkey-hint" class="text-gray-500 text-xs mb-3 hidden">Naciśnij <kbd class="bg-gray-700 px-1 rounded text-gray-300">Enter</kbd> aby przypisać &nbsp;·&nbsp; <kbd class="bg-gray-700 px-1 rounded text-gray-300">Esc</kbd> aby zmienić</p>
+            <p id="hotkey-hint" class="text-gray-500 text-xs mb-3 hidden">${t('hotkeys.enterToAssign')}</p>
             <div class="flex gap-2 justify-center">
-                <button id="hotkey-confirm-btn" class="hidden px-4 py-2 rounded bg-purple-700 hover:bg-purple-600 text-white text-sm font-bold border border-purple-500 transition-all">Przypisz</button>
-                <button id="hotkey-clear-btn" class="px-4 py-2 rounded bg-red-900/60 hover:bg-red-800 text-red-300 text-sm font-bold border border-red-700/50 transition-all">Usuń skrót</button>
-                <button id="hotkey-cancel-btn" class="px-4 py-2 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold border border-gray-700 transition-all">Anuluj</button>
+                <button id="hotkey-confirm-btn" class="hidden px-4 py-2 rounded bg-purple-700 hover:bg-purple-600 text-white text-sm font-bold border border-purple-500 transition-all">${t('hotkeys.assign')}</button>
+                <button id="hotkey-clear-btn" class="px-4 py-2 rounded bg-red-900/60 hover:bg-red-800 text-red-300 text-sm font-bold border border-red-700/50 transition-all">${t('hotkeys.clearShortcut')}</button>
+                <button id="hotkey-cancel-btn" class="px-4 py-2 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold border border-gray-700 transition-all">${t('hotkeys.cancel')}</button>
             </div>
         </div>
     `;
@@ -86,7 +87,7 @@ export function openHotkeyAssignModal(graphicId) {
         setModLight(elShift, false);
         captureBox.classList.remove('border-green-500', 'text-green-300', 'border-red-600', 'text-red-300', 'border-yellow-500', 'text-yellow-300');
         captureBox.classList.add('animate-pulse', 'border-purple-600', 'text-purple-300');
-        captureBox.textContent = 'Naciśnij kombinację klawiszy...';
+        captureBox.textContent = t('hotkeys.pressKeyCombination');
         hintEl.classList.add('hidden');
         confirmBtn.classList.add('hidden');
     }
@@ -213,7 +214,7 @@ export function openHotkeyAssignModal(graphicId) {
                 pendingDescriptor = null;
                 captureBox.classList.remove('animate-pulse', 'border-purple-600', 'text-purple-300', 'border-yellow-500', 'text-yellow-300', 'border-green-500', 'text-green-300');
                 captureBox.classList.add('border-red-600', 'text-red-300');
-                captureBox.innerHTML = `<span class="text-red-400">${escAttr(desc.label)}</span><br><span class="text-xs text-red-500">Konflikt z: ${escAttr(conflict.name)}</span>`;
+                captureBox.innerHTML = `<span class="text-red-400">${escAttr(desc.label)}</span><br><span class="text-xs text-red-500">${t('hotkeys.conflictWith', escAttr(conflict.name))}</span>`;
                 hintEl.classList.add('hidden');
                 confirmBtn.classList.add('hidden');
                 setTimeout(resetCapture, 1500);

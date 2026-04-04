@@ -1,6 +1,6 @@
-# Dokumentacja: Tworzenie Własnych Szablonów Grafik (CG Control PRO)
+# Dokumentacja: Tworzenie Własnych Szablonów Grafik (BTB CG System)
 
-Aplikacja **CG Control PRO** (silnik `VinciFlow`) wykorzystuje strukturę opartą o szablony HTML, CSS i JavaScript kompilowane w locie za pomocą biblioteki **Handlebars.js**. Szablony są następnie animowane i renderowane w środowisku przeglądarkowym (źródło Output). 
+Aplikacja **BTB CG System** (silnik `VinciFlow`) wykorzystuje strukturę opartą o szablony HTML, CSS i JavaScript kompilowane w locie za pomocą biblioteki **Handlebars.js**. Szablony są następnie animowane i renderowane w środowisku przeglądarkowym (źródło Output). 
 
 Poniższa dokumentacja opisuje, jak zdefiniować własny szablon w bazie danych.
 

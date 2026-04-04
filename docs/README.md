@@ -1,6 +1,6 @@
-# Dokumentacja Systemu CG Control Pro
+# Dokumentacja Systemu BTB CG System
 
-Witaj w dokumentacji systemu **CG Master Alpha**. Poniżej znajdziesz spis treści ułatwiający nawigację.
+Witaj w dokumentacji systemu **BTB CG System**. Poniżej znajdziesz spis treści ułatwiający nawigację.
 
 ## Spis Treści
 
@@ -12,6 +12,8 @@ Witaj w dokumentacji systemu **CG Master Alpha**. Poniżej znajdziesz spis treś
     Opis technologii (Vite, Socket.io, SQLite) oraz struktury danych.
 4.  ### [API i Dokumentacja Techniczna](api_techniczna.md)
     Opis kluczowych funkcji silnika renderującego i synchronizacji.
+5.  ### [Podłączenie do OBS Studio](obs_integration.md)
+    Instrukcja konfiguracji źródła przeglądarki w OBS dla wyświetlania grafik CG.
 
 ---
 *Ostatnia aktualizacja: Marzec 2026*

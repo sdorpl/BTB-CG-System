@@ -1,4 +1,4 @@
-# CG Master Alpha (CG Control Pro)
+# BTB CG System
 
 System profesjonalnej emisji grafik telewizyjnych i streamingowych w czasie rzeczywistym, oparty na silniku **VinciFlow**.
 
@@ -26,4 +26,4 @@ Pełna dokumentacja systemu znajduje się w katalogu `/docs`:
 4. Otwórz wyjście wideo (Output): `http://localhost:5173/output.html`
 
 ---
-*System CG Control Pro — Wersja ALPHA*
+*System BTB CG System — Wersja ALPHA*

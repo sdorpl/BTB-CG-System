@@ -1,6 +1,6 @@
 # Instrukcja Obsługi Operatora (Funkcje Systemu)
 
-Witaj w systemie **BTB-CG** (CG Master Alpha). Jest to profesjonalne narzędzie do emisji grafik telewizyjnych i streamingowych w czasie rzeczywistym. Poniższa instrukcja przeprowadzi Cię przez wszystkie aspekty codziennej pracy z systemem.
+Witaj w systemie **BTB CG System**. Jest to profesjonalne narzędzie do emisji grafik telewizyjnych i streamingowych w czasie rzeczywistym. Poniższa instrukcja przeprowadzi Cię przez wszystkie aspekty codziennej pracy z systemem.
 
 ---
 

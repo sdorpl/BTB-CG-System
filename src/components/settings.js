@@ -3,6 +3,7 @@
 // ======================================================
 
 import { state, setCurrentPage, saveState } from '../store.js';
+import { t } from '../i18n.js';
 
 // ===========================================================
 // 3. NAVIGATION
@@ -89,7 +90,7 @@ export function renderSettings() {
         const globalGraphics = state.settings?.globalFontGraphics || [];
 
         if (state.graphics.length === 0) {
-            fontGraphicsContainer.innerHTML = '<div class="text-[10px] text-gray-500 italic p-2">Brak grafik w Banku Grafik</div>';
+            fontGraphicsContainer.innerHTML = `<div class="text-[10px] text-gray-500 italic p-2">${t('settings.noGraphicsInBank')}</div>`;
         } else {
             state.graphics.forEach(g => {
                 const isChecked = globalGraphics.includes(g.id);
@@ -116,7 +117,7 @@ export function renderSettings() {
         const globalRadiusGraphics = state.settings?.globalRadiusGraphics || [];
 
         if (state.graphics.length === 0) {
-            radiusGraphicsContainer.innerHTML = '<div class="text-[10px] text-gray-500 italic p-2">Brak grafik w Banku Grafik</div>';
+            radiusGraphicsContainer.innerHTML = `<div class="text-[10px] text-gray-500 italic p-2">${t('settings.noGraphicsInBank')}</div>`;
         } else {
             state.graphics.forEach(g => {
                 const isChecked = globalRadiusGraphics.includes(g.id);
@@ -130,4 +131,77 @@ export function renderSettings() {
             });
         }
     }
+
+    // Network info
+    fetchNetworkInfo();
+}
+
+function fetchNetworkInfo() {
+    const container = document.getElementById('network-info-container');
+    if (!container) return;
+
+    fetch('/api/server-info')
+        .then(r => r.json())
+        .then(info => {
+            const port = info.port;
+            const lanIps = info.lanIps || [];
+            const lanIp = lanIps[0] || null;
+
+            const linkClass = 'text-cyan-400 hover:text-cyan-300 underline underline-offset-2 font-mono text-xs';
+            const labelClass = 'text-[10px] text-gray-400 uppercase font-bold tracking-wider';
+            const urlClass = 'bg-gray-800 border border-gray-700 rounded px-3 py-2 flex items-center justify-between gap-2';
+
+            let html = '';
+
+            // Panel Sterowania
+            html += `<div>
+                <div class="${labelClass} mb-1.5">${t('settings.networkPanel')}</div>
+                <div class="space-y-1.5">
+                    <div class="${urlClass}">
+                        <a href="http://localhost:${port}/" target="_blank" class="${linkClass}">http://localhost:${port}/</a>
+                        <button onclick="navigator.clipboard.writeText('http://localhost:${port}/')" class="text-gray-500 hover:text-white transition-colors" title="Kopiuj">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                    </div>`;
+
+            if (lanIp) {
+                html += `<div class="${urlClass}">
+                        <a href="http://${lanIp}:${port}/" target="_blank" class="${linkClass}">http://${lanIp}:${port}/</a>
+                        <span class="text-[9px] text-gray-500 shrink-0">LAN</span>
+                        <button onclick="navigator.clipboard.writeText('http://${lanIp}:${port}/')" class="text-gray-500 hover:text-white transition-colors" title="Kopiuj">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                    </div>`;
+            }
+
+            html += `</div></div>`;
+
+            // Output (OBS/vMix)
+            html += `<div class="pt-3 border-t border-gray-700/50">
+                <div class="${labelClass} mb-1.5">${t('settings.networkOutput')}</div>
+                <div class="space-y-1.5">
+                    <div class="${urlClass}">
+                        <a href="http://localhost:${port}/output.html" target="_blank" class="${linkClass}">http://localhost:${port}/output.html</a>
+                        <button onclick="navigator.clipboard.writeText('http://localhost:${port}/output.html')" class="text-gray-500 hover:text-white transition-colors" title="Kopiuj">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                    </div>`;
+
+            if (lanIp) {
+                html += `<div class="${urlClass}">
+                        <a href="http://${lanIp}:${port}/output.html" target="_blank" class="${linkClass}">http://${lanIp}:${port}/output.html</a>
+                        <span class="text-[9px] text-gray-500 shrink-0">LAN</span>
+                        <button onclick="navigator.clipboard.writeText('http://${lanIp}:${port}/output.html')" class="text-gray-500 hover:text-white transition-colors" title="Kopiuj">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                    </div>`;
+            }
+
+            html += `</div></div>`;
+
+            container.innerHTML = html;
+        })
+        .catch(() => {
+            container.innerHTML = `<div class="text-xs text-red-400">${t('settings.networkError')}</div>`;
+        });
 }

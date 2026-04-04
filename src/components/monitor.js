@@ -7,6 +7,7 @@ import {
     selectedGraphicId, uiChannel, panelMode
 } from '../store.js';
 import { saveState } from '../store.js';
+import { t } from '../i18n.js';
 
 // module-level ref so refreshPreviewMonitor can force a rescale
 export let _previewDoScale = null;
@@ -68,7 +69,7 @@ export function refreshPreviewMonitor(skipBroadcast = false) {
 
     const tpl = state.templates.find(t => t.id === previewGraphic.templateId);
     if (!tpl) {
-        if (canvas) canvas.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#666;font-family:monospace">Szablon nie znaleziony</div>`;
+        if (canvas) canvas.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#666;font-family:monospace">${t('monitor.templateNotFound')}</div>`;
         return;
     }
 
@@ -77,12 +78,12 @@ export function refreshPreviewMonitor(skipBroadcast = false) {
         // Force rescale after render so the canvas wrap is correctly sized/positioned
         if (_previewDoScale) requestAnimationFrame(_previewDoScale);
     } else if (canvas) {
-        canvas.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#555;font-family:monospace;font-size:12px">Renderer niedostępny</div>`;
+        canvas.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#555;font-family:monospace;font-size:12px">${t('monitor.rendererUnavailable')}</div>`;
     }
 
 }
 
-window.syncDraftGraphic = function(id) {
+export function syncDraftGraphic(id) {
     const draft = window._draftGraphics[id];
     if (draft) {
         const idx = state.graphics.findIndex(g => g.id === id);
@@ -98,9 +99,9 @@ window.syncDraftGraphic = function(id) {
             if (selectedGraphicId === id) refreshPreviewControls();
         }
     }
-};
+}
 
-window.revertDraftGraphic = function(id) {
+export function revertDraftGraphic(id) {
     if (window._draftGraphics[id]) {
         delete window._draftGraphics[id];
         window._cgModules.renderShotbox();
@@ -108,13 +109,12 @@ window.revertDraftGraphic = function(id) {
             window._cgModules.openInspector(id);
         }
     }
-};
+}
 
-window._openGraphicInspector = function(id) {
+export function openGraphicInspector(id) {
     const g = window._draftGraphics[id] || state.graphics.find(x => x.id === id);
     if (!g) return;
     if (panelMode === 'bank') {
-        // Standalone bank mode — open/focus a dedicated inspector window, then tell it to select the graphic
         window.open('/?panel=inspector', 'cg_inspector', 'width=380,height=900');
         setTimeout(() => {
             uiChannel.postMessage({ action: 'select_graphic', id });
@@ -123,7 +123,7 @@ window._openGraphicInspector = function(id) {
         setPreviewGraphic(structuredClone(g));
         window._cgModules.openInspector(id);
     }
-};
+}
 
 export function refreshPreviewControls() {
     const hasPreview = !!previewGraphic;
@@ -134,10 +134,10 @@ export function refreshPreviewControls() {
     if (hasPreview) {
         const takeBtn = document.getElementById('btn-take-preview');
         if (previewGraphic.visible) {
-            takeBtn.textContent = 'ŚCIĄGNIJ (TAKE OFF)';
+            takeBtn.textContent = t('monitor.takeOff');
             takeBtn.className = 'px-4 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-bold uppercase shadow-lg shadow-red-900/30 transition-all active:scale-95';
         } else {
-            takeBtn.textContent = 'WEJDŹ (TAKE)';
+            takeBtn.textContent = t('monitor.takeOn');
             takeBtn.className = 'px-4 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-[10px] font-bold uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95';
         }
     }
@@ -157,12 +157,12 @@ export function updateProgramMonitor() {
 
     if (n === 0) {
         layersLabel?.classList.add('hidden');
-        onAirLabel.textContent = 'NA ŻYWO: 0 WARSTW';
+        onAirLabel.textContent = t('monitor.onAirZeroLayers');
         programEmpty?.classList.remove('hidden');
     } else {
         layersLabel?.classList.remove('hidden');
         if (layersCount) layersCount.textContent = n;
-        onAirLabel.textContent = `NA ŻYWO: ${n} AKTYWNE`;
+        onAirLabel.textContent = t('monitor.onAirActiveLayers', n);
         programEmpty?.classList.add('hidden');
     }
 }

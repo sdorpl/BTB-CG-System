@@ -26,6 +26,7 @@ import { bindWysiwygModalEvents } from './components/wysiwyg.js';
 import { bindTickerEditorEvents } from './components/ticker.js';
 import { switchPage } from './components/settings.js';
 import { openHotkeyAssignModal, triggerGraphicHotkey, _hotkeyAssignActive, _globalPressedKeys } from './components/hotkeys.js';
+import { t, lang, applyStaticTranslations } from './i18n.js';
 
 let _globalEventsBound = false;
 
@@ -412,13 +413,25 @@ function bindGlobalEvents() {
     if (shadowOffsetX) shadowOffsetX.addEventListener('change', (e) => updateGlobalShadow('offsetX', parseInt(e.target.value) || 0));
     if (shadowOffsetY) shadowOffsetY.addEventListener('change', (e) => updateGlobalShadow('offsetY', parseInt(e.target.value) || 0));
 
+    // Language switcher
+    const langSelect = document.getElementById('setting-language');
+    if (langSelect) {
+        langSelect.value = lang();
+        langSelect.addEventListener('change', (e) => {
+            lang(e.target.value);
+            renderShotbox();
+            renderTemplateList();
+            if (selectedGraphicId) openInspector(selectedGraphicId);
+        });
+    }
+
     document.getElementById('reset-db-btn').onclick = async () => {
-        if (!confirm('Zresetować DB do db.json? Wszystkie zmiany zostaną utracone.')) return;
+        if (!confirm(t('init.confirmResetDb'))) return;
         try {
             const res = await fetch('db.json');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            if (!data || !data.templates) throw new Error('Nieprawidłowy format db.json');
+            if (!data || !data.templates) throw new Error(t('init.invalidDbFormat'));
             localStorage.removeItem(DB_KEY);
             setState(data);
             saveState();
@@ -429,7 +442,7 @@ function bindGlobalEvents() {
             renderTemplateList();
             updateProgramMonitor();
         } catch (err) {
-            alert(`Nie udało się zresetować bazy danych: ${err.message}`);
+            alert(t('init.resetDbError', err.message));
             console.error('[Reset DB] Error:', err);
         }
     };
@@ -441,7 +454,7 @@ function bindGlobalEvents() {
 
     document.getElementById('btn-update-active').onclick = () => {
         if (!previewGraphic) return;
-        window.syncDraftGraphic(previewGraphic.id);
+        window._cgModules.syncDraftGraphic(previewGraphic.id);
     };
 
     document.getElementById('btn-take-preview').onclick = () => {
@@ -473,8 +486,8 @@ function bindGlobalEvents() {
     };
 
     bind('btn-clear-bank', 'click', () => {
-        if (confirm('Czy na pewno chcesz usunąć WSZYSTKIE elementy z banku grafik?')) {
-            if (confirm('Jesteś absolutnie pewien? Tej operacji nie można prosto cofnąć.')) {
+        if (confirm(t('init.confirmClearBank'))) {
+            if (confirm(t('init.confirmClearBankFinal'))) {
                 state.graphics = [];
                 setSelectedGraphicId(null);
                 setPreviewGraphic_store(null);
@@ -506,9 +519,9 @@ function bindGlobalEvents() {
 
         if (g && g.visible) {
             const btn = document.getElementById('btn-save-graphic');
-            btn.textContent = 'SCHOWANE W SZKICU (UŻYJ SYNCHR.)';
+            btn.textContent = t('init.hiddenInDraft');
             setTimeout(() => {
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ZAPISZ ZMIANY`;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ${t('init.saveChanges')}`;
             }, 2000);
             return;
         }
@@ -531,9 +544,9 @@ function bindGlobalEvents() {
         saveState();
         renderShotbox();
         const btn = document.getElementById('btn-save-graphic');
-        btn.textContent = '✓ Zapisano!';
+        btn.textContent = t('init.saved');
         setTimeout(() => {
-            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ZAPISZ ZMIANY`;
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ${t('init.saveChanges')}`;
         }, 2000);
     };
 
@@ -543,12 +556,12 @@ function bindGlobalEvents() {
         if (!g) return;
         const tpl = state.templates.find(t => t.id === g.templateId);
         if (!tpl) {
-            alert('Nie znaleziono źródłowego szablonu.');
+            alert(t('init.sourceTemplateNotFound'));
             return;
         }
         const newTpl = JSON.parse(JSON.stringify(tpl));
         newTpl.id = crypto.randomUUID();
-        newTpl.name = g.name + ' (Szablon)';
+        newTpl.name = g.name + t('init.templateSuffix');
 
         newTpl.type = g.type || newTpl.type;
         if (g.useCodeOverride) {
@@ -578,9 +591,10 @@ function bindGlobalEvents() {
         renderTemplateList();
 
         const btn = document.getElementById('btn-ins-save-template');
-        btn.innerHTML = '<span>✓ ZAPISANO</span>';
+        btn.innerHTML = `<span>${t('init.savedUppercase')}</span>`;
         setTimeout(() => {
-            btn.innerHTML = '<span>ZAPISZ JAKO</span><span>SZABLON</span>';
+            const parts = t('init.saveAsTemplate').split('\n');
+            btn.innerHTML = `<span>${parts[0]}</span><span>${parts[1] || ''}</span>`;
         }, 2000);
     };
 
@@ -595,12 +609,12 @@ function bindGlobalEvents() {
         if (!g) return;
         const tpl = state.templates.find(t => t.id === g.templateId);
         if (!tpl) {
-            alert('Nie znaleziono źródłowego szablonu.');
+            alert(t('init.sourceTemplateNotFound'));
             return;
         }
         const exportTpl = JSON.parse(JSON.stringify(tpl));
         exportTpl.id = crypto.randomUUID();
-        exportTpl.name = g.name + ' (Eksport)';
+        exportTpl.name = g.name + t('init.exportSuffix');
 
         exportTpl.type = g.type || exportTpl.type;
         if (g.useCodeOverride) {
@@ -628,7 +642,7 @@ function bindGlobalEvents() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportTpl, null, 2));
         const el = document.createElement('a');
         el.setAttribute("href", dataStr);
-        el.setAttribute("download", `szablon_${g.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`);
+        el.setAttribute("download", `${t('init.filePrefix')}_${g.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`);
         document.body.appendChild(el);
         el.click();
         el.remove();
@@ -639,7 +653,7 @@ function bindGlobalEvents() {
         const g = state.graphics.find(gfx => gfx.id === selectedGraphicId);
         if (!g) return;
 
-        if (confirm(`Czy na pewno chcesz usunąć grafikę "${g.name}"?`)) {
+        if (confirm(t('init.confirmDeleteGraphic', g.name))) {
             state.graphics = state.graphics.filter(gfx => gfx.id !== selectedGraphicId);
             const deletedId = selectedGraphicId;
             setSelectedGraphicId(null);
@@ -658,7 +672,7 @@ function bindGlobalEvents() {
     document.getElementById('btn-new-template').onclick = () => {
         const newTpl = {
             id: crypto.randomUUID(),
-            name: 'Nowy Szablon',
+            name: t('init.newTemplateName'),
             type: 'LOWER_THIRD',
             html_template: '<div class="lt-container">\n  <h1>{{{TITLE}}}</h1>\n</div>',
             css_template: '#{{ID}} h1 { color: {{PRIMARY_COLOR}}; }',
@@ -696,9 +710,9 @@ function bindGlobalEvents() {
                 });
                 saveState();
                 renderTemplateList();
-                alert('Szablony zaimportowane pomyślnie!');
+                alert(t('init.templatesImportedSuccess'));
             } catch (err) {
-                alert('Błąd parsowania JSON szablonu: ' + err.message);
+                alert(t('init.templateParseError', err.message));
             }
             tplFileInput.value = '';
         };
@@ -707,7 +721,7 @@ function bindGlobalEvents() {
 
     document.getElementById('btn-export-template').onclick = () => {
         if (!currentTemplateId) {
-             alert('Wybierz najpierw szablon z listy!');
+             alert(t('init.selectTemplateFirst'));
              return;
         }
         const tpl = state.templates.find(t => t.id === currentTemplateId);
@@ -716,7 +730,7 @@ function bindGlobalEvents() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tpl, null, 2));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `szablon_${tpl.name.replace(/\s+/g, '_').toLowerCase()}.json`);
+        downloadAnchorNode.setAttribute("download", `${t('init.filePrefix')}_${tpl.name.replace(/\s+/g, '_').toLowerCase()}.json`);
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
@@ -727,7 +741,7 @@ function bindGlobalEvents() {
     bind('btn-delete-template', 'click', () => {
         if (!currentTemplateId) return;
         const tpl = state.templates.find(t => t.id === currentTemplateId);
-        if (!tpl || !confirm(`Usunąć szablon "${tpl.name}"?`)) return;
+        if (!tpl || !confirm(t('init.confirmDeleteTemplate', tpl.name))) return;
         state.templates = state.templates.filter(t => t.id !== currentTemplateId);
         setCurrentTemplateId(null);
         saveState();
@@ -834,7 +848,7 @@ function bindGlobalEvents() {
 
     if (btnExportDb && btnImportDbTrigger && dbFileInput) {
         btnExportDb.onclick = () => {
-            if (!confirm('Czy na pewno chcesz pobrać aktualny stan bazy danych (Szablony, Elementy Graficzne i Ustawienia)?')) return;
+            if (!confirm(t('init.confirmExportDb'))) return;
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
@@ -850,7 +864,7 @@ function bindGlobalEvents() {
             const file = e.target.files[0];
             if (!file) return;
 
-            if (!confirm('UWAGA! Import bazy spowoduje nadpisanie WSZYSTKICH aktualnych grafik i szablonów. Czy na pewno chcesz kontynuować?')) {
+            if (!confirm(t('init.confirmImportDb'))) {
                 dbFileInput.value = '';
                 return;
             }
@@ -863,12 +877,12 @@ function bindGlobalEvents() {
                         setState(parsed);
                         socket.emit('updateState', state);
                         init();
-                        alert('Baza Danych została poprawnie zaimportowana!');
+                        alert(t('init.dbImportSuccess'));
                     } else {
-                        throw new Error('Nieprawidłowy plik Bazy Danych');
+                        throw new Error(t('init.invalidDbFile'));
                     }
                 } catch (err) {
-                    alert('Błąd importowania bazy: ' + err.message);
+                    alert(t('init.dbImportError', err.message));
                 }
                 dbFileInput.value = '';
             };
@@ -983,50 +997,50 @@ function bindGlobalEvents() {
         overlay.innerHTML = `
             <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-6 max-w-md w-full mx-4">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-white font-bold text-lg tracking-wide">Skróty Klawiszowe</h2>
+                    <h2 class="text-white font-bold text-lg tracking-wide">${t('init.shortcutsTitle')}</h2>
                     <button onclick="document.getElementById('shortcuts-help-overlay').remove()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
                 </div>
                 <div class="space-y-1 text-sm">
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">TAKE (Wejdź / Ściągnij)</span>
+                        <span class="text-gray-300">${t('init.shortcutTake')}</span>
                         <span class="text-blue-400 font-mono font-bold">F1 / Space</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">Synchronizuj (Update Active)</span>
+                        <span class="text-gray-300">${t('init.shortcutSync')}</span>
                         <span class="text-blue-400 font-mono font-bold">F2</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">Wyczyść Program (Kill All)</span>
+                        <span class="text-gray-300">${t('init.shortcutKillAll')}</span>
                         <span class="text-blue-400 font-mono font-bold">Escape</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">Usuń wybraną grafikę</span>
+                        <span class="text-gray-300">${t('init.shortcutDelete')}</span>
                         <span class="text-blue-400 font-mono font-bold">Delete</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">Poprzednia / Następna grafika</span>
+                        <span class="text-gray-300">${t('init.shortcutPrevNext')}</span>
                         <span class="text-blue-400 font-mono font-bold">↑ / ↓</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">Dashboard / Szablony</span>
+                        <span class="text-gray-300">${t('init.shortcutDashTemplates')}</span>
                         <span class="text-blue-400 font-mono font-bold">Tab</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">Ustaw tło (wybrany kolor)</span>
+                        <span class="text-gray-300">${t('init.shortcutSetBg')}</span>
                         <span class="text-blue-400 font-mono font-bold">B</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">Tło przezroczyste / OBS</span>
+                        <span class="text-gray-300">${t('init.shortcutTransBg')}</span>
                         <span class="text-blue-400 font-mono font-bold">T</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-gray-800">
-                        <span class="text-gray-300">Pokaż tę pomoc</span>
+                        <span class="text-gray-300">${t('init.shortcutShowHelp')}</span>
                         <span class="text-blue-400 font-mono font-bold">?</span>
                     </div>
                 </div>
                 ${state.graphics.some(g => g.hotkey) ? `
                 <div class="mt-3 pt-3 border-t border-gray-700">
-                    <p class="text-purple-400 text-xs font-bold uppercase tracking-wider mb-2">Skróty grafik</p>
+                    <p class="text-purple-400 text-xs font-bold uppercase tracking-wider mb-2">${t('init.graphicShortcuts')}</p>
                     <div class="space-y-1 text-sm">
                         ${state.graphics.filter(g => g.hotkey).map(g => `
                             <div class="flex justify-between py-1 border-b border-gray-800/50">
@@ -1037,7 +1051,7 @@ function bindGlobalEvents() {
                     </div>
                 </div>
                 ` : ''}
-                <p class="text-gray-600 text-xs mt-4 text-center">Skróty nie działają podczas edycji pól tekstowych</p>
+                <p class="text-gray-600 text-xs mt-4 text-center">${t('init.shortcutsDisabledNote')}</p>
             </div>
         `;
         document.body.appendChild(overlay);

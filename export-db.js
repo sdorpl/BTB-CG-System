@@ -1,10 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 
 const dbPath = path.join(__dirname, 'database.sqlite');
 const outPath = path.join(__dirname, 'new-db.json');
-const db = new sqlite3.Database(dbPath);
+const db = new Database(dbPath, { readonly: true });
 
 const state = {
     settings: {},
@@ -13,41 +13,27 @@ const state = {
     graphics: []
 };
 
-const q = (action) => new Promise((resolve) => action(resolve));
+try {
+    const settingsRow = db.prepare("SELECT data FROM settings WHERE id = 1").get();
+    state.settings = settingsRow ? JSON.parse(settingsRow.data) : {};
 
-async function exportDB() {
-    try {
-        state.settings = await q(resolve => db.get("SELECT data FROM settings WHERE id = 1", (err, row) => {
-            if (err) resolve({});
-            else resolve(row && row.data ? JSON.parse(row.data) : {});
-        }));
+    state.templates = db.prepare("SELECT data FROM templates").all()
+        .map(r => JSON.parse(r.data));
 
-        state.templates = await q(resolve => db.all("SELECT data FROM templates", (err, rows) => {
-            if (err) resolve([]);
-            else resolve(rows ? rows.map(r => JSON.parse(r.data)) : []);
-        }));
+    state.groups = db.prepare("SELECT data FROM groups").all()
+        .map(r => JSON.parse(r.data));
 
-        state.groups = await q(resolve => db.all("SELECT data FROM groups", (err, rows) => {
-            if (err) resolve([]);
-            else resolve(rows ? rows.map(r => JSON.parse(r.data)) : []);
-        }));
+    state.graphics = db.prepare("SELECT id, templateId, name, groupId, visible, data FROM graphics").all()
+        .map(r => {
+            let parsed = {};
+            try { parsed = JSON.parse(r.data); } catch(e){}
+            return { ...parsed, id: r.id, templateId: r.templateId, name: r.name, groupId: r.groupId, visible: r.visible === 1 };
+        });
 
-        state.graphics = await q(resolve => db.all("SELECT id, templateId, name, groupId, visible, data FROM graphics", (err, rows) => {
-             if (err) resolve([]);
-             else resolve(rows ? rows.map(r => {
-                 let parsed = {};
-                 try { parsed = JSON.parse(r.data); } catch(e){}
-                 return { ...parsed, id: r.id, templateId: r.templateId, name: r.name, groupId: r.groupId, visible: r.visible === 1 };
-             }) : []);
-        }));
-
-        fs.writeFileSync(outPath, JSON.stringify(state, null, 2), 'utf8');
-        console.log('Eksport bazy zakończony pomyslnie do ' + outPath);
-    } catch (e) {
-        console.error('Blad eksportu: ', e);
-    } finally {
-        db.close();
-    }
+    fs.writeFileSync(outPath, JSON.stringify(state, null, 2), 'utf8');
+    console.log('Eksport bazy zakończony pomyślnie do ' + outPath);
+} catch (e) {
+    console.error('Błąd eksportu: ', e);
+} finally {
+    db.close();
 }
-
-exportDB();

@@ -7,6 +7,7 @@ import {
     panelMode, uiChannel, saveState
 } from '../store.js';
 import { escAttr } from '../utils.js';
+import { t } from '../i18n.js';
 
 // ===========================================================
 // 5. SHOTBOX (with copy & groups)
@@ -23,7 +24,7 @@ export function copyGraphic(graphicId) {
     if (!src) return;
     const copy = JSON.parse(JSON.stringify(src));
     copy.id = crypto.randomUUID();
-    copy.name = (src.name || 'Grafika') + ' (kopia)';
+    copy.name = (src.name || t('bank.graphicFallback')) + ' ' + t('bank.copyName');
     copy.visible = false;
     // Insert right after source
     const idx = state.graphics.indexOf(src);
@@ -40,7 +41,7 @@ export function createGroup(name) {
     ensureGroups();
     const grp = {
         id: crypto.randomUUID(),
-        name: name || `Grupa ${state.groups.length + 1}`,
+        name: name || t('bank.defaultGroupName', state.groups.length + 1),
         color: GROUP_COLORS[state.groups.length % GROUP_COLORS.length]
     };
     state.groups.push(grp);
@@ -126,8 +127,8 @@ export function initShotboxDelegation() {
             e.stopPropagation();
             const id = delBtn.dataset.deleteId;
             const g = state.graphics.find(gx => gx.id === id);
-            const name = g ? g.name : 'tę grafikę';
-            if (confirm(`Czy na pewno chcesz usunąć grafikę "${name}"?`)) {
+            const name = g ? g.name : t('bank.thisGraphic');
+            if (confirm(t('bank.confirmDelete', name))) {
                 state.graphics = state.graphics.filter(g => g.id !== id);
                 if (selectedGraphicId === id) { window._cgModules.setSelectedGraphicId(null); window._cgModules.closeInspector(); }
                 if (previewGraphic?.id === id) window._cgModules.setPreviewGraphic(null);
@@ -164,35 +165,35 @@ export function initShotboxDelegation() {
         const insBtn = e.target.closest('[data-inspector-id]');
         if (insBtn) {
             e.stopPropagation();
-            window._openGraphicInspector(insBtn.dataset.inspectorId);
+            window._cgModules.openGraphicInspector(insBtn.dataset.inspectorId);
             return;
         }
         // Ticker editor button
         const tickerBtn = e.target.closest('[data-ticker-edit]');
         if (tickerBtn) {
             e.stopPropagation();
-            window.openTickerEditor(tickerBtn.dataset.tickerEdit);
+            window._cgModules.openTickerEditor(tickerBtn.dataset.tickerEdit);
             return;
         }
         // WYSIWYG editor button
         const wysiwygBtn = e.target.closest('[data-wysiwyg-edit]');
         if (wysiwygBtn) {
             e.stopPropagation();
-            window.openWysiwygModal(wysiwygBtn.dataset.wysiwygEdit);
+            window._cgModules.openWysiwygModal(wysiwygBtn.dataset.wysiwygEdit);
             return;
         }
         // Sync draft button
         const syncBtn = e.target.closest('[data-sync-draft]');
         if (syncBtn) {
             e.stopPropagation();
-            window.syncDraftGraphic(syncBtn.dataset.syncDraft);
+            window._cgModules.syncDraftGraphic(syncBtn.dataset.syncDraft);
             return;
         }
         // Revert draft button
         const revertBtn = e.target.closest('[data-revert-draft]');
         if (revertBtn) {
             e.stopPropagation();
-            window.revertDraftGraphic(revertBtn.dataset.revertDraft);
+            window._cgModules.revertDraftGraphic(revertBtn.dataset.revertDraft);
             return;
         }
         // Card background click (select for preview/inspector)
@@ -214,7 +215,7 @@ export function initShotboxDelegation() {
         const gfxId = sel.dataset.groupAssign;
         const val = sel.value;
         if (val === '__new__') {
-            const name = prompt('Nazwa nowej grupy:');
+            const name = prompt(t('bank.newGroupPrompt'));
             if (!name) { renderShotbox(); return; }
             const grp = createGroup(name);
             assignToGroup(gfxId, grp.id);
@@ -264,9 +265,9 @@ export function renderShotbox() {
         const hotkeyLabel = graphic.hotkey ? graphic.hotkey.label : null;
         const actionBtns = `
             <div class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button data-hotkey-assign="${graphic.id}" title="${hotkeyLabel ? 'Zmień skrót: ' + escAttr(hotkeyLabel) : 'Przypisz skrót klawiszowy'}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-purple-900/60 text-gray-500 hover:text-purple-400 text-[10px] leading-none">⌨</button>
-                <button data-copy-id="${graphic.id}" title="Kopiuj" aria-label="Kopiuj grafikę ${escAttr(graphic.name)}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-blue-900/60 text-gray-500 hover:text-blue-400 text-[10px] leading-none">📋</button>
-                <button data-delete-id="${graphic.id}" title="Usuń" aria-label="Usuń grafikę ${escAttr(graphic.name)}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs leading-none">&times;</button>
+                <button data-hotkey-assign="${graphic.id}" title="${hotkeyLabel ? t('bank.changeHotkey', escAttr(hotkeyLabel)) : t('bank.assignHotkey')}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-purple-900/60 text-gray-500 hover:text-purple-400 text-[10px] leading-none">⌨</button>
+                <button data-copy-id="${graphic.id}" title="${t('bank.copy')}" aria-label="${t('bank.copy')} ${escAttr(graphic.name)}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-blue-900/60 text-gray-500 hover:text-blue-400 text-[10px] leading-none">📋</button>
+                <button data-delete-id="${graphic.id}" title="${t('bank.delete')}" aria-label="${t('bank.delete')} ${escAttr(graphic.name)}" class="w-5 h-5 rounded flex items-center justify-center bg-gray-800 hover:bg-red-900/60 text-gray-500 hover:text-red-400 text-xs leading-none">&times;</button>
             </div>`;
 
         const groupOptions = state.groups.map(g =>
@@ -308,30 +309,30 @@ export function renderShotbox() {
                 <button data-off-id="${graphic.id}" class="flex-1 text-[10px] py-1.5 rounded font-black uppercase bg-black text-red-500 border border-red-900/50 hover:bg-red-900 hover:text-white transition-all">
                     OFF
                 </button>` : ''}
-                <button data-inspector-id="${graphic.id}" title="Ustawienia grafiki" class="w-7 shrink-0 flex items-center justify-center py-1.5 rounded bg-[#1a1a2a] hover:bg-blue-900/60 text-gray-500 hover:text-blue-300 border border-gray-800 hover:border-blue-700 transition-all">
+                <button data-inspector-id="${graphic.id}" title="${t('bank.graphicSettings')}" class="w-7 shrink-0 flex items-center justify-center py-1.5 rounded bg-[#1a1a2a] hover:bg-blue-900/60 text-gray-500 hover:text-blue-300 border border-gray-800 hover:border-blue-700 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
             </div>
 
             <div class="flex gap-1 mt-1">
                  ${graphic.type === 'TICKER' ? `
-                    <button data-ticker-edit="${graphic.id}" class="flex-1 bg-orange-950/30 hover:bg-orange-900/50 text-[8px] font-black text-orange-500 py-1 rounded border border-orange-900/40 uppercase tracking-tighter transition-all">Szybka Edycja</button>
+                    <button data-ticker-edit="${graphic.id}" class="flex-1 bg-orange-950/30 hover:bg-orange-900/50 text-[8px] font-black text-orange-500 py-1 rounded border border-orange-900/40 uppercase tracking-tighter transition-all">${t('bank.quickEdit')}</button>
                  ` : `
-                    <button data-wysiwyg-edit="${graphic.id}" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">Edytuj Treść</button>
+                    <button data-wysiwyg-edit="${graphic.id}" class="flex-1 bg-gray-800 hover:bg-gray-700 text-[8px] font-bold text-gray-400 py-1 rounded border border-gray-700 uppercase tracking-tighter">${t('bank.editContent')}</button>
                  `}
-                 <select data-group-assign="${graphic.id}" class="flex-[1.5] bg-black border border-gray-800 rounded text-[8px] text-gray-500 py-1 px-1 focus:outline-none focus:border-blue-500" title="Grupa">
-                    <option value="">— NO GROUP —</option>
+                 <select data-group-assign="${graphic.id}" class="flex-[1.5] bg-black border border-gray-800 rounded text-[8px] text-gray-500 py-1 px-1 focus:outline-none focus:border-blue-500" title="${t('bank.groupTooltip')}">
+                    <option value="">${t('bank.noGroup')}</option>
                     ${groupOptions}
-                    <option value="__new__">＋ NEW GROUP…</option>
+                    <option value="__new__">${t('bank.newGroup')}</option>
                 </select>
             </div>
             ${window._draftGraphics[graphic.id] ? `
             <div class="flex gap-1 mt-1 p-1 bg-yellow-900/40 border border-yellow-700/50 rounded animate-pulse">
                 <button data-sync-draft="${graphic.id}" class="flex-[2] bg-green-700 hover:bg-green-600 text-white text-[9px] font-black uppercase py-1 rounded shadow-md border-t border-green-500">
-                    SYNC NA ANTENĘ
+                    ${t('bank.syncToAir')}
                 </button>
                 <button data-revert-draft="${graphic.id}" class="flex-[1] bg-red-900/80 hover:bg-red-700 text-red-200 text-[8px] font-bold uppercase py-1 rounded border-t border-red-800">
-                    ODRZUĆ
+                    ${t('bank.discard')}
                 </button>
             </div>
             ` : ''}
@@ -362,12 +363,12 @@ export function renderShotbox() {
         header.innerHTML = `
             <div class="flex items-center gap-2 flex-1 min-w-0" data-group-toggle="${grp.id}">
                 ${chevronIcon}
-                <span class="text-[11px] font-black uppercase tracking-wider truncate" style="color:${grp.color || '#aaa'}">${grp.name || 'Grupa'}</span>
-                <span class="text-[9px] text-gray-500 font-mono tracking-tighter bg-black/40 px-1.5 py-0.5 rounded border border-gray-800/50 shadow-inner">${groupGraphics.length} EL.</span>
+                <span class="text-[11px] font-black uppercase tracking-wider truncate" style="color:${grp.color || '#aaa'}">${grp.name || t('bank.groupFallback')}</span>
+                <span class="text-[9px] text-gray-500 font-mono tracking-tighter bg-black/40 px-1.5 py-0.5 rounded border border-gray-800/50 shadow-inner">${groupGraphics.length} ${t('bank.elements')}</span>
             </div>
             <button data-group-take="${grp.id}" class="text-[9px] px-3 py-1 rounded font-bold uppercase transition-all shadow-md shrink-0
                 ${anyOn ? 'bg-red-600 text-white border-t border-red-400 animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.4)]' : 'bg-[#2a2a2a] text-gray-400 hover:bg-red-700 hover:text-white border-t border-gray-700'}">
-                ${anyOn ? 'WSZYSTKIE OFF' : 'WSZYSTKIE ON'}
+                ${anyOn ? t('bank.allOff') : t('bank.allOn')}
             </button>
         `;
 

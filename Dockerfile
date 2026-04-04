@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22-slim
 
 # Install build dependencies for native modules (sqlite3)
 RUN apt-get update && apt-get install -y \
@@ -12,8 +12,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies
-RUN npm install --omit=dev
+# Install production dependencies (skip electron postinstall — not needed in Docker)
+RUN npm install --omit=dev --ignore-scripts && \
+    npm rebuild better-sqlite3
 
 # Copy application source
 COPY . .

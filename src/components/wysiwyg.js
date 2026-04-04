@@ -10,6 +10,7 @@ import { refreshPreviewMonitor, refreshPreviewControls, updateProgramMonitor } f
 import { renderShotbox } from './shotbox.js';
 import { openInspector, renderInspectorBody } from './inspector.js';
 import { sanitizeHtml } from '../utils.js';
+import { t } from '../i18n.js';
 
 // ===========================================================
 // Normalize HTML: flatten redundant nested spans (same CSS property)
@@ -109,7 +110,7 @@ function saveWysiwygLegacy(editorEl, graphicId) {
             g.titleHtml = html;
             g.title = editorEl.textContent || editorEl.innerText || '';
             const previewBox = document.getElementById('title-preview-content');
-            if (previewBox) previewBox.innerHTML = sanitizeHtml(html) || '<span style="color:#6b7280;font-style:italic;">Kliknij aby edytować…</span>';
+            if (previewBox) previewBox.innerHTML = sanitizeHtml(html) || `<span style="color:#6b7280;font-style:italic;">${t('wysiwyg.clickToEdit')}</span>`;
         }
     }
 
@@ -523,7 +524,7 @@ export function bindWysiwygModalEvents() {
     });
 
     document.getElementById('wm-clear-all')?.addEventListener('click', () => {
-        if (confirm('Czy na pewno chcesz wyczyścić całe formatowanie tekstu?')) {
+        if (confirm(t('wysiwyg.confirmClearFormatting'))) {
             editor.chain().focus().unsetAllMarks().run();
         }
     });
@@ -534,11 +535,11 @@ export function bindWysiwygModalEvents() {
         if (src.style.display === 'none') {
             src.value = editor.getHTML();
             src.style.display = 'block';
-            btn.textContent = '▼ Ukryj źródło HTML';
+            btn.textContent = t('wysiwyg.hideHtmlSource');
         } else {
             editor.commands.setContent(src.value);
             src.style.display = 'none';
-            btn.textContent = '▶ Pokaż źródło HTML';
+            btn.textContent = t('wysiwyg.showHtmlSource');
         }
     });
 
@@ -651,7 +652,3 @@ export function saveWysiwyg(editor, graphicId) {
     renderShotbox();
     updateProgramMonitor();
 }
-
-// Expose to inline HTML handlers
-window.openWysiwygModal = openWysiwygModal;
-window.openWysiwygModalForField = openWysiwygModalForField;

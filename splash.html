@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>BTB CG System</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0d1320;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-app-region: drag;
+  }
+
+  .splash {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ── Logo mark ── */
+  .logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 28px;
+    position: relative;
+  }
+  .logo-ring {
+    width: 80px;
+    height: 80px;
+    border: 3px solid rgba(99, 102, 241, 0.15);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 1.2s linear infinite;
+  }
+  .logo-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #6366f1;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    margin-bottom: 40px;
+  }
+
+  /* ── Progress bar ── */
+  .progress-track {
+    width: 240px;
+    height: 3px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 3px;
+    margin: 0 auto 16px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .status {
+    font-size: 11px;
+    color: #475569;
+    min-height: 16px;
+    transition: opacity 0.3s;
+  }
+
+  .version {
+    position: fixed;
+    bottom: 16px;
+    right: 20px;
+    font-size: 10px;
+    color: #334155;
+  }
+
+  /* ── Background grid ── */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.03) 0%, transparent 70%),
+      radial-gradient(#1e293b 1px, transparent 1px);
+    background-size: 100% 100%, 24px 24px;
+    opacity: 0.6;
+  }
+
+  /* ── Glow ── */
+  .glow {
+    position: fixed;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.08), transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  }
+</style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="glow"></div>
+
+  <div class="splash">
+    <div class="logo">
+      <div class="logo-ring"></div>
+      <div class="logo-text">CG</div>
+    </div>
+    <h1>BTB CG System</h1>
+    <p class="subtitle">Stacja Kontrolna</p>
+    <div class="progress-track"><div class="progress-bar" id="bar"></div></div>
+    <p class="status" id="status">Inicjalizacja…</p>
+  </div>
+
+  <span class="version" id="ver"></span>
+
+  <script>
+    const bar = document.getElementById('bar');
+    const status = document.getElementById('status');
+
+    const stages = [
+      [10, 'Ładowanie modułów…'],
+      [30, 'Łączenie z bazą danych…'],
+      [55, 'Synchronizacja szablonów…'],
+      [75, 'Uruchamianie serwera…'],
+      [90, 'Prawie gotowe…'],
+    ];
+
+    let i = 0;
+    function nextStage() {
+      if (i >= stages.length) return;
+      const [pct, msg] = stages[i++];
+      bar.style.width = pct + '%';
+      status.textContent = msg;
+      setTimeout(nextStage, 600 + Math.random() * 400);
+    }
+    nextStage();
+
+    // Called from main process when server is ready
+    window.__splashReady = function() {
+      bar.style.width = '100%';
+      status.textContent = 'Uruchamianie…';
+    };
+  </script>
+</body>
+</html>

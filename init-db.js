@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 
 const dbPath = path.join(__dirname, 'database.sqlite');
 const jsonPath = path.join(__dirname, 'db.json');
@@ -11,62 +11,28 @@ if (!fs.existsSync(jsonPath)) {
     process.exit(0);
 }
 
-const db = new sqlite3.Database(dbPath);
+const db = new Database(dbPath);
+db.pragma('journal_mode = WAL');
 
-db.serialize(() => {
-    console.log('Setting up database schema...');
+console.log('Setting up database schema...');
 
-    // Tabela ustawień
-    db.run(`
-        CREATE TABLE IF NOT EXISTS settings (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            data TEXT NOT NULL
-        )
-    `);
+db.exec(`CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL)`);
+db.exec(`CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
+db.exec(`CREATE TABLE IF NOT EXISTS groups (id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
+db.exec(`CREATE TABLE IF NOT EXISTS graphics (id TEXT PRIMARY KEY, templateId TEXT, name TEXT, groupId TEXT, visible INTEGER DEFAULT 0, data TEXT NOT NULL)`);
 
-    // Tabela szablonów
-    db.run(`
-        CREATE TABLE IF NOT EXISTS templates (
-            id TEXT PRIMARY KEY,
-            data TEXT NOT NULL
-        )
-    `);
+// Czyścimy wszystko
+db.exec('DELETE FROM settings');
+db.exec('DELETE FROM templates');
+db.exec('DELETE FROM groups');
+db.exec('DELETE FROM graphics');
 
-    // Tabela grup
-    db.run(`
-        CREATE TABLE IF NOT EXISTS groups (
-            id TEXT PRIMARY KEY,
-            data TEXT NOT NULL
-        )
-    `);
+const rawData = fs.readFileSync(jsonPath, 'utf8');
+const state = JSON.parse(rawData);
 
-    // Tabela grafik
-    db.run(`
-        CREATE TABLE IF NOT EXISTS graphics (
-            id TEXT PRIMARY KEY,
-            templateId TEXT,
-            name TEXT,
-            groupId TEXT,
-            visible INTEGER DEFAULT 0,
-            data TEXT NOT NULL
-        )
-    `);
-
-    // Czyścimy wszystko
-    db.run('DELETE FROM settings');
-    db.run('DELETE FROM templates');
-    db.run('DELETE FROM groups');
-    db.run('DELETE FROM graphics');
-
-    const rawData = fs.readFileSync(jsonPath, 'utf8');
-    const state = JSON.parse(rawData);
-
-    db.run('BEGIN TRANSACTION');
-
+const migrate = db.transaction(() => {
     if (state.settings) {
-        const stmt = db.prepare('INSERT INTO settings (id, data) VALUES (1, ?)');
-        stmt.run(JSON.stringify(state.settings));
-        stmt.finalize();
+        db.prepare('INSERT INTO settings (id, data) VALUES (1, ?)').run(JSON.stringify(state.settings));
     }
 
     if (state.templates && state.templates.length > 0) {
@@ -74,7 +40,6 @@ db.serialize(() => {
         for (const t of state.templates) {
             stmt.run(t.id, JSON.stringify(t));
         }
-        stmt.finalize();
     }
 
     if (state.groups && state.groups.length > 0) {
@@ -82,7 +47,6 @@ db.serialize(() => {
         for (const g of state.groups) {
             stmt.run(g.id, JSON.stringify(g));
         }
-        stmt.finalize();
     }
 
     if (state.graphics && state.graphics.length > 0) {
@@ -91,11 +55,9 @@ db.serialize(() => {
             const visibleInt = g.visible ? 1 : 0;
             stmt.run(g.id, g.templateId || null, g.name || '', g.groupId || null, visibleInt, JSON.stringify(g));
         }
-        stmt.finalize();
     }
-
-    db.run('COMMIT');
-    console.log('Migration to database.sqlite complete.');
 });
+migrate();
 
+console.log('Migration to database.sqlite complete.');
 db.close();

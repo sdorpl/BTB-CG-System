@@ -2,6 +2,8 @@
 // src/utils.js — Shared utility / helper functions
 // ======================================================
 
+import { t } from './i18n.js';
+
 export function escAttr(str) {
     return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -48,11 +50,11 @@ export function colorPickerHtml(field, value) {
 
 export function animTypeSelect(field, value, animDir = '') {
     const opts = [
-        ['slide', '⇔ Przesunięcie (Slide)'],
-        ['fade', '◐ Zanikanie (Fade)'],
-        ['zoom', '⊕ Zoom'],
-        ['wipe', '▶ Wipe'],
-        ['none', '✕ Brak (Cut)'],
+        ['slide', t('anim.slide')],
+        ['fade', t('anim.fade')],
+        ['zoom', t('anim.zoom')],
+        ['wipe', t('anim.wipe')],
+        ['none', t('anim.none')],
     ];
     // data-anim-redir signals inspector.js delegation to re-render on change
     const redirAttr = animDir ? `data-anim-redir="${field}"` : '';
@@ -85,7 +87,7 @@ export function easingSelect(field, value, isOut = false) {
         ['ease-in', 'Ease In' + (isOut ? ' ✓' : '')],
         ['ease-in-out', 'Ease In-Out'],
         ['cubic-bezier(0.2, 0.8, 0.2, 1)', 'Smooth'],
-        ['cubic-bezier(0.34, 1.56, 0.64, 1)', 'Spring — z odbiciem'],
+        ['cubic-bezier(0.34, 1.56, 0.64, 1)', t('anim.easingSpring')],
         ['cubic-bezier(0.68, -0.55, 0.27, 1.55)', 'Bounce'],
         ['steps(4, end)', 'Steps'],
     ];

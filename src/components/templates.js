@@ -11,6 +11,7 @@ import {
 } from '../store.js';
 import { escAttr } from '../utils.js';
 import { _aceInit, _aceSuppressChange, _cmGetValue, _cmSetValue, _cmSetLanguage, _cmSetReadOnly, _cmSetOpacity } from '../ace-editor.js';
+import { t } from '../i18n.js';
 
 // ===========================================================
 // 9. TEMPLATE EDITOR
@@ -27,7 +28,7 @@ export function renderTemplateList() {
                     <div class="font-medium truncate text-xs text-white">${tpl.name}</div>
                     <div class="text-[10px] text-gray-500 font-mono">${tpl.type}</div>
                 </div>
-                <button data-export-id="${tpl.id}" title="Eksportuj do JSON" class="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-600/20 text-blue-400 rounded transition-all">
+                <button data-export-id="${tpl.id}" title="${t('tpl.exportToJson')}" class="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-600/20 text-blue-400 rounded transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </button>
             </div>
@@ -88,7 +89,7 @@ export function importTemplate(file) {
             if (imported._exportVersion === 2 && imported.template) {
                 const tpl = imported.template;
                 if (!tpl.name || (!tpl.html_template && !tpl.css_template)) {
-                    alert('Nieprawidłowy format pliku szablonu.');
+                    alert(t('tpl.invalidFormat'));
                     return;
                 }
                 const newTplId = crypto.randomUUID();
@@ -107,13 +108,13 @@ export function importTemplate(file) {
                 renderTemplateList();
                 window._cgModules.renderShotbox();
                 openTemplateEditor(newTpl.id);
-                alert(`Szablon i ${imported.graphics?.length || 0} elementów graficznych zostały pomyślnie zaimportowane!`);
+                alert(t('tpl.importSuccessWithGraphics', imported.graphics?.length || 0));
                 return;
             }
 
             // Legacy format — plain template object (backward compatibility)
             if (!imported.name || (!imported.html_template && !imported.css_template)) {
-                alert('Nieprawidłowy format pliku szablonu.');
+                alert(t('tpl.invalidFormat'));
                 return;
             }
             const newTpl = { ...imported, id: crypto.randomUUID(), name: imported.name + ' (Imported)' };
@@ -121,10 +122,10 @@ export function importTemplate(file) {
             saveState();
             renderTemplateList();
             openTemplateEditor(newTpl.id);
-            alert('Szablon został pomyślnie zaimportowany!');
+            alert(t('tpl.importSuccess'));
         } catch (err) {
             console.error('Import error:', err);
-            alert('Błąd podczas importowania pliku JSON.');
+            alert(t('tpl.importJsonError'));
         }
     };
     reader.readAsText(file);
@@ -406,13 +407,13 @@ export async function importOCGTemplates(files) {
         if (count > 0) {
             saveState();
             renderTemplateList();
-            alert(`Zaimportowano ${count} szablonów OCG! Automatyczne poprawki kompatybilności zostały zastosowane.`);
+            alert(t('tpl.ocgImportSuccess', count));
         } else {
-            alert('Nie znaleziono prawidłowych szablonów OCG w wybranych plikach.');
+            alert(t('tpl.ocgImportNoValid'));
         }
     } catch (err) {
         console.error('OCG Import error:', err);
-        alert('Błąd podczas importowania plików OCG JSON.');
+        alert(t('tpl.ocgImportError'));
     }
 }
 
@@ -673,10 +674,10 @@ export function saveCurrentTemplate() {
         if (window.__cgRenderer?.clearHbsCache) window.__cgRenderer.clearHbsCache();
     }
 
-    btn.textContent = '✓ Zapisano!';
+    btn.textContent = t('tpl.saved');
     btn.classList.replace('bg-blue-600', 'bg-green-600');
     setTimeout(() => {
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Zapisz`;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ${t('tpl.save')}`;
         btn.classList.replace('bg-green-600', 'bg-blue-600');
     }, 2000);
 }
@@ -703,20 +704,20 @@ export function addFieldRow(idVal = '', labelVal = '', defVal = '', typeVal = 't
     row.style.gridTemplateColumns = '1fr 1.3fr 2fr 1fr auto';
 
     const typeOptions = [
-        { value: 'text',     label: 'Krótki tekst' },
-        { value: 'richtext', label: 'Edytor tekstu' },
-        { value: 'list',     label: 'Lista (JSON)' },
+        { value: 'text',     label: t('tpl.fieldTypeText') },
+        { value: 'richtext', label: t('tpl.fieldTypeRichtext') },
+        { value: 'list',     label: t('tpl.fieldTypeList') },
     ];
     const typeSelectHtml = typeOptions.map(o =>
         `<option value="${o.value}" ${typeVal === o.value ? 'selected' : ''}>${o.label}</option>`
     ).join('');
 
     row.innerHTML = `
-        <input type="text" class="f-id w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] font-mono text-yellow-300 focus:outline-none focus:border-yellow-500 placeholder-gray-600" placeholder="np. f-tytul" value="${escAttr(idVal)}">
-        <input type="text" class="f-label w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-gray-200 focus:outline-none focus:border-blue-500 placeholder-gray-600" placeholder="Wyświetlana nazwa" value="${escAttr(labelVal)}">
-        <input type="text" class="f-def w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-gray-400 focus:outline-none focus:border-blue-500 placeholder-gray-600" placeholder="Wartość domyślna" value="${escAttr(defVal)}">
+        <input type="text" class="f-id w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] font-mono text-yellow-300 focus:outline-none focus:border-yellow-500 placeholder-gray-600" placeholder="${t('tpl.fieldIdPlaceholder')}" value="${escAttr(idVal)}">
+        <input type="text" class="f-label w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-gray-200 focus:outline-none focus:border-blue-500 placeholder-gray-600" placeholder="${t('tpl.fieldLabelPlaceholder')}" value="${escAttr(labelVal)}">
+        <input type="text" class="f-def w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-gray-400 focus:outline-none focus:border-blue-500 placeholder-gray-600" placeholder="${t('tpl.fieldDefaultPlaceholder')}" value="${escAttr(defVal)}">
         <select class="f-type w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-blue-400 focus:outline-none focus:border-blue-500 appearance-none">${typeSelectHtml}</select>
-        <button class="field-row-delete w-7 h-7 rounded flex items-center justify-center bg-red-900/30 hover:bg-red-700 text-red-400 hover:text-white border border-red-900/50 transition-all text-sm shrink-0" title="Usuń zmienną">&times;</button>
+        <button class="field-row-delete w-7 h-7 rounded flex items-center justify-center bg-red-900/30 hover:bg-red-700 text-red-400 hover:text-white border border-red-900/50 transition-all text-sm shrink-0" title="${t('tpl.deleteVariable')}">&times;</button>
     `;
 
     row.querySelector('.field-row-delete').addEventListener('click', () => {
@@ -791,67 +792,67 @@ export function renderDefaultsEditor(tpl) {
 
     container.innerHTML = `
         <div class="${secClass}">
-            ${secTitle('Treść')}
-            ${row('Tytuł', 'defaultFields.title', df.title, 'text', 'Domyślny tytuł')}
-            ${row('Podtytuł', 'defaultFields.subtitle', df.subtitle, 'text', 'Domyślny podtytuł')}
-            ${row('Tekst intro / wiper', 'defaultFields.introText', df.introText, 'text', 'Tekst wipera')}
-            ${row('Prędkość tickera', 'defaultFields.speed', df.speed, 'number', 'min="1" max="500"')}
-            ${row('Tryb tickera', 'defaultFields.tickerMode', df.tickerMode, 'select', opts([['whip','Whip'],['horizontal','Poziomy'],['vertical','Pionowy'],['scrolling','Scrolling']], df.tickerMode))}
+            ${secTitle(t('tpl.defaultsContentSection'))}
+            ${row(t('tpl.defaultsTitleLabel'), 'defaultFields.title', df.title, 'text', t('tpl.defaultTitlePlaceholder'))}
+            ${row(t('tpl.defaultsSubtitleLabel'), 'defaultFields.subtitle', df.subtitle, 'text', t('tpl.defaultSubtitlePlaceholder'))}
+            ${row(t('tpl.defaultsIntroText'), 'defaultFields.introText', df.introText, 'text', t('tpl.wiperTextPlaceholder'))}
+            ${row(t('tpl.defaultsTickerSpeed'), 'defaultFields.speed', df.speed, 'number', 'min="1" max="500"')}
+            ${row(t('tpl.defaultsTickerMode'), 'defaultFields.tickerMode', df.tickerMode, 'select', opts([['whip','Whip'],['horizontal',t('tpl.tickerModeHorizontal')],['vertical',t('tpl.tickerModeVertical')],['scrolling','Scrolling']], df.tickerMode))}
         </div>
 
         <div class="${secClass}">
-            ${secTitle('Tło i obramowanie')}
-            ${row('Typ tła', 'defaultStyle.background.type', bg.type, 'select', opts([['solid','Jednolite'],['gradient','Gradient'],['transparent','Przezroczyste']], bg.type))}
-            ${row('Kolor tła', 'defaultStyle.background.color', bg.color, 'color')}
-            ${row('Kolor tła 2', 'defaultStyle.background.color2', bg.color2, 'color')}
-            ${row('Kąt gradientu', 'defaultStyle.background.gradientAngle', bg.gradientAngle, 'number', 'min="0" max="360"')}
-            ${row('Kolor obramowania', 'defaultStyle.background.borderColor', bg.borderColor, 'color')}
-            ${row('Grubość obramowania', 'defaultStyle.background.borderWidth', bg.borderWidth, 'number', 'min="0" max="20"')}
-            ${row('Zaokrąglenie', 'defaultStyle.background.borderRadius', bg.borderRadius, 'number', 'min="0" max="100"')}
-            ${row('Kolor podtytułu tło', 'defaultStyle.background.subtitleBackgroundColor', bg.subtitleBackgroundColor, 'color')}
+            ${secTitle(t('tpl.defaultsBgBorder'))}
+            ${row(t('tpl.defaultsBgType'), 'defaultStyle.background.type', bg.type, 'select', opts([['solid',t('tpl.bgTypeSolid')],['gradient',t('tpl.bgTypeGradient')],['transparent',t('tpl.bgTypeTransparent')]], bg.type))}
+            ${row(t('tpl.defaultsBgColor'), 'defaultStyle.background.color', bg.color, 'color')}
+            ${row(t('tpl.defaultsBgColor2'), 'defaultStyle.background.color2', bg.color2, 'color')}
+            ${row(t('tpl.defaultsGradientAngle'), 'defaultStyle.background.gradientAngle', bg.gradientAngle, 'number', 'min="0" max="360"')}
+            ${row(t('tpl.defaultsBorderColor'), 'defaultStyle.background.borderColor', bg.borderColor, 'color')}
+            ${row(t('tpl.defaultsBorderWidth'), 'defaultStyle.background.borderWidth', bg.borderWidth, 'number', 'min="0" max="20"')}
+            ${row(t('tpl.defaultsBorderRadius'), 'defaultStyle.background.borderRadius', bg.borderRadius, 'number', 'min="0" max="100"')}
+            ${row(t('tpl.defaultsSubtitleBg'), 'defaultStyle.background.subtitleBackgroundColor', bg.subtitleBackgroundColor, 'color')}
         </div>
 
         <div class="${secClass}">
-            ${secTitle('Typografia — tytuł')}
-            ${row('Kolor tekstu', 'defaultStyle.typography.color', typo.color, 'color')}
-            ${row('Czcionka', 'defaultStyle.typography.fontFamily', typo.fontFamily, 'text', 'np. Inter')}
-            ${row('Rozmiar', 'defaultStyle.typography.fontSize', typo.fontSize, 'number', 'min="8" max="200"')}
-            ${row('Grubość', 'defaultStyle.typography.fontWeight', typo.fontWeight, 'select', opts([['normal','Normal'],['bold','Bold'],['100','100'],['200','200'],['300','300'],['400','400'],['500','500'],['600','600'],['700','700'],['800','800'],['900','900']], typo.fontWeight))}
-            ${row('Transformacja', 'defaultStyle.typography.textTransform', typo.textTransform, 'select', opts([['none','Brak'],['uppercase','WIELKIE'],['lowercase','małe'],['capitalize','Pierwsza Wielka']], typo.textTransform))}
+            ${secTitle(t('tpl.defaultsTitleTypography'))}
+            ${row(t('tpl.defaultsTextColor'), 'defaultStyle.typography.color', typo.color, 'color')}
+            ${row(t('tpl.defaultsFontFamily'), 'defaultStyle.typography.fontFamily', typo.fontFamily, 'text', t('tpl.fontFamilyPlaceholder'))}
+            ${row(t('tpl.defaultsFontSize'), 'defaultStyle.typography.fontSize', typo.fontSize, 'number', 'min="8" max="200"')}
+            ${row(t('tpl.defaultsFontWeight'), 'defaultStyle.typography.fontWeight', typo.fontWeight, 'select', opts([['normal','Normal'],['bold','Bold'],['100','100'],['200','200'],['300','300'],['400','400'],['500','500'],['600','600'],['700','700'],['800','800'],['900','900']], typo.fontWeight))}
+            ${row(t('tpl.defaultsTextTransform'), 'defaultStyle.typography.textTransform', typo.textTransform, 'select', opts([['none',t('tpl.transformNone')],['uppercase',t('tpl.transformUppercase')],['lowercase',t('tpl.transformLowercase')],['capitalize',t('tpl.transformCapitalize')]], typo.textTransform))}
         </div>
 
         <div class="${secClass}">
-            ${secTitle('Typografia — podtytuł')}
-            ${row('Kolor tekstu', 'defaultStyle.subtitleTypography.color', subTypo.color, 'color')}
-            ${row('Czcionka', 'defaultStyle.subtitleTypography.fontFamily', subTypo.fontFamily, 'text', 'np. Inter')}
-            ${row('Rozmiar', 'defaultStyle.subtitleTypography.fontSize', subTypo.fontSize, 'number', 'min="8" max="200"')}
-            ${row('Grubość', 'defaultStyle.subtitleTypography.fontWeight', subTypo.fontWeight, 'select', opts([['normal','Normal'],['bold','Bold'],['100','100'],['300','300'],['500','500'],['700','700'],['900','900']], subTypo.fontWeight))}
+            ${secTitle(t('tpl.defaultsSubtitleTypography'))}
+            ${row(t('tpl.defaultsTextColor'), 'defaultStyle.subtitleTypography.color', subTypo.color, 'color')}
+            ${row(t('tpl.defaultsFontFamily'), 'defaultStyle.subtitleTypography.fontFamily', subTypo.fontFamily, 'text', t('tpl.fontFamilyPlaceholder'))}
+            ${row(t('tpl.defaultsFontSize'), 'defaultStyle.subtitleTypography.fontSize', subTypo.fontSize, 'number', 'min="8" max="200"')}
+            ${row(t('tpl.defaultsFontWeight'), 'defaultStyle.subtitleTypography.fontWeight', subTypo.fontWeight, 'select', opts([['normal','Normal'],['bold','Bold'],['100','100'],['300','300'],['500','500'],['700','700'],['900','900']], subTypo.fontWeight))}
         </div>
 
         <div class="${secClass}">
-            ${secTitle('Layout domyślny')}
-            ${row('Szerokość', 'defaultLayout.width', dl.width, 'number', 'min="0" max="3840"')}
-            ${row('Wysokość', 'defaultLayout.height', dl.height, 'number', 'min="0" max="2160"')}
-            ${row('Pozycja X', 'defaultLayout.x', dl.x, 'number')}
-            ${row('Pozycja Y', 'defaultLayout.y', dl.y, 'number')}
-            ${row('Skala', 'defaultLayout.scale', dl.scale, 'number', 'min="0.1" max="5" step="0.1"')}
-            ${row('Warstwa (Z-Index)', 'defaultLayout.layer', dl.layer, 'number', 'min="0" max="100"')}
+            ${secTitle(t('tpl.defaultsLayout'))}
+            ${row(t('tpl.defaultsWidth'), 'defaultLayout.width', dl.width, 'number', 'min="0" max="3840"')}
+            ${row(t('tpl.defaultsHeight'), 'defaultLayout.height', dl.height, 'number', 'min="0" max="2160"')}
+            ${row(t('tpl.defaultsPosX'), 'defaultLayout.x', dl.x, 'number')}
+            ${row(t('tpl.defaultsPosY'), 'defaultLayout.y', dl.y, 'number')}
+            ${row(t('tpl.defaultsScale'), 'defaultLayout.scale', dl.scale, 'number', 'min="0.1" max="5" step="0.1"')}
+            ${row(t('tpl.defaultsLayer'), 'defaultLayout.layer', dl.layer, 'number', 'min="0" max="100"')}
         </div>
 
         <div class="${secClass}">
-            ${secTitle('Animacja — wejście')}
-            ${row('Typ', 'defaultAnimation.in.type', animIn.type, 'select', opts([['slide','Slide'],['fade','Fade'],['zoom','Zoom'],['wipe','Wipe'],['none','Brak']], animIn.type))}
-            ${row('Kierunek', 'defaultAnimation.in.direction', animIn.direction, 'select', opts([['left','Lewo'],['right','Prawo'],['top','Góra'],['bottom','Dół']], animIn.direction))}
-            ${row('Czas trwania (s)', 'defaultAnimation.in.duration', animIn.duration, 'number', 'min="0" max="10" step="0.1"')}
-            ${row('Opóźnienie (s)', 'defaultAnimation.in.delay', animIn.delay, 'number', 'min="0" max="10" step="0.1"')}
+            ${secTitle(t('tpl.defaultsAnimIn'))}
+            ${row(t('tpl.defaultsAnimType'), 'defaultAnimation.in.type', animIn.type, 'select', opts([['slide','Slide'],['fade','Fade'],['zoom','Zoom'],['wipe','Wipe'],['none',t('tpl.animTypeNone')]], animIn.type))}
+            ${row(t('tpl.defaultsAnimDirection'), 'defaultAnimation.in.direction', animIn.direction, 'select', opts([['left',t('tpl.dirLeft')],['right',t('tpl.dirRight')],['top',t('tpl.dirTop')],['bottom',t('tpl.dirBottom')]], animIn.direction))}
+            ${row(t('tpl.defaultsDuration'), 'defaultAnimation.in.duration', animIn.duration, 'number', 'min="0" max="10" step="0.1"')}
+            ${row(t('tpl.defaultsDelay'), 'defaultAnimation.in.delay', animIn.delay, 'number', 'min="0" max="10" step="0.1"')}
         </div>
 
         <div class="${secClass}">
-            ${secTitle('Animacja — wyjście')}
-            ${row('Typ', 'defaultAnimation.out.type', animOut.type, 'select', opts([['slide','Slide'],['fade','Fade'],['zoom','Zoom'],['wipe','Wipe'],['none','Brak']], animOut.type))}
-            ${row('Kierunek', 'defaultAnimation.out.direction', animOut.direction, 'select', opts([['left','Lewo'],['right','Prawo'],['top','Góra'],['bottom','Dół']], animOut.direction))}
-            ${row('Czas trwania (s)', 'defaultAnimation.out.duration', animOut.duration, 'number', 'min="0" max="10" step="0.1"')}
-            ${row('Opóźnienie (s)', 'defaultAnimation.out.delay', animOut.delay, 'number', 'min="0" max="10" step="0.1"')}
+            ${secTitle(t('tpl.defaultsAnimOut'))}
+            ${row(t('tpl.defaultsAnimType'), 'defaultAnimation.out.type', animOut.type, 'select', opts([['slide','Slide'],['fade','Fade'],['zoom','Zoom'],['wipe','Wipe'],['none',t('tpl.animTypeNone')]], animOut.type))}
+            ${row(t('tpl.defaultsAnimDirection'), 'defaultAnimation.out.direction', animOut.direction, 'select', opts([['left',t('tpl.dirLeft')],['right',t('tpl.dirRight')],['top',t('tpl.dirTop')],['bottom',t('tpl.dirBottom')]], animOut.direction))}
+            ${row(t('tpl.defaultsDuration'), 'defaultAnimation.out.duration', animOut.duration, 'number', 'min="0" max="10" step="0.1"')}
+            ${row(t('tpl.defaultsDelay'), 'defaultAnimation.out.delay', animOut.delay, 'number', 'min="0" max="10" step="0.1"')}
         </div>
     `;
 

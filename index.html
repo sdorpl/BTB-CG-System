@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CG Control Pro</title>
+  <title>BTB CG System</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0d1320">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -157,7 +157,7 @@
 
   <!-- ============================================================ HEADER == -->
   <!-- Toggle strip to show header when hidden -->
-  <div id="header-show-strip" class="hidden h-1 bg-gray-800 hover:bg-blue-600 cursor-pointer transition-colors shrink-0 relative group" title="Pokaż menu">
+  <div id="header-show-strip" class="hidden h-1 bg-gray-800 hover:bg-blue-600 cursor-pointer transition-colors shrink-0 relative group" title="Pokaż menu" data-i18n="nav.showMenu" data-i18n-attr="title">
     <div class="absolute inset-x-0 top-0 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
@@ -169,25 +169,25 @@
       <!-- Left: icon + hamburger + status -->
       <div class="flex items-center gap-2">
         <img src="/icon.svg" alt="CG" class="w-6 h-6 rounded">
-        <div id="cloud-status" class="w-2 h-2 rounded-full bg-red-500 border border-red-400/50 shadow-sm shadow-red-900/60" title="Status połączenia: łączenie..."></div>
+        <div id="cloud-status" class="w-2 h-2 rounded-full bg-red-500 border border-red-400/50 shadow-sm shadow-red-900/60" title="Status połączenia: łączenie..." data-i18n="ui.connectionStatus" data-i18n-attr="title"></div>
       </div>
 
       <!-- Right: key actions always visible + hamburger + hide -->
       <div class="flex items-center gap-1.5">
-        <button id="btn-kill-all" aria-label="Wyczyść program" title="Wyczyść Program" class="p-1.5 bg-red-600 hover:bg-red-500 text-white border border-red-400 rounded shadow-lg shadow-red-900/40 transition-all active:scale-95 flex items-center justify-center">
+        <button id="btn-kill-all" aria-label="Wyczyść program" title="Wyczyść Program" data-i18n="nav.clearProgram" data-i18n-attr="title,aria-label" class="p-1.5 bg-red-600 hover:bg-red-500 text-white border border-red-400 rounded shadow-lg shadow-red-900/40 transition-all active:scale-95 flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
 
         <div class="h-5 w-px bg-gray-700"></div>
 
         <!-- Hamburger toggle -->
-        <button id="btn-header-menu-toggle" aria-label="Menu" title="Rozwiń menu" class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors flex items-center justify-center">
+        <button id="btn-header-menu-toggle" aria-label="Menu" title="Rozwiń menu" data-i18n="nav.expandMenu" data-i18n-attr="title" class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors flex items-center justify-center">
           <svg id="hamburger-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           <svg id="close-menu-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
 
         <!-- Hide header button -->
-        <button id="btn-header-hide" aria-label="Ukryj nagłówek" title="Ukryj nagłówek" class="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-gray-800 rounded transition-colors flex items-center justify-center">
+        <button id="btn-header-hide" aria-label="Ukryj nagłówek" title="Ukryj nagłówek" data-i18n="nav.hideHeader" data-i18n-attr="title,aria-label" class="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-gray-800 rounded transition-colors flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
         </button>
       </div>
@@ -198,19 +198,19 @@
       
       <!-- Navigation -->
       <div class="flex items-center gap-1">
-        <button id="nav-dashboard" title="Panel Główny"
+        <button id="nav-dashboard" title="Panel Główny" data-i18n="nav.dashboard" data-i18n-attr="title"
           class="nav-tab p-1.5 rounded text-blue-400 bg-blue-600/10 border border-blue-600/20 transition-colors flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         </button>
-        <button id="nav-templates" title="Edytor Szablonów"
+        <button id="nav-templates" title="Edytor Szablonów" data-i18n="nav.templates" data-i18n-attr="title"
           class="nav-tab p-1.5 rounded text-gray-400 hover:text-white transition-colors flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         </button>
-        <button id="nav-settings" title="Ustawienia"
+        <button id="nav-settings" title="Ustawienia" data-i18n="nav.settings" data-i18n-attr="title"
           class="nav-tab p-1.5 rounded text-gray-400 hover:text-white transition-colors flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
-        <a href="/output.html" target="_blank" title="Wyjście (Output)"
+        <a href="/output.html" target="_blank" title="Wyjście (Output)" data-i18n="nav.output" data-i18n-attr="title"
           class="p-1.5 rounded text-gray-400 hover:text-white transition-colors flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
@@ -220,17 +220,17 @@
 
       <!-- Standalone windows -->
       <div class="flex items-center gap-1">
-        <a href="/index.html?panel=preview" title="Podgląd (osobne okno)"
+        <a href="/index.html?panel=preview" title="Podgląd (osobne okno)" data-i18n="panel.preview" data-i18n-attr="title"
           onclick="event.preventDefault(); window.open('/index.html?panel=preview', 'Podglad', 'width=960,height=640,menubar=no,toolbar=no,location=no,status=no')"
           class="p-1.5 rounded text-yellow-400 hover:text-yellow-300 bg-yellow-900/20 border border-yellow-900/50 transition-colors flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
         </a>
-        <a href="/index.html?panel=bank" title="Bank Grafik"
+        <a href="/index.html?panel=bank" title="Bank Grafik" data-i18n="panel.bank" data-i18n-attr="title"
           onclick="event.preventDefault(); window.open('/index.html?panel=bank', 'BankGrafik', 'width=800,height=1000,menubar=no,toolbar=no,location=no,status=no')"
           class="p-1.5 rounded text-orange-400 hover:text-orange-300 bg-orange-900/20 border border-orange-900/50 transition-colors flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
         </a>
-        <a href="/index.html?panel=inspector" title="Inspektor"
+        <a href="/index.html?panel=inspector" title="Inspektor" data-i18n="panel.inspector" data-i18n-attr="title"
           onclick="event.preventDefault(); window.open('/index.html?panel=inspector', 'Inspektor', 'width=400,height=1000,menubar=no,toolbar=no,location=no,status=no')"
           class="p-1.5 rounded text-green-400 hover:text-green-300 bg-green-900/20 border border-green-900/50 transition-colors flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -241,12 +241,12 @@
 
       <!-- Background controls -->
       <div class="flex items-center gap-1">
-        <input type="color" id="hex-bg-picker" value="#000000" style="width:18px;height:18px;padding:0;border:none;background:transparent;cursor:pointer;" title="Wybierz kolor tła">
+        <input type="color" id="hex-bg-picker" value="#000000" style="width:18px;height:18px;padding:0;border:none;background:transparent;cursor:pointer;" title="Wybierz kolor tła" data-i18n="bg.pickColor" data-i18n-attr="title">
         <input type="text" id="hex-bg" value="#000000" class="w-[60px] px-1 py-0.5 bg-gray-900 text-white border border-gray-700 text-[10px] text-center font-bold font-mono rounded" placeholder="#000000">
-        <button id="btn-bg-set" aria-label="Ustaw kolor tła" title="Ustaw kolor tła" class="p-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded flex items-center justify-center">
+        <button id="btn-bg-set" aria-label="Ustaw kolor tła" title="Ustaw kolor tła" data-i18n="bg.setColor" data-i18n-attr="title,aria-label" class="p-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10"/></svg>
         </button>
-        <button id="btn-bg-trans" aria-label="Tło przezroczyste" title="Tło OBS (przezroczyste)" class="p-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded flex items-center justify-center">
+        <button id="btn-bg-trans" aria-label="Tło przezroczyste" title="Tło OBS (przezroczyste)" data-i18n="bg.transparent" data-i18n-attr="title,aria-label" class="p-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
         </button>
       </div>
@@ -255,22 +255,22 @@
 
       <!-- Presets -->
       <div class="flex items-center gap-1" id="preset-bar">
-        <select id="preset-select" class="bg-gray-900 border border-gray-700 text-white text-[10px] font-bold rounded px-2 py-1 max-w-[120px] cursor-pointer" title="Wybierz preset grafik">
-          <option value="">— brak —</option>
+        <select id="preset-select" class="bg-gray-900 border border-gray-700 text-white text-[10px] font-bold rounded px-2 py-1 max-w-[120px] cursor-pointer" title="Wybierz preset grafik" data-i18n="preset.select" data-i18n-attr="title">
+          <option value="" data-i18n="preset.none">— brak —</option>
         </select>
-        <button id="btn-preset-load" title="Załaduj preset" class="p-1 bg-green-700 hover:bg-green-600 text-white border border-green-500 rounded transition-all active:scale-95 flex items-center justify-center">
+        <button id="btn-preset-load" title="Załaduj preset" data-i18n="preset.load" data-i18n-attr="title" class="p-1 bg-green-700 hover:bg-green-600 text-white border border-green-500 rounded transition-all active:scale-95 flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </button>
-        <button id="btn-preset-save" title="Zapisz preset" class="p-1 bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 rounded transition-all active:scale-95 flex items-center justify-center">
+        <button id="btn-preset-save" title="Zapisz preset" data-i18n="preset.save" data-i18n-attr="title" class="p-1 bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 rounded transition-all active:scale-95 flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         </button>
-        <button id="btn-preset-delete" title="Usuń preset" class="p-1 bg-gray-700 hover:bg-red-700 text-gray-300 hover:text-white border border-gray-600 hover:border-red-500 rounded transition-all active:scale-95 flex items-center justify-center">
+        <button id="btn-preset-delete" title="Usuń preset" data-i18n="preset.delete" data-i18n-attr="title" class="p-1 bg-gray-700 hover:bg-red-700 text-gray-300 hover:text-white border border-gray-600 hover:border-red-500 rounded transition-all active:scale-95 flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
         </button>
-        <button id="btn-preset-export" title="Eksportuj preset" class="p-1 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600 rounded transition-all active:scale-95 flex items-center justify-center">
+        <button id="btn-preset-export" title="Eksportuj preset" data-i18n="preset.export" data-i18n-attr="title" class="p-1 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600 rounded transition-all active:scale-95 flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </button>
-        <label id="btn-preset-import" title="Importuj preset" class="p-1 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600 rounded transition-all active:scale-95 cursor-pointer flex items-center justify-center">
+        <label id="btn-preset-import" title="Importuj preset" data-i18n="preset.import" data-i18n-attr="title" class="p-1 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600 rounded transition-all active:scale-95 cursor-pointer flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <input type="file" id="preset-import-file" accept=".json" class="hidden">
         </label>
@@ -280,10 +280,10 @@
 
       <!-- Utilities -->
       <div class="flex items-center gap-1">
-        <button onclick="document.dispatchEvent(new KeyboardEvent('keydown',{key:'?',shiftKey:true}))" aria-label="Skróty klawiszowe" class="text-gray-500 hover:text-blue-400 p-1 transition-colors" title="Skróty klawiszowe (?)">
+        <button onclick="document.dispatchEvent(new KeyboardEvent('keydown',{key:'?',shiftKey:true}))" aria-label="Skróty klawiszowe" class="text-gray-500 hover:text-blue-400 p-1 transition-colors" title="Skróty klawiszowe (?)" data-i18n="util.shortcuts" data-i18n-attr="title,aria-label">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
         </button>
-        <button id="reset-db-btn" aria-label="Resetuj bazę danych" class="text-gray-500 hover:text-red-400 p-1 transition-colors" title="Reset Database">
+        <button id="reset-db-btn" aria-label="Resetuj bazę danych" class="text-gray-500 hover:text-red-400 p-1 transition-colors" title="Reset Database" data-i18n="util.resetDb" data-i18n-attr="title,aria-label">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
         </button>
       </div>
@@ -335,16 +335,16 @@
           <!-- Label bar ABOVE -->
           <div id="preview-label-bar" class="h-7 bg-[#222] border-x border-gray-800 border-t-4 border-t-[#fbc02d] flex items-center justify-between px-3 shrink-0" style="height: 28px;">
             <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black tracking-widest text-[#fbc02d] uppercase">PREVIEW (PODGLĄD)</span>
-                <button id="btn-toggle-safe-area" aria-label="Przełącz bezpieczny obszar EBU" class="text-[8px] uppercase font-bold text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 rounded px-1.5 py-0.5 transition-colors border border-gray-800">BEZPIECZNY OBSZAR</button>
+                <span class="text-[10px] font-black tracking-widest text-[#fbc02d] uppercase" data-i18n="preview.title">PREVIEW (PODGLĄD)</span>
+                <button id="btn-toggle-safe-area" aria-label="BEZPIECZNY OBSZAR" class="text-[8px] uppercase font-bold text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 rounded px-1.5 py-0.5 transition-colors border border-gray-800" data-i18n="preview.safeArea" data-i18n-attr="aria-label">BEZPIECZNY OBSZAR</button>
             </div>
             <div class="flex items-center gap-2">
               <span id="preview-name" class="text-[9px] text-gray-500 font-mono tracking-tighter truncate max-w-[120px]">---</span>
-              <button onclick="window.open('/index.html?panel=preview', 'cg_preview', 'width=960,height=600,menubar=no,toolbar=no,location=no,status=no')" title="Otwórz Podgląd w osobnym oknie" class="text-[9px] text-yellow-500 hover:text-yellow-300 bg-yellow-900/20 hover:bg-yellow-900/40 border border-yellow-900/50 rounded px-1.5 py-0.5 transition-colors flex items-center gap-1 shrink-0">
+              <button onclick="window.open('/index.html?panel=preview', 'cg_preview', 'width=960,height=600,menubar=no,toolbar=no,location=no,status=no')" title="Otwórz Podgląd w osobnym oknie" data-i18n="preview.openWindow" data-i18n-attr="title" class="text-[9px] text-yellow-500 hover:text-yellow-300 bg-yellow-900/20 hover:bg-yellow-900/40 border border-yellow-900/50 rounded px-1.5 py-0.5 transition-colors flex items-center gap-1 shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 POPOUT
               </button>
-              <button id="btn-collapse-preview" onclick="toggleMonitor('preview')" title="Zwiń / Rozwiń" class="text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 border border-gray-800 rounded px-1.5 py-0.5 transition-colors flex items-center shrink-0">
+              <button id="btn-collapse-preview" data-toggle-monitor="preview" title="Zwiń / Rozwiń" data-i18n="ui.collapseExpand" data-i18n-attr="title" class="text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 border border-gray-800 rounded px-1.5 py-0.5 transition-colors flex items-center shrink-0">
                 <svg id="chevron-preview" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s"><polyline points="18 15 12 9 6 15"/></svg>
               </button>
             </div>
@@ -371,13 +371,13 @@
           <!-- Controls below -->
           <div id="preview-controls-bar" class="h-10 mt-1 bg-black/40 border-x border-b border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 36px;">
             <div class="flex flex-col">
-              <span class="text-[8px] text-gray-600 font-bold uppercase leading-none">Następny Element</span>
+              <span class="text-[8px] text-gray-600 font-bold uppercase leading-none" data-i18n="preview.nextElement">Następny Element</span>
               <span id="preview-next-label" class="text-[10px] text-gray-400 font-mono truncate max-w-[150px]">---</span>
             </div>
             <div class="flex gap-1">
-              <button id="btn-edit-preview" disabled class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded text-[9px] font-bold uppercase transition-colors disabled:opacity-30">Edytuj</button>
-              <button id="btn-update-active" disabled class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded text-[9px] font-bold uppercase transition-colors disabled:opacity-30">Synchr.</button>
-              <button id="btn-take-preview" disabled class="px-3 py-1 bg-green-700 hover:bg-green-600 text-white border border-green-500 rounded text-[9px] font-black uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30">Na Żywo</button>
+              <button id="btn-edit-preview" disabled class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded text-[9px] font-bold uppercase transition-colors disabled:opacity-30" data-i18n="preview.edit">Edytuj</button>
+              <button id="btn-update-active" disabled class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded text-[9px] font-bold uppercase transition-colors disabled:opacity-30" data-i18n="preview.sync">Synchr.</button>
+              <button id="btn-take-preview" disabled class="px-3 py-1 bg-green-700 hover:bg-green-600 text-white border border-green-500 rounded text-[9px] font-black uppercase shadow-lg shadow-green-900/30 transition-all active:scale-95 disabled:opacity-30" data-i18n="preview.goLive">Na Żywo</button>
             </div>
           </div>
           </div><!-- /preview-monitor-collapsible -->
@@ -388,19 +388,19 @@
           <!-- Label bar ABOVE -->
           <div id="program-label-bar" class="h-7 bg-[#222] border-x border-gray-800 border-t-4 border-t-[#e53935] flex items-center justify-between px-3 shrink-0" style="height: 28px;">
             <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black tracking-widest text-[#e53935] uppercase">PROGRAM (WIZJA)</span>
+                <span class="text-[10px] font-black tracking-widest text-[#e53935] uppercase" data-i18n="program.title">PROGRAM (WIZJA)</span>
                 <span id="program-layers-label" class="flex items-center gap-1 text-[9px] text-white bg-red-600 px-1.5 rounded animate-pulse hidden">
-                  NA ŻYWO: <span id="program-layers-count">0</span>
+                  <span data-i18n="ui.onAirPrefix">NA ŻYWO:</span> <span id="program-layers-count">0</span>
                 </span>
-                <button id="btn-toggle-safe-area-program" aria-label="Przełącz bezpieczny obszar EBU" class="text-[8px] uppercase font-bold text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 rounded px-1.5 py-0.5 transition-colors border border-gray-800">BEZPIECZNY OBSZAR</button>
+                <button id="btn-toggle-safe-area-program" aria-label="BEZPIECZNY OBSZAR" data-i18n="preview.safeArea" data-i18n-attr="aria-label" class="text-[8px] uppercase font-bold text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 rounded px-1.5 py-0.5 transition-colors border border-gray-800">BEZPIECZNY OBSZAR</button>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 bg-red-600 rounded-full shadow-[0_0_8px_#e53935] animate-pulse"></div>
-              <button onclick="window.open('/output.html', 'cg_program', 'width=960,height=540,menubar=no,toolbar=no,location=no,status=no')" title="Otwórz Program (Output) w osobnym oknie" class="text-[9px] text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 border border-red-900/50 rounded px-1.5 py-0.5 transition-colors flex items-center gap-1 shrink-0">
+              <button onclick="window.open('/output.html', 'cg_program', 'width=960,height=540,menubar=no,toolbar=no,location=no,status=no')" title="Otwórz Program (Output) w osobnym oknie" data-i18n="program.openWindow" data-i18n-attr="title" class="text-[9px] text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 border border-red-900/50 rounded px-1.5 py-0.5 transition-colors flex items-center gap-1 shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 POPOUT
               </button>
-              <button id="btn-collapse-program" onclick="toggleMonitor('program')" title="Zwiń / Rozwiń" class="text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 border border-gray-800 rounded px-1.5 py-0.5 transition-colors flex items-center shrink-0">
+              <button id="btn-collapse-program" data-toggle-monitor="program" title="Zwiń / Rozwiń" data-i18n="ui.collapseExpand" data-i18n-attr="title" class="text-gray-500 hover:text-white bg-black/40 hover:bg-gray-800 border border-gray-800 rounded px-1.5 py-0.5 transition-colors flex items-center shrink-0">
                 <svg id="chevron-program" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s"><polyline points="18 15 12 9 6 15"/></svg>
               </button>
             </div>
@@ -419,8 +419,8 @@
           </div>
           <!-- Controls below -->
           <div class="h-10 mt-1 bg-black/40 border-x border-b border-gray-800 flex items-center justify-between px-2 shrink-0" style="height: 36px;">
-            <span id="on-air-label" class="text-[9px] text-gray-500 font-black uppercase tracking-widest pl-1">Na Żywo: 0 Warstw</span>
-            <button id="btn-clear-program" class="px-3 py-1 bg-red-900/40 hover:bg-red-800 text-red-500 border border-red-900/50 rounded text-[9px] font-black uppercase transition-colors">Wyczyść Wszystko</button>
+            <span id="on-air-label" class="text-[9px] text-gray-500 font-black uppercase tracking-widest pl-1" data-i18n="program.onAirLayers">Na Żywo: 0 Warstw</span>
+            <button id="btn-clear-program" class="px-3 py-1 bg-red-900/40 hover:bg-red-800 text-red-500 border border-red-900/50 rounded text-[9px] font-black uppercase transition-colors" data-i18n="program.clearAll">Wyczyść Wszystko</button>
           </div>
           </div><!-- /program-monitor-collapsible -->
         </div>
@@ -429,7 +429,7 @@
       <!-- SHOTBOX GRID -->
       <div class="flex flex-col flex-1 min-h-0">
         <div class="h-9 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
-          <span class="text-[10px] font-bold uppercase text-gray-400">Bank Grafik</span>
+          <span class="text-[10px] font-bold uppercase text-gray-400" data-i18n="bank.title">Bank Grafik</span>
           <div class="flex gap-2">
             <button id="btn-clear-bank"
               class="text-[10px] bg-red-900/40 hover:bg-red-900 text-red-500 hover:text-red-400 border border-red-900/50 px-3 py-1 rounded font-medium transition-colors flex items-center gap-1">
@@ -438,7 +438,7 @@
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
               </svg>
-              Wyczyść
+              <span data-i18n="bank.clear">Wyczyść</span>
             </button>
             <button id="btn-new-graphic" class="btn btn-primary btn-xs">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -446,7 +446,7 @@
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Nowa Grafika
+              <span data-i18n="bank.newGraphic">Nowa Grafika</span>
             </button>
           </div>
         </div>
@@ -467,7 +467,7 @@
             d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
           <circle cx="12" cy="12" r="3" />
         </svg>
-        <p class="text-sm font-medium">Wybierz grafikę z Shotboxa</p>
+        <p class="text-sm font-medium" data-i18n="inspector.selectGraphic">Wybierz grafikę z Shotboxa</p>
       </div>
 
       <!-- Inspector Active Content -->
@@ -475,24 +475,24 @@
         <!-- Header -->
         <div class="p-2 bg-black/20 border-b border-gray-800 flex justify-between items-center text-xs text-gray-500 shrink-0">
           <div class="flex items-center gap-2">
-            <button id="btn-close-inspector" aria-label="Zamknij inspektor" class="text-gray-500 hover:text-white transition-colors">
+            <button id="btn-close-inspector" aria-label="Zamknij inspektor" data-i18n="inspector.close" data-i18n-attr="aria-label" class="text-gray-500 hover:text-white transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
-            <span class="font-bold uppercase text-gray-300">Inspektor</span>
+            <span class="font-bold uppercase text-gray-300" data-i18n="inspector.title">Inspektor</span>
           </div>
           <select id="inspector-type-select" disabled
             class="bg-gray-800 border border-gray-700 rounded text-[10px] px-1 py-0.5 text-blue-400 font-mono focus:outline-none appearance-none cursor-not-allowed">
-            <option value="LOWER_THIRD">BELKA</option>
-            <option value="TICKER">TICKER</option>
-            <option value="CLOCK">ZEGAR</option>
-            <option value="IMAGE">GRAFIKA</option>
+            <option value="LOWER_THIRD" data-i18n="inspector.typeBar">BELKA</option>
+            <option value="TICKER" data-i18n="inspector.typeTicker">TICKER</option>
+            <option value="CLOCK" data-i18n="inspector.typeClock">ZEGAR</option>
+            <option value="IMAGE" data-i18n="inspector.typeImage">GRAFIKA</option>
           </select>
         </div>
 
         <!-- Inspector Tabs -->
         <div class="flex bg-gray-900 border-b border-gray-800 shrink-0">
-          <button id="ins-tab-main" class="flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors">WYGLĄD I TREŚĆ</button>
-          <button id="ins-tab-anim" class="flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors">ANIMACJA</button>
+          <button id="ins-tab-main" class="flex-1 py-2 text-[10px] font-bold text-blue-400 border-b-2 border-blue-500 bg-gray-800/50 transition-colors" data-i18n="inspector.tabMain">WYGLĄD I TREŚĆ</button>
+          <button id="ins-tab-anim" class="flex-1 py-2 text-[10px] font-bold text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors" data-i18n="inspector.tabAnim">ANIMACJA</button>
         </div>
 
         <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col" id="inspector-body">
@@ -509,24 +509,24 @@
               <polyline points="17 21 17 13 7 13 7 21" />
               <polyline points="7 3 7 8 15 8" />
             </svg>
-            ZAPISZ ZMIANY
+            <span data-i18n="inspector.saveChanges">ZAPISZ ZMIANY</span>
           </button>
 
           <div class="flex gap-2 ins-actions-row">
             <button id="btn-ins-save-template"
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-green-900/40 hover:bg-green-600 text-green-500 hover:text-white py-1.5 rounded font-bold border border-green-900/50 transition-all hover:scale-[1.02] text-[9px] text-center leading-tight">
-              <span>ZAPISZ JAKO</span>
-              <span>SZABLON</span>
+              <span data-i18n="inspector.saveTemplate">ZAPISZ JAKO
+SZABLON</span>
             </button>
             <button id="btn-ins-edit-code"
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-purple-900/40 hover:bg-purple-600 text-purple-400 hover:text-white py-1.5 rounded font-bold border border-purple-900/50 transition-all hover:scale-[1.02] text-[9px] text-center leading-tight">
-              <span>EDYTUJ</span>
-              <span>KOD</span>
+              <span data-i18n="inspector.editCode">EDYTUJ
+KOD</span>
             </button>
             <button id="btn-ins-export-json"
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-gray-800 hover:bg-gray-600 text-gray-300 hover:text-white py-1.5 rounded font-bold border border-gray-700 transition-all hover:scale-[1.02] text-[9px] text-center leading-tight">
-              <span>EKSPORTUJ</span>
-              <span>KOD (JSON)</span>
+              <span data-i18n="inspector.exportJson">EKSPORTUJ
+KOD (JSON)</span>
             </button>
           </div>
 
@@ -539,7 +539,7 @@
               <line x1="10" y1="11" x2="10" y2="17"></line>
               <line x1="14" y1="11" x2="14" y2="17"></line>
             </svg>
-            USUŃ GRAFIKĘ
+            <span data-i18n="inspector.deleteGraphic">USUŃ GRAFIKĘ</span>
           </button>
         </div>
       </div>
@@ -551,16 +551,16 @@
     <!-- Template List Sidebar -->
     <aside class="w-56 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0">
       <div class="p-3 border-b border-gray-700 flex justify-between items-center">
-        <h2 class="font-bold text-sm">Szablony</h2>
+        <h2 class="font-bold text-sm" data-i18n="tpl.title">Szablony</h2>
         <div class="flex gap-1">
-          <button id="btn-new-template" class="p-1 hover:bg-gray-700 rounded text-green-400" title="Nowy" aria-label="Utwórz nowy szablon">
+          <button id="btn-new-template" class="p-1 hover:bg-gray-700 rounded text-green-400" title="Nowy" data-i18n="tpl.new" data-i18n-attr="title,aria-label">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
           </button>
-          <button id="btn-import-template" class="p-1 hover:bg-gray-700 rounded text-blue-400" title="Import JSON" aria-label="Importuj szablon JSON">
+          <button id="btn-import-template" class="p-1 hover:bg-gray-700 rounded text-blue-400" title="Import JSON" data-i18n="tpl.importJson" data-i18n-attr="title,aria-label" aria-label="Import JSON">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -568,7 +568,7 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </button>
-          <button id="btn-import-ocg-template" class="p-1 hover:bg-gray-700 rounded text-orange-400" title="Import OCG (.json)" aria-label="Importuj szablon OCG">
+          <button id="btn-import-ocg-template" class="p-1 hover:bg-gray-700 rounded text-orange-400" title="Import OCG (.json)" data-i18n="tpl.importOcg" data-i18n-attr="title,aria-label" aria-label="Import OCG (.json)">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -588,7 +588,7 @@
     <!-- Main Template Editor -->
     <div class="flex-1 flex flex-col min-w-0">
       <div id="tpl-editor-empty" class="flex-1 flex items-center justify-center text-gray-600">
-        <p class="font-medium">Wybierz szablon do edycji</p>
+        <p class="font-medium" data-i18n="tpl.selectToEdit">Wybierz szablon do edycji</p>
       </div>
       <div id="tpl-editor-main" class="hidden flex-col h-full">
         <!-- Header -->
@@ -603,7 +603,7 @@
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
               </svg>
-              Usuń
+              <span data-i18n="tpl.delete">Usuń</span>
             </button>
             <button id="btn-export-template"
               class="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white rounded font-medium text-sm shadow-lg">
@@ -613,7 +613,7 @@
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              Eksportuj (.json)
+              <span data-i18n="tpl.exportJson">Eksportuj (.json)</span>
             </button>
             <button id="btn-export-ocg-template"
               class="flex items-center gap-2 px-3 py-1.5 bg-orange-700/50 hover:bg-orange-600 border border-orange-600 text-white rounded font-medium text-sm shadow-lg">
@@ -623,7 +623,7 @@
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              Eksportuj OCG
+              <span data-i18n="tpl.exportOcg">Eksportuj OCG</span>
             </button>
             <button id="btn-save-template"
               class="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm shadow-lg">
@@ -633,23 +633,23 @@
                 <polyline points="17 21 17 13 7 13 7 21" />
                 <polyline points="7 3 7 8 15 8" />
               </svg>
-              Zapisz
+              <span data-i18n="tpl.save">Zapisz</span>
             </button>
           </div>
         </div>
         <!-- Graphic code override bar (hidden by default, shown when editing graphic code) -->
         <div id="tpl-graphic-mode-bar" class="hidden bg-yellow-900/30 border-b border-yellow-700/50 px-6 py-2 flex items-center justify-between shrink-0">
           <div class="flex items-center gap-3">
-            <span class="text-yellow-400 text-xs font-black uppercase tracking-wider">Edycja kodu grafiki:</span>
+            <span class="text-yellow-400 text-xs font-black uppercase tracking-wider" data-i18n="tpl.graphicEditTitle">Edycja kodu grafiki:</span>
             <span id="tpl-graphic-mode-name" class="text-white text-sm font-bold"></span>
             <label class="flex items-center gap-1.5 ml-4 cursor-pointer">
               <input type="checkbox" id="tpl-graphic-override-toggle" class="w-3.5 h-3.5 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-0 cursor-pointer">
-              <span class="text-[10px] font-bold text-yellow-300 uppercase">Nadpisz kod szablonu</span>
+              <span class="text-[10px] font-bold text-yellow-300 uppercase" data-i18n="tpl.overrideToggle">Nadpisz kod szablonu</span>
             </label>
           </div>
           <button id="btn-exit-graphic-code" class="flex items-center gap-1.5 px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded text-xs font-bold transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            Wróć do szablonu
+            <span data-i18n="tpl.backToTemplate">Wróć do szablonu</span>
           </button>
         </div>
         <!-- Tabs -->
@@ -662,7 +662,7 @@
             class="tpl-tab tab-js py-3 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-200">JS
             Logic</button>
           <button data-tab="vars"
-            class="tpl-tab tab-vars py-3 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-200">Zmienne</button>
+            class="tpl-tab tab-vars py-3 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-200" data-i18n="tpl.tabVars">Zmienne</button>
         </div>
         <!-- Code Editor (Ace) -->
         <div class="flex-1 relative">
@@ -671,33 +671,33 @@
           <div id="fields-builder-wrapper" class="hidden w-full h-full bg-[#0d1117] overflow-y-auto custom-scrollbar flex flex-col" style="position:absolute;top:0;left:0;">
             <div class="p-4 border-b border-gray-800 flex items-center justify-between shrink-0">
               <div>
-                <h3 class="text-xs font-black uppercase tracking-widest text-white">Parametry Wejściowe (Zmienne Szablonu)</h3>
-                <p class="text-[10px] text-gray-500 mt-0.5">Definiuj pola danych, które będą widoczne w kafelkach na panelu głównym.</p>
+                <h3 class="text-xs font-black uppercase tracking-widest text-white" data-i18n="tpl.varsTitle">Parametry Wejściowe (Zmienne Szablonu)</h3>
+                <p class="text-[10px] text-gray-500 mt-0.5" data-i18n="tpl.varsDesc">Definiuj pola danych, które będą widoczne w kafelkach na panelu głównym.</p>
               </div>
               <button id="btn-add-field-row"
                 class="flex items-center gap-1.5 px-3 py-1.5 bg-green-700/30 hover:bg-green-600/50 text-green-400 border border-green-700/50 rounded text-[10px] font-black uppercase transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Dodaj Zmienną
+                <span data-i18n="tpl.addVar">Dodaj Zmienną</span>
               </button>
             </div>
             <!-- Table header -->
             <div class="grid gap-2 px-4 pt-3 pb-1 shrink-0 text-[9px] font-black uppercase tracking-widest text-gray-500" style="grid-template-columns:1fr 1.3fr 2fr 1fr auto;">
-              <span>ID Elementu HTML</span>
-              <span>Nazwa Wyświetlana</span>
-              <span>Wartość Domyślna</span>
-              <span>Typ</span>
+              <span data-i18n="tpl.htmlId">ID Elementu HTML</span>
+              <span data-i18n="tpl.displayName">Nazwa Wyświetlana</span>
+              <span data-i18n="tpl.defaultValue">Wartość Domyślna</span>
+              <span data-i18n="tpl.type">Typ</span>
               <span></span>
             </div>
             <div id="fields-builder-container" class="flex flex-col gap-1.5 px-4 pb-4 flex-1"></div>
             <div id="fields-builder-empty" class="hidden flex-1 flex items-center justify-center text-gray-600 text-xs font-medium py-10">
-              Brak zmiennych — kliknij <span class="text-green-400 mx-1 font-bold">+ Dodaj Zmienną</span> aby zdefiniować pierwsze pole.
+              <span data-i18n="tpl.noVarsPrefix">Brak zmiennych — kliknij</span> <span class="text-green-400 mx-1 font-bold" data-i18n="tpl.addVarCta">+ Dodaj Zmienną</span> <span data-i18n="tpl.noVarsSuffix">aby zdefiniować pierwsze pole.</span>
             </div>
 
             <!-- Default Values Editor -->
             <div class="border-t border-gray-800 mt-2">
               <div class="p-4 border-b border-gray-800 shrink-0">
-                <h3 class="text-xs font-black uppercase tracking-widest text-white">Wartości domyślne szablonu</h3>
-                <p class="text-[10px] text-gray-500 mt-0.5">Domyślne ustawienia stosowane przy tworzeniu nowych grafik z tego szablonu.</p>
+                <h3 class="text-xs font-black uppercase tracking-widest text-white" data-i18n="tpl.defaultsTitle">Wartości domyślne szablonu</h3>
+                <p class="text-[10px] text-gray-500 mt-0.5" data-i18n="tpl.defaultsDesc">Domyślne ustawienia stosowane przy tworzeniu nowych grafik z tego szablonu.</p>
               </div>
               <div id="tpl-defaults-editor" class="p-4 space-y-4">
                 <!-- Rendered dynamically by app.js -->
@@ -720,33 +720,33 @@
             <path
               d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
-          Ustawienia globalne
+          <span data-i18n="settings.globalTitle">Ustawienia globalne</span>
         </h2>
 
         <div class="space-y-4">
           <div>
-            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">Rozdzielczość wyjścia (Program)</label>
+            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase" data-i18n="settings.resolution">Rozdzielczość wyjścia (Program)</label>
             <div class="flex items-center gap-4">
               <div class="flex-1">
-                <label class="block text-[10px] text-gray-500 mb-1">Szerokość (px)</label>
+                <label class="block text-[10px] text-gray-500 mb-1" data-i18n="settings.width">Szerokość (px)</label>
                 <input type="number" id="setting-res-width" value="1920"
                   class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
               </div>
               <div class="text-gray-500 mt-4">&times;</div>
               <div class="flex-1">
-                <label class="block text-[10px] text-gray-500 mb-1">Wysokość (px)</label>
+                <label class="block text-[10px] text-gray-500 mb-1" data-i18n="settings.height">Wysokość (px)</label>
                 <input type="number" id="setting-res-height" value="1080"
                   class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
               </div>
             </div>
-            <p class="text-[10px] text-gray-500 mt-2">Domyślna rozdzielczość używana na żywo w oknie WYJŚCIE. Odśwież
+            <p class="text-[10px] text-gray-500 mt-2" data-i18n="settings.resolutionHelp">Domyślna rozdzielczość używana na żywo w oknie WYJŚCIE. Odśwież
               okno wyjścia po każdej zmianie rozdzielczości w celu zastosowania.</p>
           </div>
 
           <div class="pt-4 border-t border-gray-800">
-            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">Globalna Czcionka</label>
+            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase" data-i18n="settings.globalFont">Globalna Czcionka</label>
             <div class="mb-3">
-              <label class="block text-[10px] text-gray-500 mb-1">Krój czcionki (Font Family)</label>
+              <label class="block text-[10px] text-gray-500 mb-1" data-i18n="settings.fontFamily">Krój czcionki (Font Family)</label>
               <select id="setting-global-font-family"
                 class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
                 <option value="Inter">Inter</option>
@@ -758,12 +758,12 @@
                 <option value="Georgia">Georgia</option>
                 <option value="monospace">Monospace</option>
               </select>
-              <p class="text-[10px] text-gray-500 mt-2">Wybierz styl czcionki. Ten styl będzie również domyślnie używany
+              <p class="text-[10px] text-gray-500 mt-2" data-i18n="settings.fontHelp">Wybierz styl czcionki. Ten styl będzie również domyślnie używany
                 przy dodawaniu nowych elementów.</p>
             </div>
 
             <div class="mt-4">
-              <label class="block text-[10px] text-gray-500 mb-2">Zastosuj wymuszenie globalnej czcionki dla elementów z
+              <label class="block text-[10px] text-gray-500 mb-2" data-i18n="settings.fontApplyTo">Zastosuj wymuszenie globalnej czcionki dla elementów z
                 Banku Grafik:</label>
               <div id="setting-global-font-graphics"
                 class="bg-gray-800 border border-gray-700 rounded p-3 max-h-60 overflow-y-auto custom-scrollbar flex flex-col gap-2">
@@ -774,16 +774,16 @@
 
           <!-- GLOBAL BORDER RADIUS -->
           <div class="pt-4 border-t border-gray-800">
-            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">Globalne Zaokrąglenie (Border Radius)</label>
+            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase" data-i18n="settings.globalRadius">Globalne Zaokrąglenie (Border Radius)</label>
             <div class="mb-3">
-              <label class="block text-[10px] text-gray-500 mb-1">Promień zaokrąglenia (px)</label>
+              <label class="block text-[10px] text-gray-500 mb-1" data-i18n="settings.radiusValue">Promień zaokrąglenia (px)</label>
               <input type="number" id="setting-global-radius" value="0"
                 class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
-              <p class="text-[10px] text-gray-500 mt-2">Wybierz wartość zaokrąglenia, która wymusi obłe krawędzie na wybranych elementach.</p>
+              <p class="text-[10px] text-gray-500 mt-2" data-i18n="settings.radiusHelp">Wybierz wartość zaokrąglenia, która wymusi obłe krawędzie na wybranych elementach.</p>
             </div>
 
             <div class="mt-4">
-              <label class="block text-[10px] text-gray-500 mb-2">Zastosuj wymuszenie zaokrąglenia dla elementów z Banku Grafik:</label>
+              <label class="block text-[10px] text-gray-500 mb-2" data-i18n="settings.radiusApplyTo">Zastosuj wymuszenie zaokrąglenia dla elementów z Banku Grafik:</label>
               <div id="setting-global-radius-graphics"
                 class="bg-gray-800 border border-gray-700 rounded p-3 max-h-60 overflow-y-auto custom-scrollbar flex flex-col gap-2">
                 <!-- Checkboxes will be injected here via app.js -->
@@ -792,17 +792,17 @@
           </div>
 
           <div class="pt-4 border-t border-gray-800">
-            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">Globalny Cień (Shadow)</label>
+            <label class="block text-xs font-bold text-gray-400 mb-1 uppercase" data-i18n="settings.globalShadow">Globalny Cień (Shadow)</label>
             <div class="mb-3 flex items-center gap-2">
               <input type="checkbox" id="setting-shadow-enabled"
                 class="w-3 h-3 bg-gray-800 border-gray-600 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 cursor-pointer">
-              <label for="setting-shadow-enabled" class="text-[10px] text-gray-300 cursor-pointer">Włącz globalny cień
+              <label for="setting-shadow-enabled" class="text-[10px] text-gray-300 cursor-pointer" data-i18n="settings.shadowEnable">Włącz globalny cień
                 dla wszystkich elementów</label>
             </div>
 
             <div id="setting-shadow-controls" class="space-y-3 opacity-50 pointer-events-none transition-opacity">
               <div>
-                <label class="block text-[10px] text-gray-500 mb-1">Kolor Cienia</label>
+                <label class="block text-[10px] text-gray-500 mb-1" data-i18n="settings.shadowColor">Kolor Cienia</label>
                 <div class="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded p-1 max-w-[200px]">
                   <input type="color" id="setting-shadow-color" value="#000000"
                     class="h-6 w-8 rounded bg-transparent cursor-pointer border-none p-0 shrink-0">
@@ -812,7 +812,7 @@
               </div>
               <div class="grid grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-[10px] text-gray-500 mb-1">Rozmycie</label>
+                  <label class="block text-[10px] text-gray-500 mb-1" data-i18n="settings.shadowBlur">Rozmycie</label>
                   <input type="number" id="setting-shadow-blur" value="4"
                     class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none text-white">
                 </div>
@@ -831,6 +831,44 @@
           </div>
         </div>
       </div>
+
+      <!-- Language Switcher -->
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-5">
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span data-i18n="settings.language">Język interfejsu</span>
+        </h2>
+        <p class="text-[10px] text-gray-500 mb-3" data-i18n="settings.languageHelp">Wybierz język, w którym wyświetlany będzie interfejs aplikacji.</p>
+        <select id="setting-language" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-500 w-48">
+          <option value="pl">🇵🇱 Polski</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="de">🇩🇪 Deutsch</option>
+        </select>
+      </div>
+
+      <!-- NETWORK INFO -->
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-5">
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          <span data-i18n="settings.networkTitle">Adresy sieciowe</span>
+        </h2>
+        <p class="text-[10px] text-gray-500 mb-4" data-i18n="settings.networkHelp">Adresy, pod którymi dostępna jest aplikacja w przeglądarce oraz strona wyjściowa (output) do podpięcia w OBS/vMix.</p>
+        <div id="network-info-container" class="space-y-3">
+          <div class="text-xs text-gray-500 italic">Ładowanie...</div>
+        </div>
+      </div>
+
       <div class="bg-gray-900 border border-gray-800 rounded-lg p-5">
         <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -839,11 +877,11 @@
             <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
             <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
           </svg>
-          Baza Danych
+          <span data-i18n="settings.database">Baza Danych</span>
         </h2>
 
         <div class="space-y-4">
-          <p class="text-[10px] text-gray-500 mb-2">Możesz wykonać pełną kopię zapasową środowiska (szablonów, banku grafik i ustawień tła) pobierając plik ze stanem aplikacji, lub wgrać swój plik JSON, aby odtworzyć konfigurację.</p>
+          <p class="text-[10px] text-gray-500 mb-2" data-i18n="settings.dbHelp">Możesz wykonać pełną kopię zapasową środowiska (szablonów, banku grafik i ustawień tła) pobierając plik ze stanem aplikacji, lub wgrać swój plik JSON, aby odtworzyć konfigurację.</p>
           <div class="grid grid-cols-2 gap-4">
             <button id="btn-export-db"
               class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-green-400 border border-gray-700 py-2 rounded font-bold text-xs transition-colors">
@@ -853,7 +891,7 @@
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              Eksportuj (Pobierz db.json)
+              <span data-i18n="settings.exportDb">Eksportuj (Pobierz db.json)</span>
             </button>
             <div class="relative w-full">
               <input type="file" id="db-file-input" accept=".json" class="hidden">
@@ -865,7 +903,7 @@
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-                Importuj Baze
+                <span data-i18n="settings.importDb">Importuj Baze</span>
               </button>
             </div>
           </div>
@@ -894,14 +932,14 @@
       <div class="flex items-center justify-between px-5 py-2 border-b border-gray-800 shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-xs font-bold">T</div>
-          <span class="font-bold text-sm">Edytor Tekstu — <span id="wysiwyg-modal-title"
+          <span class="font-bold text-sm" data-i18n="wysiwyg.title">Edytor Tekstu — <span id="wysiwyg-modal-title"
               class="text-blue-400 font-mono text-xs"></span></span>
         </div>
         <div class="flex gap-2 items-center">
           <button id="wysiwyg-cancel"
-            class="px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs font-medium">Anuluj</button>
+            class="px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs font-medium" data-i18n="wysiwyg.cancel">Anuluj</button>
           <button id="wysiwyg-save"
-            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold">Zatwierdź</button>
+            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold" data-i18n="wysiwyg.apply">Zatwierdź</button>
           <button id="wysiwyg-modal-close"
             class="text-gray-400 hover:text-white text-xl leading-none w-8 h-8 flex items-center justify-center">&#215;</button>
         </div>
@@ -972,12 +1010,12 @@
 
             <!-- Group 3: Color & Highlight -->
             <div style="display:flex;gap:4px;align-items:center;">
-              <label title="Kolor tekstu"
+              <label title="Kolor tekstu" data-i18n="wysiwyg.textColor" data-i18n-attr="title"
                 style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">
                 <span style="font-size:11px;color:#e5e7eb;font-weight:bold;border-bottom:2px solid currentColor;">A</span>
                 <input id="wm-color" type="color" value="#ffffff" style="position:absolute;width:0;height:0;opacity:0;">
               </label>
-              <label title="Kolor tła tekstu (Highlight)"
+              <label title="Kolor tła tekstu (Highlight)" data-i18n="wysiwyg.highlightColor" data-i18n-attr="title"
                 style="width:28px;height:26px;background:#1f2937;border:1px solid #374151;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">
                 <span style="font-size:11px;color:#e5e7eb;background:#3b82f6;padding:0 2px;border-radius:2px;">A</span>
                 <input id="wm-highlight" type="color" value="#3b82f6" style="position:absolute;width:0;height:0;opacity:0;">
@@ -1022,7 +1060,7 @@
 
             <!-- Group 6: Alignment & Line Height -->
             <div style="display:flex;gap:4px;align-items:center;">
-              <select id="wm-line-height" title="Interlinia (line-height)"
+              <select id="wm-line-height" title="Interlinia (line-height)" data-i18n="wysiwyg.lineHeightTitle" data-i18n-attr="title"
                 style="height:26px;width:55px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#a78bfa;font-size:10px;padding:0 4px;cursor:pointer;">
                 <option value="0.8">× 0.8</option>
                 <option value="0.9">× 0.9</option>
@@ -1050,10 +1088,10 @@
             <div style="display:flex;gap:4px;align-items:center;">
               <button id="wm-clear-all" title="Clear All Formatting"
                 style="height:26px;padding:0 8px;background:#991b1b;border:1px solid #7f1d1d;border-radius:4px;color:#fecaca;cursor:pointer;font-size:10px;font-weight:bold;">✕ Clear</button>
-              <label title="Kolor tła podglądu" style="display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:4px;">
+              <label title="Kolor tła podglądu" data-i18n="wysiwyg.bgColor" data-i18n-attr="title" style="display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:4px;">
                 <input id="wm-bg" type="color" value="#0047ab"
                   style="height:22px;width:26px;border:1px solid #374151;border-radius:3px;cursor:pointer;background:transparent;">
-                <span style="font-size:9px;color:#6b7280;">Tło</span>
+                <span style="font-size:9px;color:#6b7280;" data-i18n="wysiwyg.bgLabel">Tło</span>
               </label>
             </div>
           </div>
@@ -1068,7 +1106,7 @@
           <!-- HTML source view (collapsed by default) -->
           <div style="border-top:1px solid #1f2937;">
             <button id="toggle-html-view"
-              style="width:100%;padding:4px 12px;background:#111827;color:#6b7280;font-size:9px;text-align:left;border:none;cursor:pointer;">▶
+              style="width:100%;padding:4px 12px;background:#111827;color:#6b7280;font-size:9px;text-align:left;border:none;cursor:pointer;" data-i18n="wysiwyg.showHtml">▶
               Pokaż źródło HTML</button>
             <textarea id="wm-html-source"
               style="display:none;width:100%;height:60px;background:#0d1117;color:#86efac;font-family:monospace;font-size:9px;border:none;padding:6px;resize:none;"></textarea>
@@ -1079,7 +1117,7 @@
         <div class="flex-1 flex flex-col min-h-0 bg-gray-950">
           <div
             class="px-4 py-1 border-b border-gray-800 text-[9px] text-gray-500 uppercase font-semibold flex items-center justify-between shrink-0">
-            <span>Podgląd na żywo</span>
+            <span data-i18n="wysiwyg.livePreview">Podgląd na żywo</span>
             <span class="text-[9px] text-gray-600">1920 × 1080</span>
           </div>
           <!-- 16:9 monitor — outer clips the 1920px canvas properly -->
@@ -1092,7 +1130,7 @@
                 class="shadow-2xl opacity-0 transition-opacity duration-700"></div>
             </div>
           </div>
-          <div class="px-4 py-1 border-t border-gray-800 text-[9px] text-gray-500 shrink-0">
+          <div class="px-4 py-1 border-t border-gray-800 text-[9px] text-gray-500 shrink-0" data-i18n="wysiwyg.previewNote">
             Zmiany występują w podglądzie • Na antenie pojawi się po kliknięciu TAKE
           </div>
         </div>
@@ -1110,7 +1148,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 18 6-6 6 6"/><path d="m5 6 6 6 6-6"/></svg>
           </div>
           <div>
-            <h3 class="font-black text-sm uppercase tracking-wider text-white">Szybka Edycja Tickera</h3>
+            <h3 class="font-black text-sm uppercase tracking-wider text-white" data-i18n="ticker.editTitle">Szybka Edycja Tickera</h3>
             <p id="ticker-editor-subtitle" class="text-[10px] text-gray-500 font-mono uppercase">---</p>
           </div>
         </div>
@@ -1118,13 +1156,13 @@
           <button id="ticker-editor-add-group"
             class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-blue-400 border border-gray-700 rounded text-[10px] font-black uppercase transition-all flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Dodaj Grupę
+            <span data-i18n="ticker.addGroup">Dodaj Grupę</span>
           </button>
           <div class="h-6 w-px bg-gray-800 mx-1"></div>
           <button id="ticker-editor-cancel"
-            class="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-[10px] font-bold uppercase border border-gray-700 transition-all">Anuluj</button>
+            class="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-[10px] font-bold uppercase border border-gray-700 transition-all" data-i18n="ticker.cancel">Anuluj</button>
           <button id="ticker-editor-save"
-            class="px-6 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-black uppercase shadow-lg shadow-blue-900/40 transition-all active:scale-95">Zatwierdź Zmiany</button>
+            class="px-6 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-black uppercase shadow-lg shadow-blue-900/40 transition-all active:scale-95" data-i18n="ticker.saveChanges">Zatwierdź Zmiany</button>
         </div>
       </div>
 
@@ -1135,15 +1173,15 @@
       
       <!-- Footer Info -->
       <div class="px-5 py-2 border-t border-gray-800 bg-black/20 flex justify-between items-center shrink-0">
-          <span class="text-[9px] text-gray-600 uppercase font-bold tracking-widest">Przeciągnij elementy aby zmienić kolejność lub grupę</span>
+          <span class="text-[9px] text-gray-600 uppercase font-bold tracking-widest" data-i18n="ticker.dragHint">Przeciągnij elementy aby zmienić kolejność lub grupę</span>
           <div class="flex items-center gap-4">
               <div class="flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_#3b82f6]"></span>
-                  <span class="text-[9px] text-gray-500 uppercase font-bold">Wiadomość</span>
+                  <span class="text-[9px] text-gray-500 uppercase font-bold" data-i18n="ticker.message">Wiadomość</span>
               </div>
               <div class="flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_5px_#f97316]"></span>
-                  <span class="text-[9px] text-gray-500 uppercase font-bold">Kategoria (Wiper)</span>
+                  <span class="text-[9px] text-gray-500 uppercase font-bold" data-i18n="ticker.categoryWiper">Kategoria (Wiper)</span>
               </div>
           </div>
       </div>
@@ -1155,7 +1193,7 @@
     <div class="text-center">
       <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-3">
       </div>
-      <p class="text-gray-400 text-sm">Loading CG Engine...</p>
+      <p class="text-gray-400 text-sm" data-i18n="loading.engine">Loading CG Engine...</p>
     </div>
   </div>
 
@@ -1216,7 +1254,7 @@
   <div id="modal-template-selector" class="hidden fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center p-4">
     <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
       <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-        <h3 class="font-bold text-lg">Wybierz Szablon</h3>
+        <h3 class="font-bold text-lg" data-i18n="tpl.selectTemplate">Wybierz Szablon</h3>
         <button id="modal-tpl-close" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
       </div>
       <div id="modal-tpl-list" class="flex-1 overflow-y-auto custom-scrollbar p-4 grid grid-cols-2 gap-3">
