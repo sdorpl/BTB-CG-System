@@ -11,7 +11,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron . --no-sandbox",
-    "prebuild": "cd ../server && npm install --install-strategy=nested --omit=dev --ignore-scripts --workspaces=false && npm rebuild better-sqlite3",
+    "prebuild": "cd ../server && npm install --install-strategy=nested --omit=dev --ignore-scripts --workspaces=false && npx --yes @electron/rebuild -m . -o better-sqlite3",
     "rebuild": "electron-builder install-app-deps",
     "dist:win": "npm run prebuild && electron-builder --win",
     "dist:mac": "npm run prebuild && electron-builder --mac",

@@ -52,14 +52,29 @@ function startServer() {
     const serverScript = getServerScript();
     const userDataPath = app.getPath('userData');
 
-    // Use Electron itself as Node.js runtime via ELECTRON_RUN_AS_NODE
-    serverProcess = spawn(process.execPath, [serverScript], {
-        env: {
-            ...process.env,
-            ELECTRON_RUN_AS_NODE: '1',
-            APPDATA_PATH: userDataPath,
-            CLIENT_ROOT: getClientRoot(),
-        },
+    let nodeBin, spawnEnv;
+    if (app.isPackaged) {
+        // Packaged: use Electron binary with ELECTRON_RUN_AS_NODE
+        // (better-sqlite3 is rebuilt for Electron in prebuild step)
+        nodeBin = process.execPath;
+        spawnEnv = { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
+    } else {
+        // Dev: use system node so regular native modules work
+        nodeBin = process.argv[0] || 'node';
+        // Try to find the real node binary (not electron)
+        const { execSync } = require('child_process');
+        try {
+            nodeBin = execSync('which node', { encoding: 'utf8' }).trim();
+        } catch { nodeBin = 'node'; }
+        spawnEnv = { ...process.env };
+    }
+
+    spawnEnv.APPDATA_PATH = userDataPath;
+    spawnEnv.CLIENT_ROOT = getClientRoot();
+
+    console.log(`[Electron] Spawning server: ${nodeBin} ${serverScript}`);
+    serverProcess = spawn(nodeBin, [serverScript], {
+        env: spawnEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
         windowsHide: true,
     });
