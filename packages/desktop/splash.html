@@ -4,12 +4,17 @@
 <meta charset="UTF-8">
 <title>BTB CG System</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: #0d1320;
+    background: #020617;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(30, 64, 175, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(88, 28, 135, 0.15) 0px, transparent 50%);
     color: #e2e8f0;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -35,8 +40,8 @@
   .logo-ring {
     width: 80px;
     height: 80px;
-    border: 3px solid rgba(99, 102, 241, 0.15);
-    border-top-color: #6366f1;
+    border: 3px solid rgba(59, 130, 246, 0.15);
+    border-top-color: #3b82f6;
     border-radius: 50%;
     animation: spin 1.2s linear infinite;
   }
@@ -49,7 +54,7 @@
     font-size: 22px;
     font-weight: 800;
     letter-spacing: -0.5px;
-    color: #6366f1;
+    color: #3b82f6;
   }
 
   h1 {
@@ -57,17 +62,18 @@
     font-weight: 700;
     letter-spacing: -0.5px;
     margin-bottom: 6px;
-    background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+    background: linear-gradient(135deg, #ffffff, #94a3b8);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .subtitle {
-    font-size: 12px;
-    color: #64748b;
+    font-size: 10px;
+    color: #6b7280;
     text-transform: uppercase;
-    letter-spacing: 2.5px;
+    letter-spacing: 3px;
+    font-weight: 600;
     margin-bottom: 40px;
   }
 
@@ -75,7 +81,7 @@
   .progress-track {
     width: 240px;
     height: 3px;
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     border-radius: 3px;
     margin: 0 auto 16px;
     overflow: hidden;
@@ -83,14 +89,15 @@
   .progress-bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #6366f1, #818cf8);
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
     border-radius: 3px;
     transition: width 0.4s ease;
   }
 
   .status {
-    font-size: 11px;
-    color: #475569;
+    font-size: 10px;
+    color: #6b7280;
+    font-weight: 500;
     min-height: 16px;
     transition: opacity 0.3s;
   }
@@ -101,6 +108,7 @@
     right: 20px;
     font-size: 10px;
     color: #334155;
+    font-weight: 500;
   }
 
   /* ── Background grid ── */
@@ -108,11 +116,9 @@
     position: fixed;
     inset: 0;
     z-index: 0;
-    background-image:
-      radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.03) 0%, transparent 70%),
-      radial-gradient(#1e293b 1px, transparent 1px);
-    background-size: 100% 100%, 24px 24px;
-    opacity: 0.6;
+    background-image: radial-gradient(#333 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.3;
   }
 
   /* ── Glow ── */
@@ -121,7 +127,7 @@
     width: 300px;
     height: 300px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.08), transparent 70%);
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08), transparent 70%);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -148,7 +154,6 @@
       <div class="logo-text">CG</div>
     </div>
     <h1>BTB CG System</h1>
-    <p class="subtitle">Stacja Kontrolna</p>
     <div class="progress-track"><div class="progress-bar" id="bar"></div></div>
     <p class="status" id="status">Inicjalizacja…</p>
   </div>

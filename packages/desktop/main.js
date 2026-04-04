@@ -142,11 +142,11 @@ function showConnectDialog() {
 
     connectWindow = new BrowserWindow({
         width: 460,
-        height: 340,
+        height: 480,
         frame: false,
         resizable: false,
         center: true,
-        backgroundColor: '#0d1320',
+        backgroundColor: '#020617',
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -183,7 +183,7 @@ function createMainWindow() {
         title: 'BTB CG System',
         icon: path.join(__dirname, 'icon.png'),
         show: false,
-        backgroundColor: '#0d1320',
+        backgroundColor: '#020617',
         titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
         webPreferences: {
             nodeIntegration: false,
@@ -268,6 +268,14 @@ ipcMain.on('connect-local', () => {
 
 ipcMain.on('connect-remote', (_event, url) => {
     connectToRemote(url);
+});
+
+ipcMain.on('connect-window-minimize', () => {
+    if (connectWindow && !connectWindow.isDestroyed()) connectWindow.minimize();
+});
+
+ipcMain.on('connect-window-close', () => {
+    if (connectWindow && !connectWindow.isDestroyed()) connectWindow.close();
 });
 
 ipcMain.handle('get-server-url', () => {
