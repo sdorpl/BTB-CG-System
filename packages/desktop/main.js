@@ -233,28 +233,26 @@ function connectToRemote(url) {
     activeServerUrl = url;
     saveConfig({ lastRemoteUrl: url });
 
+    createMainWindow();
+
     if (connectWindow && !connectWindow.isDestroyed()) {
         connectWindow.close();
     }
 
-    createMainWindow();
     mainWindow.loadURL(url);
     mainWindow.show();
 }
 
 // ── Launch local server flow ─────────────────────────────
 function launchLocal() {
+    createSplash();
+    createMainWindow();
+
     if (connectWindow && !connectWindow.isDestroyed()) {
         connectWindow.close();
     }
 
-    createSplash();
-    createMainWindow();
     startServer();
-
-    if (serverPort && mainWindow) {
-        mainWindow.loadURL(`http://localhost:${serverPort}`);
-    }
 }
 
 // ── IPC Handlers ─────────────────────────────────────────

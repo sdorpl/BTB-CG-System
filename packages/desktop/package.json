@@ -1,11 +1,17 @@
 {
   "name": "@btb-cg/desktop",
   "version": "1.1.0",
+  "description": "BTB CG System — Desktop application",
+  "author": {
+    "name": "BTB",
+    "email": "btb@cgmaster.local"
+  },
+  "homepage": "https://github.com/sdorpl/BTB-CG-System",
   "private": true,
   "main": "main.js",
   "scripts": {
     "start": "electron . --no-sandbox",
-    "prebuild": "cd ../server && npm install --install-strategy=nested --omit=dev --ignore-scripts && npm rebuild better-sqlite3",
+    "prebuild": "cd ../server && npm install --install-strategy=nested --omit=dev --ignore-scripts --workspaces=false && npm rebuild better-sqlite3",
     "rebuild": "electron-builder install-app-deps",
     "dist:win": "npm run prebuild && electron-builder --win",
     "dist:mac": "npm run prebuild && electron-builder --mac",
@@ -21,6 +27,7 @@
     "appId": "com.btb.cgsystem",
     "productName": "BTB CG System",
     "asar": false,
+    "electronVersion": "41.1.0",
     "afterPack": "./electron-builder-hooks.js",
     "files": [
       "main.js",
@@ -38,7 +45,8 @@
         "to": "server/",
         "filter": [
           "**/*",
-          "!uploads/**"
+          "!uploads/**",
+          "!database.sqlite*"
         ]
       },
       {
@@ -59,11 +67,11 @@
       "target": ["dmg", "zip"]
     },
     "win": {
-      "target": ["nsis", "portable"]
+      "target": ["dir"]
     },
     "linux": {
       "icon": "icon.png",
-      "target": ["AppImage", "deb"]
+      "target": ["AppImage"]
     },
     "directories": {
       "output": "../../dist"

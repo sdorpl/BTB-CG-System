@@ -1,14 +1,35 @@
 const fs = require('fs');
 const path = require('path');
 
-// Fix Linux sandbox issues for portable packages (AppImage, tar.gz).
-// Chromium's SUID sandbox needs root:4755 and user-ns sandbox is blocked
-// by AppArmor on Ubuntu 23.10+. We replace the binary with a wrapper
-// script that passes --no-sandbox, matching what VS Code / Slack do.
-exports.default = async function afterPack(context) {
-    if (context.electronPlatformName !== 'linux') return;
+// Recursively copy a directory
+function copyDirSync(src, dest) {
+    fs.mkdirSync(dest, { recursive: true });
+    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+        const srcPath = path.join(src, entry.name);
+        const destPath = path.join(dest, entry.name);
+        if (entry.isDirectory()) {
+            copyDirSync(srcPath, destPath);
+        } else {
+            fs.copyFileSync(srcPath, destPath);
+        }
+    }
+}
 
+exports.default = async function afterPack(context) {
     const appOutDir = context.appOutDir;
+    const resourcesDir = path.join(appOutDir, 'resources');
+
+    // ── Copy server node_modules (electron-builder skips them via extraResources) ──
+    const serverNM = path.join(__dirname, '..', 'server', 'node_modules');
+    const destNM = path.join(resourcesDir, 'server', 'node_modules');
+    if (fs.existsSync(serverNM) && !fs.existsSync(destNM)) {
+        console.log('[afterPack] Copying server/node_modules to resources...');
+        copyDirSync(serverNM, destNM);
+        console.log('[afterPack] server/node_modules copied.');
+    }
+
+    // ── Linux sandbox fixes ──
+    if (context.electronPlatformName !== 'linux') return;
 
     // 1. Remove chrome-sandbox (SUID sandbox — can't work in portable)
     const chromeSandbox = path.join(appOutDir, 'chrome-sandbox');
