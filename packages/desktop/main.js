@@ -47,25 +47,16 @@ function getClientRoot() {
     return path.join(__dirname, '..', 'client');
 }
 
-// ── Locate system Node.js binary ────────────────────────
-function getNodeBinary() {
-    if (app.isPackaged) {
-        const bundled = path.join(process.resourcesPath, 'node',
-            process.platform === 'win32' ? 'node.exe' : 'node');
-        if (fs.existsSync(bundled)) return bundled;
-    }
-    return 'node'; // system PATH
-}
-
 // ── Start the backend server as a child process ─────────
 function startServer() {
     const serverScript = getServerScript();
     const userDataPath = app.getPath('userData');
-    const nodeBin = getNodeBinary();
 
-    serverProcess = spawn(nodeBin, [serverScript], {
+    // Use Electron itself as Node.js runtime via ELECTRON_RUN_AS_NODE
+    serverProcess = spawn(process.execPath, [serverScript], {
         env: {
             ...process.env,
+            ELECTRON_RUN_AS_NODE: '1',
             APPDATA_PATH: userDataPath,
             CLIENT_ROOT: getClientRoot(),
         },
