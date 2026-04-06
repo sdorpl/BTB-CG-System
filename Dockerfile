@@ -1,5 +1,5 @@
-# ── Stage 1: Build (install + compile native modules) ────
-FROM node:22-slim AS build
+# ── Single-stage build ────────────────────────────────────
+FROM node:22-slim
 
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
@@ -13,14 +13,6 @@ COPY packages/client/package.json packages/client/package.json
 # Install production deps for server workspace only
 RUN npm install --omit=dev --ignore-scripts --workspace=packages/server --workspace=packages/client && \
     npm rebuild better-sqlite3
-
-# ── Stage 2: Runtime (no build tools, smaller image) ──────
-FROM node:22-slim
-
-WORKDIR /app
-
-# Copy node_modules from build stage (npm workspaces hoists to root)
-COPY --from=build /app/node_modules ./node_modules
 
 # Copy server source
 COPY packages/server/ packages/server/

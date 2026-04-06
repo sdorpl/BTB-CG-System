@@ -17,7 +17,9 @@ Instrukcja wdrożenia BTB CG System jako kontenera Docker za pomocą Portainer.
 2. Nazwa stacka: `btb-cg-system`
 3. Wybierz **Repository**
 4. Repository URL: `https://github.com/sdorpl/BTB-CG-System.git`
-5. Compose path: `docker-compose.yml`
+5. **Reference** (branch): wpisz nazwę brancha, np. `perf/optimizations` lub `main`
+   > Pole "Reference" znajduje się pod URL repozytorium. Domyślnie Portainer pobiera `main`. Aby użyć innego brancha, wpisz jego pełną nazwę.
+6. Compose path: `docker-compose.yml`
 6. Opcjonalnie w **Environment variables** dodaj:
    - `PORT` — port wewnętrzny serwera (domyślnie `3000`)
 7. Kliknij **Deploy the stack**
