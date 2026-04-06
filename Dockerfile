@@ -1,4 +1,23 @@
-# ── Single-stage build ────────────────────────────────────
+# ── Stage 1: Build client assets (vendor + tailwind) ──────
+FROM node:22-slim AS client-build
+
+WORKDIR /app
+
+# Copy workspace root manifests
+COPY package.json package-lock.json ./
+COPY packages/client/package.json packages/client/package.json
+COPY packages/server/package.json packages/server/package.json
+
+# Install ALL deps (including devDependencies needed for esbuild / tailwind)
+RUN npm install --workspace=packages/client --workspace=packages/server --include=dev
+
+# Copy client source
+COPY packages/client/ packages/client/
+
+# Build vendor libs (sortable, gsap, handlebars, ace, tiptap bundle) + tailwind.css
+RUN npm run build:client
+
+# ── Stage 2: Production image ────────────────────────────
 FROM node:22-slim
 
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
@@ -17,8 +36,12 @@ RUN npm install --omit=dev --ignore-scripts --workspace=packages/server --worksp
 # Copy server source
 COPY packages/server/ packages/server/
 
-# Copy client static files
+# Copy client source (without build artifacts)
 COPY packages/client/ packages/client/
+
+# Copy built assets from stage 1 (vendor/ + tailwind.css)
+COPY --from=client-build /app/packages/client/vendor/ packages/client/vendor/
+COPY --from=client-build /app/packages/client/tailwind.css packages/client/tailwind.css
 
 # Data directories (DB + uploads) — mount as volumes for persistence
 RUN mkdir -p /data/uploads
