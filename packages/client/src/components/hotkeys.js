@@ -13,6 +13,10 @@ import { t } from '../i18n.js';
 export let _hotkeyAssignActive = false;
 export let _globalPressedKeys = new Set(); // tracks currently held keys for multi-key hotkeys
 
+// Clear pressed keys when window loses focus to prevent stale state
+window.addEventListener('blur', () => { _globalPressedKeys.clear(); });
+document.addEventListener('keyup', (e) => { _globalPressedKeys.delete(e.key); });
+
 export function openHotkeyAssignModal(graphicId) {
     // Import here to avoid circular at module-eval time
     const { renderShotbox } = window._cgModules;

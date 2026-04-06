@@ -14,6 +14,8 @@
     "start:electron": "npm run start --workspace=packages/desktop",
     "build:css": "npm run build:css --workspace=packages/client",
     "dev:css": "npm run dev:css --workspace=packages/client",
+    "build:vendor": "npm run build:vendor --workspace=packages/client",
+    "build:client": "npm run build --workspace=packages/client",
     "init-db": "npm run init-db --workspace=packages/server",
     "dist:win": "npm run dist:win --workspace=packages/desktop",
     "dist:mac": "npm run dist:mac --workspace=packages/desktop",

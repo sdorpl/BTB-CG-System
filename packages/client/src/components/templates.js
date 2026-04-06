@@ -142,9 +142,12 @@ export async function importOCGTemplates(files) {
     });
 
     try {
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const text = await readFileAsText(file);
+        // Read all files in parallel for better performance
+        const fileTexts = await Promise.all(
+            Array.from(files).map(file => readFileAsText(file))
+        );
+
+        for (const text of fileTexts) {
             let imported = JSON.parse(text);
             if (!Array.isArray(imported)) imported = [imported];
 

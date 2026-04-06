@@ -11,7 +11,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron . --no-sandbox",
-    "prebuild": "cd ../server && npm install --install-strategy=nested --omit=dev --ignore-scripts --workspaces=false && npm rebuild better-sqlite3",
+    "prebuild": "node prebuild-server.js",
     "rebuild": "electron-builder install-app-deps",
     "dist:win": "npm run prebuild && electron-builder --win",
     "dist:mac": "npm run prebuild && electron-builder --mac",
@@ -26,7 +26,8 @@
   "build": {
     "appId": "com.btb.cgsystem",
     "productName": "BTB CG System",
-    "asar": false,
+    "asar": true,
+    "asarUnpack": ["**/node_modules/better-sqlite3/**"],
     "electronVersion": "41.1.0",
     "afterPack": "./electron-builder-hooks.js",
     "files": [
@@ -69,11 +70,12 @@
     },
     "win": {
       "icon": "icon.ico",
-      "target": ["dir"]
+      "target": ["nsis", "portable"]
     },
     "linux": {
       "icon": "icon.png",
-      "target": ["AppImage"]
+      "target": ["AppImage", "deb"],
+      "artifactName": "BTB-CG-System-${version}-${arch}.${ext}"
     },
     "directories": {
       "output": "../../dist"

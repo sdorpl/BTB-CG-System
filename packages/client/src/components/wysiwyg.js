@@ -272,10 +272,11 @@ function _initTipTap() {
         },
     });
 
-    // Custom Extension: FontSize (px)
-    const FontSize = window.TipTap.TextStyle.extend({
+    // Custom Extension: Combined TextStyle with fontSize, letterSpacing, decoration
+    const CustomTextStyle = TextStyle.extend({
         addAttributes() {
             return {
+                ...this.parent?.(),
                 fontSize: {
                     default: null,
                     parseHTML: element => element.style.fontSize,
@@ -284,21 +285,6 @@ function _initTipTap() {
                         return { style: `font-size: ${attributes.fontSize}` };
                     },
                 },
-            };
-        },
-        addCommands() {
-            return {
-                setFontSize: fontSize => ({ chain }) => {
-                    return chain().setMark('textStyle', { fontSize }).run();
-                },
-            };
-        },
-    });
-
-    // Custom Extension: LetterSpacing
-    const LetterSpacing = window.TipTap.TextStyle.extend({
-        addAttributes() {
-            return {
                 letterSpacing: {
                     default: null,
                     parseHTML: element => element.style.letterSpacing,
@@ -307,21 +293,6 @@ function _initTipTap() {
                         return { style: `letter-spacing: ${attributes.letterSpacing}` };
                     },
                 },
-            };
-        },
-        addCommands() {
-            return {
-                setLetterSpacing: letterSpacing => ({ chain }) => {
-                    return chain().setMark('textStyle', { letterSpacing }).run();
-                },
-            };
-        },
-    });
-
-     // Custom Extension: Padding & Radius (for Highlights)
-     const Decoration = window.TipTap.TextStyle.extend({
-        addAttributes() {
-            return {
                 padding: {
                     default: null,
                     parseHTML: element => element.style.padding,
@@ -345,11 +316,18 @@ function _initTipTap() {
                         if (!attributes.display) return {};
                         return { style: `display: ${attributes.display}` };
                     },
-                }
+                },
             };
         },
         addCommands() {
             return {
+                ...this.parent?.(),
+                setFontSize: fontSize => ({ chain }) => {
+                    return chain().setMark('textStyle', { fontSize }).run();
+                },
+                setLetterSpacing: letterSpacing => ({ chain }) => {
+                    return chain().setMark('textStyle', { letterSpacing }).run();
+                },
                 setDecoration: attrs => ({ chain }) => {
                     return chain().setMark('textStyle', attrs).run();
                 },
@@ -367,13 +345,11 @@ function _initTipTap() {
                 // Underline and TextStyle might be included or conflict
             }),
             CustomParagraph,
-            FontSize,
+            CustomTextStyle,
             FontFamily,
             Color,
             Highlight.configure({ multicolor: true }),
             TextAlign.configure({ types: ['paragraph'] }),
-            LetterSpacing,
-            Decoration
         ],
         content: '',
         onUpdate: ({ editor }) => {

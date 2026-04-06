@@ -24,6 +24,7 @@ packages/server/uploads/*
 
 # Build artifacts
 packages/client/tailwind.css
+packages/client/vendor/
 
 # Editor directories and files
 .vscode/*

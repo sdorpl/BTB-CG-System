@@ -6,8 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BTB CG System</title>
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="/icon.png">
-  <link rel="apple-touch-icon" href="/icon.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0d1320">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,26 +16,9 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto+Condensed:ital,wght@0,300;0,400;0,700;1,400&display=swap"
     rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="tailwind.css">
   <link rel="stylesheet" href="style.css">
-  <!-- SortableJS dla operacji przeciągnij i upuść (Drag & Drop) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'gray-850': '#1a2030',
-            'gray-925': '#0d1320',
-          },
-          animation: {
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          }
-        }
-      }
-    }
-  </script>
+  <script src="vendor/sortable.min.js"></script>
   <style>
     @font-face {
       font-family: 'Bahnschrift';
@@ -1201,36 +1185,12 @@ KOD (JSON)</span>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
+  <script src="vendor/gsap.min.js"></script>
+  <script src="vendor/handlebars.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   
-  <!-- TipTap Core and Extensions (ESM) -->
-  <script type="module">
-    import { Editor } from 'https://esm.sh/@tiptap/core';
-    import { StarterKit } from 'https://esm.sh/@tiptap/starter-kit';
-    import { Paragraph } from 'https://esm.sh/@tiptap/extension-paragraph';
-    import { Color } from 'https://esm.sh/@tiptap/extension-color';
-    import { TextStyle } from 'https://esm.sh/@tiptap/extension-text-style';
-    import { Highlight } from 'https://esm.sh/@tiptap/extension-highlight';
-    import { Underline } from 'https://esm.sh/@tiptap/extension-underline';
-    import { TextAlign } from 'https://esm.sh/@tiptap/extension-text-align';
-    import { FontFamily } from 'https://esm.sh/@tiptap/extension-font-family';
-
-    window.TipTap = {
-      Editor,
-      StarterKit,
-      Paragraph,
-      Color,
-      TextStyle,
-      Highlight: Highlight.configure({ multicolor: true }),
-      Underline,
-      TextAlign: TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      FontFamily
-    };
-  </script>
+  <!-- TipTap (bundled locally) -->
+  <script src="vendor/tiptap.bundle.js"></script>
 
   <style>
     /* TipTap Editor Styles */
@@ -1249,7 +1209,7 @@ KOD (JSON)</span>
     }
   </style>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.35.5/ace.js" crossorigin="anonymous"></script>
+  <script src="vendor/ace/ace.js"></script>
   <script src="gsap-fx.js"></script>
   <script src="renderer.js"></script>
   <script type="module" src="app.js"></script>

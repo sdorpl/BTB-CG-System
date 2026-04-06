@@ -23,8 +23,6 @@ export function _aceInit() {
         showGutter: true,
         highlightActiveLine: true,
         useWorker: false,           // Wyłącz walidator — szablony używają Handlebars {{}}
-        enableBasicAutocompletion: false,
-        enableLiveAutocompletion: false,
     });
 
     // Match app background

@@ -9,7 +9,7 @@ import {
     codeEditorGraphicId, setCodeEditorGraphicId, inspectorAccordionStates,
     currentInspectorTab, setCurrentInspectorTab, DB_KEY, saveState, uiChannel, panelMode
 } from './store.js';
-import { escAttr } from './utils.js';
+import { escAttr, isSafeId } from './utils.js';
 import { _aceInit, _aceSuppressChange } from './ace-editor.js';
 import {
     setupMonitorScaling, setPreviewGraphic, refreshPreviewMonitor,
@@ -33,6 +33,7 @@ let _globalEventsBound = false;
 // BroadcastChannel message handler — runs once at module load
 uiChannel.onmessage = (e) => {
     if (e.data.action === 'select_graphic') {
+        if (!isSafeId(e.data.id)) return;
         const gfx = state.graphics.find(g => g.id === e.data.id);
         if (gfx) {
             setPreviewGraphic(structuredClone(gfx), true);

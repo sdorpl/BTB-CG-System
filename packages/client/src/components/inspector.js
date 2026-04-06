@@ -782,6 +782,7 @@ export function renderInspectorBody(graphic) {
             if (file) {
                 try {
                     const res = await uploadFile(file);
+                    if (!res?.url || !res.url.startsWith('/uploads/')) throw new Error('Invalid upload response');
                     let g = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
                     if (g) {
                         g = structuredClone(g);
@@ -808,6 +809,7 @@ export function renderInspectorBody(graphic) {
             if (file) {
                 try {
                     const res = await uploadFile(file);
+                    if (!res?.url || !res.url.startsWith('/uploads/')) throw new Error('Invalid upload response');
                     let g = window._draftGraphics[graphic.id] || state.graphics.find(g => g.id === graphic.id);
                     if (g) {
                         g = structuredClone(g);
@@ -1011,8 +1013,12 @@ export function handleInspectorChange(el, graphic) {
 
     window._cgModules.refreshPreviewMonitor();
 
-    // Commit to persistent draft
-    window._draftGraphics[graphic.id] = structuredClone(g);
+    // Commit to persistent draft — clone after all mutations succeeded
+    try {
+        window._draftGraphics[graphic.id] = structuredClone(g);
+    } catch (e) {
+        console.error('[inspector] Failed to clone draft:', e);
+    }
 
     // Re-render inspector when background type changes (shows/hides gradient fields), layout side changes, or wiper visibility toggles
     if (field === 'style.background.type' || field === 'layout.side' || field === 'wiper.show') {

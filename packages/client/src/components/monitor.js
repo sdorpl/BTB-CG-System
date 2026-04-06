@@ -11,11 +11,15 @@ import { t } from '../i18n.js';
 
 // module-level ref so refreshPreviewMonitor can force a rescale
 export let _previewDoScale = null;
+let _previewResizeObserver = null;
 
 export function setupMonitorScaling() {
     const outer = document.getElementById('preview-canvas-outer');
     const canvasWrap = document.getElementById('preview-canvas-wrap');
     if (!outer || !canvasWrap) return;
+
+    // Disconnect previous observer if exists (prevents leak on repeated calls)
+    if (_previewResizeObserver) _previewResizeObserver.disconnect();
 
     _previewDoScale = () => {
         // Now that preview-canvas-outer is relative and inside a flex container,
@@ -33,8 +37,8 @@ export function setupMonitorScaling() {
         canvasWrap.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;
     };
 
-    const ro = new ResizeObserver(_previewDoScale);
-    ro.observe(outer);
+    _previewResizeObserver = new ResizeObserver(_previewDoScale);
+    _previewResizeObserver.observe(outer);
     setTimeout(_previewDoScale, 100);
 }
 

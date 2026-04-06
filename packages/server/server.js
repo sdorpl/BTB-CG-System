@@ -58,11 +58,16 @@ if (!dbExists) {
 const UPLOADS_DIR = path.join(appDataPath, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
+const ALLOWED_UPLOAD_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.webm', '.mp4', '.mp3', '.ogg', '.wav', '.ttf', '.otf', '.woff', '.woff2']);
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, UPLOADS_DIR),
     filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (!ALLOWED_UPLOAD_EXTS.has(ext)) {
+            return cb(new Error('File type not allowed'));
+        }
         const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, unique + path.extname(file.originalname));
+        cb(null, unique + ext);
     }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // max 10MB
@@ -243,6 +248,14 @@ const syncFullStateToDB = db.transaction((state) => {
 // Start
 // Usunięto loadStateFromDB() stąd, jest wywoływane wewnątrz ensureDatabaseInitialized()
 
+// Block access to database files via static serving
+app.use((req, res, next) => {
+    if (/\.sqlite(-\w+)?$/i.test(req.path) || /db\.json$/i.test(req.path)) {
+        return res.status(403).end();
+    }
+    next();
+});
+
 // Serve client static files from the client package
 if (fs.existsSync(CLIENT_ROOT)) {
     app.use(express.static(CLIENT_ROOT));
@@ -266,7 +279,12 @@ app.get('/api/server-info', (req, res) => {
 });
 
 // Endpoint do uploadu pliku (zastępuje osadzanie Base64 w grafice)
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) return res.status(400).json({ error: err.message || 'Upload failed' });
+        next();
+    });
+}, (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const url = `/uploads/${req.file.filename}`;
     console.log(`[UPLOAD] Saved: ${req.file.filename} (${req.file.size} bytes)`);

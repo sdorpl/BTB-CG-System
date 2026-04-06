@@ -51,7 +51,7 @@
     const _pendingShowTimers = {}; // graphic.id -> timeoutId for pending re-show after hide
 
     // Validate graphic IDs before injecting into DOM attributes
-    const _safeIdRe = /^[a-f0-9\-]{1,64}$/i;
+    const _safeIdRe = /^(?:g-)?[a-f0-9\-]{1,64}$/i;
     function _isSafeId(id) { return typeof id === 'string' && _safeIdRe.test(id); }
 
     // Fast string hash (djb2) — replaces expensive JSON.stringify comparison
@@ -289,9 +289,10 @@
             const borderRadius = isGlobalRadius ? (settings.globalBorderRadius || 0) : (bgData.borderRadius || 0);
 
             if (bgData.type === 'gradient') {
-                const angle = bgData.gradientAngle || 135;
-                const c1 = bgData.color || '#1e3a8a';
-                const c2 = bgData.color2 || '#3b82f6';
+                const angle = parseInt(bgData.gradientAngle, 10) || 135;
+                const _cssColorRe = /^#[0-9a-f]{3,8}$|^rgba?\([^)]+\)$|^[a-z]{3,20}$/i;
+                const c1 = _cssColorRe.test(bgData.color || '') ? bgData.color : '#1e3a8a';
+                const c2 = _cssColorRe.test(bgData.color2 || '') ? bgData.color2 : '#3b82f6';
                 const gradientVal = `linear-gradient(${angle}deg, ${c1}, ${c2})`;
                 // Target container/bar elements specifically, but EXCLUDE wiper/ticker elements
                 // that have their own distinct background colors (wiper, msg-box, track, etc.)
@@ -300,8 +301,9 @@
             }
 
             if (isGlobalRadius || bgData.borderRadius > 0) {
+                const safeBorderRadius = parseInt(borderRadius, 10) || 0;
                 cssStr += `\n/* border radius override */`;
-                cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { border-radius: ${borderRadius}px !important; overflow: hidden !important; }`;
+                cssStr += `\n#${instanceId} [class*="container"]:not([class*="utk"]):not([class*="wiper"]), #${instanceId} [class*="-bar"], #${instanceId} [class*="wrapper"]:not([class*="utk"]), #${instanceId} [class*="plate"] { border-radius: ${safeBorderRadius}px !important; overflow: hidden !important; }`;
             }
 
             // Layout side override
@@ -313,8 +315,8 @@
                 const yS = (data.layout.side === 'center') ? 'center' : ySide;
                 const xS = (data.layout.side === 'center') ? 'center' : xSide;
 
-                const mx = data.layout?.marginX || 0;
-                const my = data.layout?.marginY || 0;
+                const mx = parseInt(data.layout?.marginX, 10) || 0;
+                const my = parseInt(data.layout?.marginY, 10) || 0;
 
                 cssStr += `\n/* Side Layout */`;
                 cssStr += `\n#${instanceId} { display: flex; width: 100%; height: 100%; box-sizing: border-box; pointer-events: none; }`;
@@ -367,32 +369,33 @@
             try {
                 // new Function avoids leaking local closure scope (safer than eval)
                 new Function('root', 'gsap', jsCode)(rootEl, window.gsap);
-
-                // Allow DOM repaints before executing GSAP show animations logic
-                setTimeout(() => {
-                    if (rootEl) {
-                        rootEl.classList.add('active');
-                        // Legacy support: also add .active to the first child (often .lt-container)
-                        if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
-                        rootEl.setAttribute('data-squash-enabled', data.style?.typography?.squashEnabled !== false);
-                    }
-                    if (rootEl.__slt_show) {
-                        rootEl.__slt_show();
-                    } else {
-                        rootEl.style.display = 'block';
-                    }
-                    // Apply global text squashing after initial render/animation trigger
-                    requestAnimationFrame(() => applyGlobalSquashing(rootEl));
-                }, 30);
             } catch (e) {
                 console.error("Vinci JS error", e);
             }
-        } else if (rootEl) {
-            // No JS template, but still trigger active class for CSS-only templates
+        }
+
+        // Show logic — MUST run even if template JS threw an error,
+        // otherwise the graphic stays at opacity: 0 forever.
+        if (rootEl) {
             setTimeout(() => {
-                rootEl.classList.add('active');
-                if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
-                rootEl.style.display = 'block';
+                if (rootEl) {
+                    rootEl.classList.add('active');
+                    if (rootEl.firstElementChild) rootEl.firstElementChild.classList.add('active');
+                    rootEl.setAttribute('data-squash-enabled', data.style?.typography?.squashEnabled !== false);
+                }
+                if (rootEl.__slt_show) {
+                    try {
+                        rootEl.__slt_show();
+                    } catch (e) {
+                        console.error("__slt_show error", e);
+                        rootEl.style.opacity = '1';
+                    }
+                } else {
+                    rootEl.style.display = 'block';
+                    rootEl.style.opacity = '1';
+                }
+                // Apply global text squashing after initial render/animation trigger
+                requestAnimationFrame(() => applyGlobalSquashing(rootEl));
             }, 30);
         }
     }

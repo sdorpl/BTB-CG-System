@@ -1,6 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: dark --default, dracula, synthwave;
+}
+
+@source "./*.{html,js}";
+@source "./src/**/*.{html,js}";
+@source "./renderer.js";
+@source "./app.js";
+
+@theme {
+  --color-gray-850: #1a2030;
+  --color-gray-925: #0d1320;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 
 @layer base {
   @font-face {
