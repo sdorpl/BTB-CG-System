@@ -1,12 +1,14 @@
 services:
-  cg-control:
+  cg-system:
     build: .
-    container_name: cg-control-pro
+    container_name: btb-cg-system
     ports:
       - "3000:3000"
     volumes:
-      - ./database.sqlite:/app/packages/server/database.sqlite:Z
+      - cg-data:/data
     environment:
       - PORT=3000
-      - DATABASE_URL=/app/packages/server/database.sqlite
     restart: unless-stopped
+
+volumes:
+  cg-data:

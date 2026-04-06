@@ -1,31 +1,131 @@
-# Running BTB-CG-System with Portainer
+# Uruchamianie BTB CG System z Portainer
 
-This guide explains how to deploy the BTB-CG-System using Portainer, fetching the source code directly from a GitHub repository.
+Instrukcja wdrożenia BTB CG System jako kontenera Docker za pomocą Portainer.
 
-## Prerequisites
+---
 
-- Portainer instance running and accessible.
-- Docker and Docker Compose installed on the host.
+## Wymagania
 
-## Deployment Steps
+- Portainer (CE lub Business) z dostępem do Docker Engine
+- Docker z obsługą Compose v2
 
-1. **Log in to Portainer.**
-2. **Navigate to "Stacks"** in the sidebar.
-3. **Click "Add stack".**
-4. **Name your stack** (e.g., `btb-cg-system`).
-5. **Select "Repository"** as the build method.
-6. **Enter the Repository URL:** `https://github.com/sdorpl/BTB-CG-System.git`
-7. **Specify the "Compose path":** `docker-compose.yml`.
-8. **Under "Environment variables"**, you can optionally set `PORT` if you want the internal server to run on a different port (default is 3000).
-9. **Click "Deploy the stack".**
+---
 
-## Post-Deployment
+## Sposób 1: Stack z repozytorium Git
 
-- The application will automatically build the Docker image and start the container.
-- On the first run, the SQLite database will be automatically initialized and populated from `db.json`.
-- You can access the Control Panel at `http://<your-server-ip>:3000/`.
-- The output page is available at `http://<your-server-ip>:3000/output.html`.
+1. Zaloguj się do Portainer → **Stacks** → **Add stack**
+2. Nazwa stacka: `btb-cg-system`
+3. Wybierz **Repository**
+4. Repository URL: `https://github.com/sdorpl/BTB-CG-System.git`
+5. Compose path: `docker-compose.yml`
+6. Opcjonalnie w **Environment variables** dodaj:
+   - `PORT` — port wewnętrzny serwera (domyślnie `3000`)
+7. Kliknij **Deploy the stack**
 
-## Data Persistence
+> Portainer sam zbuduje obraz Docker z `Dockerfile` i uruchomi kontener.
 
-The `docker-compose.yml` is configured to persist data in a `./data` directory relative to where the stack is deployed. This directory will contain your `database.sqlite` file.
+---
+
+## Sposób 2: Stack z gotowego docker-compose
+
+1. **Stacks** → **Add stack** → **Web editor**
+2. Nazwa: `btb-cg-system`
+3. Wklej poniższy compose:
+
+```yaml
+services:
+  cg-system:
+    build: .
+    container_name: btb-cg-system
+    ports:
+      - "3000:3000"
+    volumes:
+      - cg-data:/data
+    environment:
+      - PORT=3000
+    restart: unless-stopped
+
+volumes:
+  cg-data:
+```
+
+4. Kliknij **Deploy the stack**
+
+---
+
+## Sposób 3: Z gotowego obrazu (bez budowania)
+
+Jeśli obraz został wcześniej zbudowany i wgrany do registry:
+
+1. **Containers** → **Add container**
+2. Image: `btb-cg-system:1.1.0`
+3. **Port mapping:** Host `3000` → Container `3000`
+4. **Volumes:** Utwórz named volume `cg-data` zamontowany na `/data`
+5. **Restart policy:** `unless-stopped`
+6. Kliknij **Deploy the container**
+
+---
+
+## Po wdrożeniu
+
+| Co | URL |
+|---|---|
+| Panel sterowania | `http://<IP-serwera>:3000/` |
+| Output dla OBS | `http://<IP-serwera>:3000/output.html` |
+
+Przy pierwszym uruchomieniu:
+- Baza danych SQLite zostanie automatycznie utworzona i zainicjalizowana
+- Szablony z `templates/` zostaną zsynchronizowane do bazy
+- Katalog uploads jest tworzony automatycznie
+
+---
+
+## Persystencja danych
+
+Wszystkie dane (baza SQLite + uploadowane pliki) przechowywane są w wolumenie Docker zamontowanym na `/data`:
+
+```
+/data/
+├── database.sqlite      # Baza danych
+└── uploads/             # Wgrane pliki (obrazy, czcionki, media)
+```
+
+Wolumen `cg-data` przetrwa restart kontenera, aktualizację stacka i przebudowanie obrazu.
+
+### Backup bazy danych
+
+```bash
+# Skopiuj bazę z wolumenu na host
+docker cp btb-cg-system:/data/database.sqlite ./backup_database.sqlite
+
+# Lub z poziomu Portainer: Volumes → cg-data → Browse
+```
+
+---
+
+## Zmiana portu
+
+Aby udostępnić aplikację na innym porcie (np. 8080):
+
+```yaml
+ports:
+  - "8080:3000"
+```
+
+Port wewnętrzny (`3000`) nie wymaga zmian — jest kodem w obrazie.
+
+---
+
+## Aktualizacja
+
+1. **Stacks** → `btb-cg-system` → **Editor**
+2. Kliknij **Update the stack** z opcją **Re-pull image and redeploy**
+3. Dane w wolumenie `cg-data` zostają zachowane
+
+---
+
+## Healthcheck
+
+Obraz ma wbudowany healthcheck — Portainer pokaże status zdrowia kontenera:
+- **healthy** — serwer odpowiada na HTTP
+- **unhealthy** — serwer nie odpowiada (sprawdź logi)
